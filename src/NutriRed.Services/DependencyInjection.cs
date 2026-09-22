@@ -9,6 +9,7 @@ public static class DependencyInjection
     public static IServiceCollection AddNutriRedServices(this IServiceCollection services)
     {
         services.AddScoped<ICategoriaService, CategoriaService>();
+        services.AddScoped<IProductoService, ProductoService>();
         return services;
     }
 }
