@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/NutriRed.Data/NutriRed.Data.csproj" />
+    <Project Path="src/NutriRed.Domain/NutriRed.Domain.csproj" />
+    <Project Path="src/NutriRed.Services/NutriRed.Services.csproj" />
+    <Project Path="src/NutriRed.Web/NutriRed.Web.csproj" />
+  </Folder>
+</Solution>
