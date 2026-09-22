@@ -1,18 +1,15 @@
-# 🍎 NutriRed - Sistema Inteligente e Inclusivo para la Gestión de Bancos de Alimentos
+NutriRed - Sistema Inteligente e Inclusivo para la Gestión de Bancos de Alimentos
 
-> **"Conectando solidaridad con eficiencia tecnológica."**
 
 Proyecto final desarrollado para la **Universidad Tecnológica Nacional (UTN)** por el **Equipo 24 (CCS Nexus)**:
 * **Cavallero, Pablo Andres**
 * **Limache Caballero, Rosaura**
 * **Sueldo, Martín**
 
----
-
-## 📖 Descripción del Proyecto
+## Descripción del Proyecto
 
 **NutriRed** es una plataforma integral de arquitectura dual (Panel de Control Web + App Móvil Android) diseñada para optimizar y digitalizar la logística de los bancos de alimentos:
-1. **Recepción ágil de donaciones:** Escaneo de códigos de barra comerciales (EAN) y registro de lotes y vencimientos.
+1. **Recepción ágil de donaciones:** Escaneo de códigos de barra comerciales y registro de lotes y vencimientos.
 2. **Control FEFO (*First Expired, First Out*):** Priorización automática de lotes con fecha de caducidad más cercana para evitar desperdicio de alimentos.
 3. **Armado Inteligente de Paquetes:** Sugerencia automática de kits según la cantidad de integrantes familiares, con soporte de sustitución ante faltantes y generación de código QR para rotulado.
 4. **Despacho y Entrega en Terreno:** Verificación de receptores (titulares o terceros autorizados) y captura de firma digital de conformidad desde la app móvil.
@@ -20,18 +17,18 @@ Proyecto final desarrollado para la **Universidad Tecnológica Nacional (UTN)** 
 
 ---
 
-## 🛠️ Stack Tecnológico
+## Stack Tecnológico
 
 * **Plataforma:** .NET 9 (`net9.0`)
 * **Backend Web:** ASP.NET Core MVC (Vistas Razor + Tag Helpers + Bootstrap)
 * **API REST:** Controladores ASP.NET Core con documentación interactiva en **Swagger UI** y soporte JWT para la app Android.
 * **Acceso a Datos:** Entity Framework Core 9 (Code-First)
 * **Base de Datos:** Microsoft SQL Server (`LocalDB` / `SQLEXPRESS`)
-* **Herramientas:** Visual Studio 2022 / VS Code / .NET CLI
+* **Herramientas:** Visual Studio 2022/2026
 
 ---
 
-## 🏗️ Arquitectura de la Solución
+## Arquitectura de la Solución
 
 El proyecto sigue una arquitectura en capas desacoplada con un proyecto web unificado:
 
@@ -41,7 +38,7 @@ NutriRed/
 ├── .gitignore                  # Exclusiones oficiales para .NET
 ├── README.md                   # Documentación del proyecto
 └── src/
-    ├── NutriRed.Domain/        # Entidades POCO, Enums y Data Annotations
+    ├── NutriRed.Domain/        # Entidades, Enums y Data Annotations
     ├── NutriRed.Data/          # NutriRedDbContext, Mapeos, Migraciones y Seed Data
     ├── NutriRed.Services/      # Lógica de negocio (Algoritmo FEFO, validaciones)
     └── NutriRed.Web/           # Aplicación Web MVC + API REST Android + Swagger
@@ -64,7 +61,7 @@ graph TD
 
 ---
 
-## 🚀 Guía de Inicio Rápido para el Equipo
+## Guía de Inicio Rápido para el Equipo
 
 Sigue estos pasos para clonar y ejecutar el proyecto en tu máquina:
 
@@ -105,7 +102,7 @@ dotnet run --project src/NutriRed.Web
 
 ---
 
-## 🌐 Puntos de Acceso
+## Puntos de Acceso
 
 Una vez iniciada la aplicación, accede desde el navegador:
 
@@ -114,7 +111,7 @@ Una vez iniciada la aplicación, accede desde el navegador:
 
 ---
 
-## 🌱 Datos de Prueba Iniciales (*Seed Data*)
+## Datos de Prueba Iniciales
 
 La aplicación incluye un sembrado automático de datos en desarrollo. Al iniciar la primera vez, se cargarán solos:
 
