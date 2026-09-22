@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using NutriRed.Data;
+using NutriRed.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -7,10 +8,13 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<NutriRedDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// 2. Soporte para Vistas MVC y Controladores de API
+// 2. Registro de Servicios de Negocio (NutriRed.Services)
+builder.Services.AddNutriRedServices();
+
+// 3. Soporte para Vistas MVC y Controladores de API
 builder.Services.AddControllersWithViews();
 
-// 3. Documentación Swagger para la API de Android
+// 4. Documentación Swagger para la API de Android
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
