@@ -1,0 +1,55 @@
+@*
+    Vista Parcial: _Alertas.cshtml
+    Muestra mensajes flash de notificación (Éxito, Error, Advertencia, Info) provenientes de TempData.
+*@
+
+@if (TempData["Exito"] != null || TempData["Success"] != null)
+{
+    var mensaje = TempData["Exito"] ?? TempData["Success"];
+    <div class="alert alert-success alert-dismissible fade show shadow-sm border-start border-4 border-success d-flex align-items-center mb-4" role="alert">
+        <i class="bi bi-check-circle-fill fs-4 me-3 text-success"></i>
+        <div>
+            <strong>¡Operación Exitosa!</strong>
+            <div>@mensaje</div>
+        </div>
+        <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+    </div>
+}
+
+@if (TempData["Error"] != null || TempData["ErrorMensaje"] != null)
+{
+    var mensaje = TempData["Error"] ?? TempData["ErrorMensaje"];
+    <div class="alert alert-danger alert-dismissible fade show shadow-sm border-start border-4 border-danger d-flex align-items-center mb-4" role="alert">
+        <i class="bi bi-exclamation-triangle-fill fs-4 me-3 text-danger"></i>
+        <div>
+            <strong>Atención / Error</strong>
+            <div>@mensaje</div>
+        </div>
+        <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+    </div>
+}
+
+@if (TempData["Advertencia"] != null || TempData["Warning"] != null)
+{
+    var mensaje = TempData["Advertencia"] ?? TempData["Warning"];
+    <div class="alert alert-warning alert-dismissible fade show shadow-sm border-start border-4 border-warning d-flex align-items-center mb-4" role="alert">
+        <i class="bi bi-exclamation-circle-fill fs-4 me-3 text-warning"></i>
+        <div>
+            <strong>Advertencia de Operación</strong>
+            <div>@mensaje</div>
+        </div>
+        <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+    </div>
+}
+
+@if (TempData["Info"] != null)
+{
+    <div class="alert alert-info alert-dismissible fade show shadow-sm border-start border-4 border-info d-flex align-items-center mb-4" role="alert">
+        <i class="bi bi-info-circle-fill fs-4 me-3 text-info"></i>
+        <div>
+            <strong>Información</strong>
+            <div>@TempData["Info"]</div>
+        </div>
+        <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+    </div>
+}

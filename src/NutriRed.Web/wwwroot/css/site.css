@@ -1,31 +1,355 @@
-html {
-  font-size: 14px;
+/* ==========================================================================
+   NutriRed - Sistema de Gestión de Bancos de Alimentos
+   Diseño de Marca & Accesibilidad WCAG (site.css)
+   ========================================================================== */
+
+/* --- Variables Globales de Marca (DESIGN.md) --- */
+:root {
+  --nr-emerald-primary: #059669;
+  --nr-emerald-hover: #047857;
+  --nr-emerald-light: #ecfdf5;
+  --nr-emerald-border: #a7f3d0;
+  
+  --nr-canvas: #f8fafc;
+  --nr-surface: #ffffff;
+  --nr-ink: #0f172a;
+  --nr-secondary: #475569;
+  --nr-muted: #94a3b8;
+  --nr-border-subtle: #e2e8f0;
+  
+  /* Semáforo FEFO */
+  --fefo-optimo-color: #065f46;
+  --fefo-optimo-bg: #d1fae5;
+  --fefo-optimo-border: #34d399;
+
+  --fefo-atencion-color: #92400e;
+  --fefo-atencion-bg: #fef3c7;
+  --fefo-atencion-border: #fbbf24;
+
+  --fefo-urgente-color: #9a3412;
+  --fefo-urgente-bg: #ffedd5;
+  --fefo-urgente-border: #fb923c;
+
+  --fefo-critico-color: #9f1239;
+  --fefo-critico-bg: #ffe4e6;
+  --fefo-critico-border: #f43f5e;
+
+  --font-family-sans: 'Outfit', system-ui, -apple-system, sans-serif;
+  --font-family-mono: 'JetBrains Mono', SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
-@media (min-width: 768px) {
-  html {
-    font-size: 16px;
-  }
-}
-
-.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
-  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
-}
-
-html {
-  position: relative;
-  min-height: 100%;
-}
-
+/* --- Tipografía Base & Contenedores --- */
 body {
-  margin-bottom: 60px;
+  font-family: var(--font-family-sans);
+  background-color: var(--nr-canvas);
+  color: var(--nr-ink);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
-.form-floating > .form-control-plaintext::placeholder, .form-floating > .form-control::placeholder {
-  color: var(--bs-secondary-color);
-  text-align: end;
+main {
+  flex: 1 0 auto;
 }
 
-.form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
-  text-align: start;
+.font-mono {
+  font-family: var(--font-family-mono) !important;
+}
+
+/* --- Barra de Navegación Principal --- */
+.navbar-nutrired {
+  background-color: var(--nr-surface);
+  border-bottom: 1px solid var(--nr-border-subtle);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.04);
+}
+
+.navbar-nutrired .navbar-brand {
+  font-weight: 700;
+  color: var(--nr-ink);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.navbar-nutrired .navbar-brand .brand-icon {
+  background: var(--nr-emerald-light);
+  color: var(--nr-emerald-primary);
+  width: 38px;
+  height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  font-size: 1.25rem;
+}
+
+.navbar-nutrired .nav-link {
+  color: var(--nr-secondary);
+  font-weight: 500;
+  padding: 0.5rem 0.85rem;
+  border-radius: 8px;
+  transition: all 0.2s ease-in-out;
+}
+
+.navbar-nutrired .nav-link:hover,
+.navbar-nutrired .nav-link.active {
+  color: var(--nr-emerald-primary);
+  background-color: var(--nr-emerald-light);
+}
+
+/* --- Botones Personalizados --- */
+.btn-emerald {
+  background-color: var(--nr-emerald-primary);
+  color: #ffffff;
+  border: 1px solid var(--nr-emerald-primary);
+  font-weight: 600;
+  border-radius: 8px;
+  padding: 0.5rem 1.15rem;
+  transition: all 0.2s ease;
+}
+
+.btn-emerald:hover,
+.btn-emerald:focus {
+  background-color: var(--nr-emerald-hover);
+  border-color: var(--nr-emerald-hover);
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(5, 150, 105, 0.25);
+}
+
+.btn-outline-emerald {
+  color: var(--nr-emerald-primary);
+  border: 1px solid var(--nr-emerald-primary);
+  background-color: transparent;
+  font-weight: 600;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.btn-outline-emerald:hover {
+  background-color: var(--nr-emerald-light);
+  color: var(--nr-emerald-hover);
+  border-color: var(--nr-emerald-hover);
+}
+
+/* --- Tarjetas & Paneles Bento --- */
+.card-nr {
+  background: var(--nr-surface);
+  border: 1px solid var(--nr-border-subtle);
+  border-radius: 14px;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.03);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card-nr-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+}
+
+.card-nr-header {
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--nr-border-subtle);
+  background: transparent;
+  font-weight: 600;
+}
+
+/* --- Badges Semánticos FEFO --- */
+.badge-fefo-optimo {
+  background-color: var(--fefo-optimo-bg);
+  color: var(--fefo-optimo-color);
+  border: 1px solid var(--fefo-optimo-border);
+  font-weight: 600;
+  padding: 0.35rem 0.65rem;
+  border-radius: 6px;
+}
+
+.badge-fefo-atencion {
+  background-color: var(--fefo-atencion-bg);
+  color: var(--fefo-atencion-color);
+  border: 1px solid var(--fefo-atencion-border);
+  font-weight: 600;
+  padding: 0.35rem 0.65rem;
+  border-radius: 6px;
+}
+
+.badge-fefo-urgente {
+  background-color: var(--fefo-urgente-bg);
+  color: var(--fefo-urgente-color);
+  border: 1px solid var(--fefo-urgente-border);
+  font-weight: 600;
+  padding: 0.35rem 0.65rem;
+  border-radius: 6px;
+}
+
+.badge-fefo-critico {
+  background-color: var(--fefo-critico-bg);
+  color: var(--fefo-critico-color);
+  border: 1px solid var(--fefo-critico-border);
+  font-weight: 600;
+  padding: 0.35rem 0.65rem;
+  border-radius: 6px;
+}
+
+/* --- Códigos y Etiquetas Logísticas --- */
+.code-tag {
+  font-family: var(--font-family-mono);
+  background: #f1f5f9;
+  color: #334155;
+  border: 1px solid #cbd5e1;
+  padding: 0.2rem 0.45rem;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+/* --- Tablas Modernas --- */
+.table-nr {
+  --bs-table-bg: transparent;
+  --bs-table-striped-bg: rgba(248, 250, 252, 0.7);
+}
+
+.table-nr thead th {
+  background-color: #f8fafc;
+  color: #475569;
+  font-weight: 600;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  border-bottom: 2px solid var(--nr-border-subtle);
+  padding: 0.85rem 1rem;
+}
+
+.table-nr tbody td {
+  padding: 0.85rem 1rem;
+  vertical-align: middle;
+  border-bottom: 1px solid var(--nr-border-subtle);
+}
+
+/* --- Pie de Página --- */
+.footer-nutrired {
+  background-color: var(--nr-surface);
+  border-top: 1px solid var(--nr-border-subtle);
+  color: var(--nr-secondary);
+  font-size: 0.875rem;
+  padding: 1.25rem 0;
+  margin-top: auto;
+}
+
+/* ==========================================================================
+   MODO ALTO CONTRASTE (WCAG 2.1 AA/AAA)
+   Activado mediante la clase .high-contrast en el <body>
+   ========================================================================== */
+body.high-contrast {
+  background-color: #000000 !important;
+  color: #ffffff !important;
+}
+
+body.high-contrast .navbar-nutrired,
+body.high-contrast .card-nr,
+body.high-contrast .footer-nutrired,
+body.high-contrast .modal-content,
+body.high-contrast .dropdown-menu {
+  background-color: #000000 !important;
+  color: #ffffff !important;
+  border: 2px solid #ffffff !important;
+  box-shadow: none !important;
+}
+
+body.high-contrast .navbar-brand,
+body.high-contrast .nav-link,
+body.high-contrast h1, 
+body.high-contrast h2, 
+body.high-contrast h3, 
+body.high-contrast h4, 
+body.high-contrast h5, 
+body.high-contrast p,
+body.high-contrast td,
+body.high-contrast th,
+body.high-contrast label,
+body.high-contrast span {
+  color: #ffffff !important;
+}
+
+body.high-contrast .nav-link:hover,
+body.high-contrast .nav-link.active {
+  background-color: #ffff00 !important;
+  color: #000000 !important;
+  font-weight: 700 !important;
+}
+
+body.high-contrast .btn-emerald {
+  background-color: #ffff00 !important;
+  color: #000000 !important;
+  border: 2px solid #ffffff !important;
+  font-weight: 800 !important;
+}
+
+body.high-contrast .btn-outline-emerald,
+body.high-contrast .btn-outline-secondary,
+body.high-contrast .btn-outline-primary {
+  border: 2px solid #ffffff !important;
+  color: #ffffff !important;
+  background-color: #000000 !important;
+}
+
+body.high-contrast .btn-outline-emerald:hover,
+body.high-contrast .btn-outline-secondary:hover {
+  background-color: #ffffff !important;
+  color: #000000 !important;
+}
+
+body.high-contrast .code-tag {
+  background-color: #1a1a1a !important;
+  color: #ffff00 !important;
+  border: 1px solid #ffff00 !important;
+}
+
+body.high-contrast .badge-fefo-optimo,
+body.high-contrast .badge-fefo-atencion,
+body.high-contrast .badge-fefo-urgente,
+body.high-contrast .badge-fefo-critico {
+  background-color: #000000 !important;
+  color: #ffffff !important;
+  border: 2px solid #ffffff !important;
+  font-weight: 700 !important;
+}
+
+body.high-contrast .badge-fefo-critico {
+  border-color: #ff4d4d !important;
+  color: #ff4d4d !important;
+}
+
+body.high-contrast .badge-fefo-atencion,
+body.high-contrast .badge-fefo-urgente {
+  border-color: #ffff00 !important;
+  color: #ffff00 !important;
+}
+
+body.high-contrast .table-nr thead th {
+  background-color: #121212 !important;
+  color: #ffff00 !important;
+  border-bottom: 2px solid #ffffff !important;
+}
+
+body.high-contrast .table-nr tbody td {
+  border-bottom: 1px solid #ffffff !important;
+}
+
+body.high-contrast .form-control,
+body.high-contrast .form-select {
+  background-color: #000000 !important;
+  color: #ffffff !important;
+  border: 2px solid #ffffff !important;
+}
+
+body.high-contrast .form-control:focus,
+body.high-contrast .form-select:focus {
+  border-color: #ffff00 !important;
+  outline: 2px solid #ffff00 !important;
+  box-shadow: none !important;
+}
+
+body.high-contrast .alert {
+  background-color: #121212 !important;
+  color: #ffffff !important;
+  border: 2px solid #ffffff !important;
 }

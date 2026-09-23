@@ -1,50 +1,196 @@
-﻿<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html>
+<html lang="es">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - NutriRed.Web</title>
-    <script type="importmap"></script>
+    <title>@ViewData["Title"] - NutriRed | Banco de Alimentos</title>
+
+    <!-- Tipografía: Outfit (Titulares & UI) + JetBrains Mono (Lotes, EAN y QR) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Iconografía: Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+
+    <!-- Bootstrap 5.3 & Estilos NutriRed -->
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/NutriRed.Web.styles.css" asp-append-version="true" />
 </head>
 <body>
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">NutriRed.Web</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
+    <header class="sticky-top">
+        <nav class="navbar navbar-expand-lg navbar-nutrired py-2">
+            <div class="container-fluid px-lg-4">
+                <!-- Logotipo e Identidad -->
+                <a class="navbar-brand me-4" asp-controller="Home" asp-action="Index">
+                    <span class="brand-icon">
+                        <i class="bi bi-box2-heart-fill"></i>
+                    </span>
+                    <div>
+                        <span class="d-block lh-1">NutriRed</span>
+                        <small class="text-muted fw-normal" style="font-size: 0.72rem; letter-spacing: 0.04em;">BANCO DE ALIMENTOS</small>
+                    </div>
+                </a>
+
+                <!-- Botón Responsive Móvil -->
+                <button class="navbar-toggler border-0 shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNutriRedContent"
+                        aria-controls="navbarNutriRedContent" aria-expanded="false" aria-label="Alternar navegación">
                     <span class="navbar-toggler-icon"></span>
                 </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
+
+                <!-- Menú Principal Modular -->
+                <div class="collapse navbar-collapse" id="navbarNutriRedContent">
+                    <ul class="navbar-nav me-auto mb-2 mb-lg-0 gap-1">
+                        <!-- Dashboard -->
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
+                            <a class="nav-link" asp-controller="Home" asp-action="Index">
+                                <i class="bi bi-speedometer2 me-1"></i> Dashboard
+                            </a>
                         </li>
+
+                        <!-- Módulo Almacén & Catálogo -->
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="bi bi-boxes me-1"></i> Almacén
+                            </a>
+                            <ul class="dropdown-menu shadow-sm border-0 rounded-3 mt-2">
+                                <li>
+                                    <a class="dropdown-item py-2" asp-controller="Productos" asp-action="Index">
+                                        <i class="bi bi-egg-fried text-success me-2"></i> Alimentos en Catálogo
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item py-2" asp-controller="Categorias" asp-action="Index">
+                                        <i class="bi bi-tags text-primary me-2"></i> Categorías de Alimentos
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <a class="dropdown-item py-2" asp-controller="Inventario" asp-action="Index">
+                                        <i class="bi bi-hourglass-split text-warning me-2"></i> Stock Consolidado & FEFO
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item py-2" asp-controller="Inventario" asp-action="Mermas">
+                                        <i class="bi bi-trash3 text-danger me-2"></i> Registro de Mermas & Bajas
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+
+                        <!-- Módulo Donaciones (RF1) -->
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="bi bi-gift me-1"></i> Donaciones
+                            </a>
+                            <ul class="dropdown-menu shadow-sm border-0 rounded-3 mt-2">
+                                <li>
+                                    <a class="dropdown-item py-2" asp-controller="Donaciones" asp-action="Registrar">
+                                        <i class="bi bi-plus-circle text-success me-2"></i> Recepción Física de Donación
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item py-2" asp-controller="Donaciones" asp-action="Index">
+                                        <i class="bi bi-receipt text-secondary me-2"></i> Historial y Comprobantes
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+
+                        <!-- Módulo Kits Nutricionales (RF2) -->
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="bi bi-box-seam me-1"></i> Kits Nutricionales
+                            </a>
+                            <ul class="dropdown-menu shadow-sm border-0 rounded-3 mt-2">
+                                <li>
+                                    <a class="dropdown-item py-2" asp-controller="Paquetes" asp-action="Armar">
+                                        <i class="bi bi-magic text-success me-2"></i> Armado Inteligente de Kit
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item py-2" asp-controller="Paquetes" asp-action="Index">
+                                        <i class="bi bi-qr-code text-primary me-2"></i> Paquetes & Rótulos QR
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+
+                        <!-- Módulo Beneficiarios -->
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+                            <a class="nav-link" asp-controller="Familias" asp-action="Index">
+                                <i class="bi bi-people me-1"></i> Beneficiarios
+                            </a>
+                        </li>
+
+                        <!-- Módulo Despacho y Entrega (RF3) -->
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Entregas" asp-action="Index">
+                                <i class="bi bi-truck me-1"></i> Despacho
+                            </a>
                         </li>
                     </ul>
+
+                    <!-- Herramientas de la Barra Superior -->
+                    <div class="d-flex align-items-center gap-2 mt-3 mt-lg-0">
+                        <!-- Enlace a Swagger para la App Móvil Android -->
+                        <a href="/swagger" target="_blank" class="btn btn-sm btn-outline-secondary rounded-pill px-3" title="Explorador interactivo de endpoints REST para Android">
+                            <i class="bi bi-phone me-1 text-primary"></i> API Android
+                        </a>
+
+                        <!-- Botón Accesible: Modo Alto Contraste (WCAG) -->
+                        <button id="btnToggleHighContrast" type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3" aria-label="Alternar modo de alto contraste para accesibilidad">
+                            <i id="highContrastIcon" class="bi bi-circle-half me-1"></i>
+                            <span id="highContrastLabel">Contraste</span>
+                        </button>
+
+                        <!-- Identificación de Usuario / Voluntario (Fase Actual) -->
+                        <div class="d-none d-xl-flex align-items-center bg-light border rounded-pill px-3 py-1">
+                            <i class="bi bi-person-badge text-success me-2"></i>
+                            <div class="lh-1 text-start">
+                                <span class="fw-semibold d-block text-dark" style="font-size: 0.8rem;">Voluntario Activo</span>
+                                <small class="text-muted" style="font-size: 0.68rem;">Depósito Central</small>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </nav>
     </header>
-    <div class="container">
-        <main role="main" class="pb-3">
-            @RenderBody()
-        </main>
-    </div>
 
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2026 - NutriRed.Web - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+    <!-- Contenido Dinámico de las Vistas -->
+    <main role="main" class="py-4">
+        <div class="container-fluid px-lg-4">
+            <!-- Inyección Global de Notificaciones Flash (TempData) -->
+            <partial name="_Alertas" />
+
+            @RenderBody()
+        </div>
+    </main>
+
+    <!-- Pie de Página Institucional -->
+    <footer class="footer-nutrired py-3">
+        <div class="container-fluid px-lg-4 d-flex flex-column flex-md-row justify-content-between align-items-center gap-2">
+            <div>
+                <span class="fw-semibold text-dark">NutriRed</span> &copy; 2026 — Sistema de Gestión para Bancos de Alimentos.
+                <span class="badge bg-light text-secondary border ms-2">UTN - Equipo 24</span>
+            </div>
+            <div class="d-flex align-items-center gap-3 text-muted" style="font-size: 0.8rem;">
+                <span><i class="bi bi-universal-access me-1 text-primary"></i> Accesibilidad WCAG 2.1</span>
+                <span>•</span>
+                <span>.NET 9 + EF Core 9</span>
+                <span>•</span>
+                <a asp-controller="Home" asp-action="Privacy" class="text-decoration-none text-muted">Privacidad</a>
+            </div>
         </div>
     </footer>
+
+    <!-- Scripts Esenciales -->
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

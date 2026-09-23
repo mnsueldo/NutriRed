@@ -1,8 +1,176 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
+@{
+    ViewData["Title"] = "Panel de Control Operativo";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<!-- Hero / Bienvenida Operativa -->
+<div class="card card-nr border-0 shadow-sm mb-4" style="background: linear-gradient(135deg, #ecfdf5 0%, #f0fdf4 100%); border-left: 5px solid var(--nr-emerald-primary) !important;">
+    <div class="card-body p-4 p-lg-5">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+            <div>
+                <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-1 mb-2 fw-semibold">
+                    <i class="bi bi-shield-check me-1"></i> Banco de Alimentos Operativo
+                </span>
+                <h1 class="h2 fw-bold text-dark mb-1">Bienvenido a NutriRed</h1>
+                <p class="text-secondary mb-0" style="max-width: 650px;">
+                    Plataforma inteligente e inclusiva para la gestión logística de alimentos, control estricto de caducidad 
+                    <strong class="text-dark">FEFO</strong> y despacho seguro a familias beneficiarias.
+                </p>
+            </div>
+            <div class="d-flex flex-wrap gap-2">
+                <a asp-controller="Donaciones" asp-action="Registrar" class="btn btn-emerald">
+                    <i class="bi bi-plus-circle me-1"></i> Nueva Donación
+                </a>
+                <a asp-controller="Paquetes" asp-action="Armar" class="btn btn-outline-emerald">
+                    <i class="bi bi-magic me-1"></i> Armar Kit Asistencial
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Retícula de Accesos Rápidos por Módulo -->
+<div class="row g-4 mb-4">
+    <!-- Tarjeta: Almacén y Control FEFO -->
+    <div class="col-md-6 col-xl-3">
+        <div class="card card-nr card-nr-hover h-100 p-3">
+            <div class="d-flex align-items-center gap-3 mb-3">
+                <div class="p-3 rounded-3" style="background: #ecfdf5; color: #059669;">
+                    <i class="bi bi-boxes fs-3"></i>
+                </div>
+                <div>
+                    <h2 class="h6 fw-bold mb-0 text-dark">Almacén & Catálogo</h2>
+                    <small class="text-muted">Control de alimentos y lotes</small>
+                </div>
+            </div>
+            <p class="text-secondary small mb-3">
+                Catálogo de alimentos, alerta de stock mínimo y visualización de existencias por lote.
+            </p>
+            <div class="mt-auto pt-2 border-top d-flex justify-content-between align-items-center">
+                <a asp-controller="Productos" asp-action="Index" class="btn btn-sm btn-link text-success p-0 fw-semibold text-decoration-none">
+                    Ver Alimentos <i class="bi bi-arrow-right"></i>
+                </a>
+                <span class="badge badge-fefo-optimo small">FEFO Activo</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tarjeta: Donaciones Físicas (RF1) -->
+    <div class="col-md-6 col-xl-3">
+        <div class="card card-nr card-nr-hover h-100 p-3">
+            <div class="d-flex align-items-center gap-3 mb-3">
+                <div class="p-3 rounded-3" style="background: #eff6ff; color: #2563eb;">
+                    <i class="bi bi-gift fs-3"></i>
+                </div>
+                <div>
+                    <h2 class="h6 fw-bold mb-0 text-dark">Donaciones (RF1)</h2>
+                    <small class="text-muted">Recepción en depósito</small>
+                </div>
+            </div>
+            <p class="text-secondary small mb-3">
+                Ingreso físico, validación de caducidad no vencida y generación correlativa <code class="code-tag">DON-2026-X</code>.
+            </p>
+            <div class="mt-auto pt-2 border-top d-flex justify-content-between align-items-center">
+                <a asp-controller="Donaciones" asp-action="Index" class="btn btn-sm btn-link text-primary p-0 fw-semibold text-decoration-none">
+                    Ver Comprobantes <i class="bi bi-arrow-right"></i>
+                </a>
+                <span class="badge bg-primary-subtle text-primary border border-primary-subtle small">Atómico</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tarjeta: Kits y Rotulación QR (RF2) -->
+    <div class="col-md-6 col-xl-3">
+        <div class="card card-nr card-nr-hover h-100 p-3">
+            <div class="d-flex align-items-center gap-3 mb-3">
+                <div class="p-3 rounded-3" style="background: #fef3c7; color: #d97706;">
+                    <i class="bi bi-box-seam fs-3"></i>
+                </div>
+                <div>
+                    <h2 class="h6 fw-bold mb-0 text-dark">Armado de Kits (RF2)</h2>
+                    <small class="text-muted">Sugerencia inteligente</small>
+                </div>
+            </div>
+            <p class="text-secondary small mb-3">
+                Asignación de plantilla según tamaño de familia, consumo de lotes FEFO y rótulo QR <code class="code-tag">PKG-2026-X</code>.
+            </p>
+            <div class="mt-auto pt-2 border-top d-flex justify-content-between align-items-center">
+                <a asp-controller="Paquetes" asp-action="Index" class="btn btn-sm btn-link text-warning p-0 fw-semibold text-decoration-none">
+                    Ver Paquetes <i class="bi bi-arrow-right"></i>
+                </a>
+                <span class="badge badge-fefo-atencion small">Sustitutos OK</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tarjeta: Despacho y Firma Digital (RF3) -->
+    <div class="col-md-6 col-xl-3">
+        <div class="card card-nr card-nr-hover h-100 p-3">
+            <div class="d-flex align-items-center gap-3 mb-3">
+                <div class="p-3 rounded-3" style="background: #fdf2f8; color: #db2777;">
+                    <i class="bi bi-truck fs-3"></i>
+                </div>
+                <div>
+                    <h2 class="h6 fw-bold mb-0 text-dark">Despacho (RF3)</h2>
+                    <small class="text-muted">Entrega asistencial</small>
+                </div>
+            </div>
+            <p class="text-secondary small mb-3">
+                Validación de identidad (Titular vs. Tercero), captura de firma digital en pantalla táctil e inmutabilidad.
+            </p>
+            <div class="mt-auto pt-2 border-top d-flex justify-content-between align-items-center">
+                <a asp-controller="Entregas" asp-action="Index" class="btn btn-sm btn-link text-danger p-0 fw-semibold text-decoration-none">
+                    Despachar <i class="bi bi-arrow-right"></i>
+                </a>
+                <span class="badge bg-danger-subtle text-danger border border-danger-subtle small">Firma Base64</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Guía Pedagógica de Semáforo FEFO para Operarios -->
+<div class="card card-nr p-4">
+    <div class="card-nr-header px-0 pt-0 pb-3 mb-3">
+        <h3 class="h5 fw-bold mb-0 text-dark">
+            <i class="bi bi-info-circle text-primary me-2"></i> Estándar Visual de Caducidad FEFO (First Expired, First Out)
+        </h3>
+        <small class="text-muted">Referencia de colores semánticos aplicados en todas las tablas y rótulos de almacén.</small>
+    </div>
+    <div class="row g-3">
+        <div class="col-sm-6 col-lg-3">
+            <div class="p-3 rounded-3 border d-flex align-items-center gap-3" style="background: var(--fefo-optimo-bg); border-color: var(--fefo-optimo-border) !important;">
+                <i class="bi bi-check-circle-fill fs-2" style="color: var(--fefo-optimo-color);"></i>
+                <div>
+                    <strong class="d-block" style="color: var(--fefo-optimo-color);">FEFO Óptimo</strong>
+                    <small class="text-muted">Vencimiento > 15 días</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+            <div class="p-3 rounded-3 border d-flex align-items-center gap-3" style="background: var(--fefo-atencion-bg); border-color: var(--fefo-atencion-border) !important;">
+                <i class="bi bi-exclamation-triangle-fill fs-2" style="color: var(--fefo-atencion-color);"></i>
+                <div>
+                    <strong class="d-block" style="color: var(--fefo-atencion-color);">FEFO Atención</strong>
+                    <small class="text-muted">Vence en menos de 15 días</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+            <div class="p-3 rounded-3 border d-flex align-items-center gap-3" style="background: var(--fefo-urgente-bg); border-color: var(--fefo-urgente-border) !important;">
+                <i class="bi bi-exclamation-diamond-fill fs-2" style="color: var(--fefo-urgente-color);"></i>
+                <div>
+                    <strong class="d-block" style="color: var(--fefo-urgente-color);">FEFO Urgente</strong>
+                    <small class="text-muted">Vence en menos de 5 días</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+            <div class="p-3 rounded-3 border d-flex align-items-center gap-3" style="background: var(--fefo-critico-bg); border-color: var(--fefo-critico-border) !important;">
+                <i class="bi bi-x-circle-fill fs-2" style="color: var(--fefo-critico-color);"></i>
+                <div>
+                    <strong class="d-block" style="color: var(--fefo-critico-color);">FEFO Crítico</strong>
+                    <small class="text-muted">Vencido o dado de baja</small>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
