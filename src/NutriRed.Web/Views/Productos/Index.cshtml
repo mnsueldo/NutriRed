@@ -1,0 +1,180 @@
+@model IEnumerable<Producto>
+
+@{
+    ViewData["Title"] = "Catálogo de Alimentos";
+    string? busqueda = ViewBag.Busqueda as string;
+    int? categoriaId = ViewBag.CategoriaId as int?;
+    bool verTodos = ViewBag.VerTodos == true;
+}
+
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-1 small">
+                <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index" class="text-decoration-none text-muted">Inicio</a></li>
+                <li class="breadcrumb-item text-muted">Almacén</li>
+                <li class="breadcrumb-item active text-dark fw-semibold" aria-current="page">Alimentos</li>
+            </ol>
+        </nav>
+        <h1 class="h3 fw-bold text-dark mb-0">Catálogo de Alimentos</h1>
+        <p class="text-secondary small mb-0">Padrón de alimentos con código EAN-13 comercial, categorías e inventario de control.</p>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+        <a asp-action="Create" class="btn btn-emerald">
+            <i class="bi bi-plus-lg me-1"></i> Registrar Alimento
+        </a>
+    </div>
+</div>
+
+<!-- Filtros de Búsqueda y Categoría -->
+<div class="card card-nr mb-4">
+    <div class="card-body p-3">
+        <form asp-action="Index" method="get" class="row g-2 align-items-center">
+            <!-- Buscador por Texto / EAN -->
+            <div class="col-md-5 col-lg-4">
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text bg-white border-end-0">
+                        <i class="bi bi-upc-scan text-muted"></i>
+                    </span>
+                    <input type="text" name="busqueda" value="@busqueda" class="form-control border-start-0" 
+                           placeholder="Buscar por nombre o EAN..." />
+                </div>
+            </div>
+
+            <!-- Filtro por Categoría -->
+            <div class="col-md-4 col-lg-3">
+                <select name="categoriaId" asp-items="ViewBag.CategoriasFiltro" class="form-select form-select-sm">
+                    <option value="">-- Todas las Categorías --</option>
+                </select>
+            </div>
+
+            <!-- Checkbox de Inactivos -->
+            <div class="col-auto">
+                <div class="form-check form-check-inline small mb-0">
+                    <input class="form-check-input" type="checkbox" name="verTodos" id="checkVerTodos" value="true" @(verTodos ? "checked" : "") />
+                    <label class="form-check-label text-secondary" for="checkVerTodos">Incluir inactivos</label>
+                </div>
+            </div>
+
+            <!-- Botones de Acción -->
+            <div class="col-auto ms-auto d-flex gap-2">
+                <button type="submit" class="btn btn-emerald btn-sm px-3">
+                    <i class="bi bi-funnel me-1"></i> Filtrar
+                </button>
+                @if (!string.IsNullOrWhiteSpace(busqueda) || categoriaId.HasValue || verTodos)
+                {
+                    <a asp-action="Index" class="btn btn-outline-secondary btn-sm" title="Limpiar filtros">
+                        <i class="bi bi-x-circle me-1"></i> Limpiar
+                    </a>
+                }
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Tabla de Alimentos -->
+<div class="card card-nr overflow-hidden">
+    @if (!Model.Any())
+    {
+        <div class="text-center py-5">
+            <i class="bi bi-egg-fried text-muted" style="font-size: 3.5rem;"></i>
+            <h4 class="h5 fw-bold text-dark mt-3">No se encontraron alimentos</h4>
+            <p class="text-secondary small mb-3">No hay productos que coincidan con los criterios de búsqueda.</p>
+            <a asp-action="Create" class="btn btn-emerald btn-sm">
+                <i class="bi bi-plus-lg me-1"></i> Incorporar nuevo alimento
+            </a>
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-nr align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th style="width: 140px;">Código EAN</th>
+                        <th>Alimento</th>
+                        <th>Categoría</th>
+                        <th style="width: 120px;">U. Medida</th>
+                        <th style="width: 110px;" class="text-center">Stock Mín.</th>
+                        <th style="width: 110px;" class="text-center">Estado</th>
+                        <th style="width: 220px;" class="text-end">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var prod in Model)
+                    {
+                        <tr>
+                            <td>
+                                <span class="code-tag">
+                                    <i class="bi bi-upc me-1 text-muted"></i>@prod.CodigoBarras
+                                </span>
+                            </td>
+                            <td>
+                                <div class="fw-semibold text-dark">@prod.Nombre</div>
+                                <small class="text-muted text-truncate d-inline-block" style="max-width: 280px;">
+                                    @(string.IsNullOrWhiteSpace(prod.Descripcion) ? "Sin presentación especificada" : prod.Descripcion)
+                                </small>
+                            </td>
+                            <td>
+                                <span class="badge bg-light text-dark border">
+                                    <i class="bi bi-tag me-1 text-primary"></i>@(prod.Categoria?.Nombre ?? "General")
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle">
+                                    @prod.UnidadMedida
+                                </span>
+                            </td>
+                            <td class="text-center">
+                                <span class="fw-semibold text-dark">@prod.StockMinimo.ToString("N0")</span>
+                            </td>
+                            <td class="text-center">
+                                @if (prod.Activo)
+                                {
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1">
+                                        <i class="bi bi-check-circle-fill me-1"></i> Activo
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-2 py-1">
+                                        <i class="bi bi-slash-circle me-1"></i> Inactivo
+                                    </span>
+                                }
+                            </td>
+                            <td class="text-end">
+                                <div class="d-inline-flex gap-1">
+                                    <!-- Ver Detalles y Lotes -->
+                                    <a asp-action="Detalles" asp-route-id="@prod.Id" class="btn btn-sm btn-outline-primary" title="Ver detalle y lotes físicos">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+
+                                    <!-- Editar -->
+                                    <a asp-action="Edit" asp-route-id="@prod.Id" class="btn btn-sm btn-outline-secondary" title="Editar alimento">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+
+                                    <!-- Alternar Activo / Desactivado (Soft Delete) -->
+                                    <form asp-action="CambiarEstado" method="post" class="d-inline"
+                                          onsubmit="return confirm('¿Está seguro de que desea @(prod.Activo ? "desactivar" : "activar") el alimento \'@prod.Nombre\'?');">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@prod.Id" />
+                                        <input type="hidden" name="nuevoEstado" value="@(!prod.Activo ? "true" : "false")" />
+                                        <button type="submit" class="btn btn-sm @(prod.Activo ? "btn-outline-danger" : "btn-outline-success")"
+                                                title="@(prod.Activo ? "Desactivar alimento" : "Activar alimento")">
+                                            <i class="bi @(prod.Activo ? "bi-toggle-on" : "bi-toggle-off")"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <div class="card-footer bg-white border-top p-3 d-flex justify-content-between align-items-center">
+            <small class="text-muted">Total de alimentos listados: <strong>@Model.Count()</strong></small>
+            <small class="text-muted"><i class="bi bi-info-circle me-1"></i> Los códigos EAN son escaneables desde la App Android.</small>
+        </div>
+    }
+</div>

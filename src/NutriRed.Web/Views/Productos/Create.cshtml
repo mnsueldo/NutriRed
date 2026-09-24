@@ -1,0 +1,129 @@
+@model Producto
+
+@{
+    ViewData["Title"] = "Nuevo Alimento";
+}
+
+<div class="row justify-content-center">
+    <div class="col-lg-8 col-xl-7">
+        <!-- Navegación de Migas de Pan -->
+        <nav aria-label="breadcrumb" class="mb-3">
+            <ol class="breadcrumb mb-1 small">
+                <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index" class="text-decoration-none text-muted">Inicio</a></li>
+                <li class="breadcrumb-item"><a asp-action="Index" class="text-decoration-none text-muted">Alimentos</a></li>
+                <li class="breadcrumb-item active text-dark fw-semibold" aria-current="page">Alta de Alimento</li>
+            </ol>
+        </nav>
+
+        <div class="card card-nr shadow-sm">
+            <div class="card-header card-nr-header d-flex align-items-center gap-2">
+                <div class="p-2 rounded-2" style="background: var(--nr-emerald-light); color: var(--nr-emerald-primary);">
+                    <i class="bi bi-egg-fried fs-5"></i>
+                </div>
+                <div>
+                    <h1 class="h5 fw-bold text-dark mb-0">Registrar Alimento en Catálogo</h1>
+                    <small class="text-muted">Complete los datos técnicos para habilitar el alimento para donaciones y kits.</small>
+                </div>
+            </div>
+
+            <div class="card-body p-4">
+                <form asp-action="Create" method="post">
+                    @Html.AntiForgeryToken()
+
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger mb-4" role="alert"></div>
+
+                    <!-- Código de Barras Comercial (EAN-13) -->
+                    <div class="mb-3">
+                        <label asp-for="CodigoBarras" class="form-label fw-semibold text-dark">
+                            Código de Barras Comercial (EAN) <span class="text-danger">*</span>
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light text-muted">
+                                <i class="bi bi-upc-scan"></i>
+                            </span>
+                            <input asp-for="CodigoBarras" class="form-control font-mono" placeholder="Ej: 7790070412345" autofocus />
+                        </div>
+                        <span asp-validation-for="CodigoBarras" class="text-danger small"></span>
+                        <div class="form-text">Código único de 13 dígitos del envase. Permitirá a los voluntarios escanearlo con la App Android.</div>
+                    </div>
+
+                    <!-- Nombre del Alimento -->
+                    <div class="mb-3">
+                        <label asp-for="Nombre" class="form-label fw-semibold text-dark">
+                            Nombre del Alimento <span class="text-danger">*</span>
+                        </label>
+                        <input asp-for="Nombre" class="form-control" placeholder="Ej: Leche Entera Larga Vida 1L, Arroz Largo Fino 1kg..." />
+                        <span asp-validation-for="Nombre" class="text-danger small"></span>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <!-- Categoría -->
+                        <div class="col-md-6">
+                            <label asp-for="CategoriaId" class="form-label fw-semibold text-dark">
+                                Categoría <span class="text-danger">*</span>
+                            </label>
+                            <select asp-for="CategoriaId" asp-items="ViewBag.Categorias" class="form-select">
+                                <option value="">-- Seleccionar Categoría --</option>
+                            </select>
+                            <span asp-validation-for="CategoriaId" class="text-danger small"></span>
+                        </div>
+
+                        <!-- Unidad de Medida -->
+                        <div class="col-md-6">
+                            <label asp-for="UnidadMedida" class="form-label fw-semibold text-dark">
+                                Unidad de Medida <span class="text-danger">*</span>
+                            </label>
+                            <select asp-for="UnidadMedida" asp-items="Html.GetEnumSelectList<UnidadMedida>()" class="form-select">
+                            </select>
+                            <span asp-validation-for="UnidadMedida" class="text-danger small"></span>
+                        </div>
+                    </div>
+
+                    <!-- Descripción / Presentación -->
+                    <div class="mb-3">
+                        <label asp-for="Descripcion" class="form-label fw-semibold text-dark">
+                            Descripción / Presentación del Envase
+                        </label>
+                        <input asp-for="Descripcion" class="form-control" placeholder="Ej: Paquete plástico de 500g, Botella PET de 900ml..." />
+                        <span asp-validation-for="Descripcion" class="text-danger small"></span>
+                    </div>
+
+                    <!-- Stock Mínimo de Alerta -->
+                    <div class="mb-4">
+                        <label asp-for="StockMinimo" class="form-label fw-semibold text-dark">
+                            Stock Mínimo de Alerta <span class="text-danger">*</span>
+                        </label>
+                        <div class="input-group">
+                            <input asp-for="StockMinimo" class="form-control" type="number" step="1" min="0" />
+                            <span class="input-group-text bg-light text-muted">unidades / existencias</span>
+                        </div>
+                        <span asp-validation-for="StockMinimo" class="text-danger small"></span>
+                        <div class="form-text">Si el stock físico consolidado cae por debajo de este valor, el sistema emitirá alertas de reposición.</div>
+                    </div>
+
+                    <!-- Estado Activo -->
+                    <div class="form-check form-switch mb-4 p-3 bg-light rounded-3 border">
+                        <input asp-for="Activo" class="form-check-input ms-0 me-3" type="checkbox" role="switch" id="switchProdActivo" checked />
+                        <label class="form-check-label fw-semibold text-dark" for="switchProdActivo">
+                            Alimento habilitado para operaciones inmediatas
+                        </label>
+                        <div class="text-muted small">Los alimentos inactivos no pueden ser ingresados en nuevas donaciones ni en kits.</div>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center pt-3 border-top">
+                        <a asp-action="Index" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left me-1"></i> Volver al Catálogo
+                        </a>
+                        <button type="submit" class="btn btn-emerald">
+                            <i class="bi bi-check2-circle me-1"></i> Registrar Alimento
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
