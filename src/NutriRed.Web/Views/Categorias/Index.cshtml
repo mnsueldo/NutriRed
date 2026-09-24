@@ -1,0 +1,129 @@
+@model IEnumerable<Categoria>
+
+@{
+    ViewData["Title"] = "Categorías de Alimentos";
+    bool verTodas = ViewBag.VerTodas == true;
+}
+
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-1 small">
+                <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index" class="text-decoration-none text-muted">Inicio</a></li>
+                <li class="breadcrumb-item text-muted">Almacén</li>
+                <li class="breadcrumb-item active text-dark fw-semibold" aria-current="page">Categorías</li>
+            </ol>
+        </nav>
+        <h1 class="h3 fw-bold text-dark mb-0">Categorías de Alimentos</h1>
+        <p class="text-secondary small mb-0">Agrupación taxonómica para la clasificación de alimentos, recetas de kits e inventario.</p>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+        <a asp-action="Create" class="btn btn-emerald">
+            <i class="bi bi-plus-lg me-1"></i> Nueva Categoría
+        </a>
+    </div>
+</div>
+
+<!-- Filtros de Visualización -->
+<div class="card card-nr mb-4">
+    <div class="card-body p-3 d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-2">
+        <div class="btn-group btn-group-sm" role="group" aria-label="Filtro de estados">
+            <a asp-action="Index" asp-route-verTodas="false" class="btn @(!verTodas ? "btn-emerald" : "btn-outline-secondary")">
+                <i class="bi bi-check2-circle me-1"></i> Solo Activas
+            </a>
+            <a asp-action="Index" asp-route-verTodas="true" class="btn @(verTodas ? "btn-emerald" : "btn-outline-secondary")">
+                <i class="bi bi-collection me-1"></i> Ver Todas (incluye inactivas)
+            </a>
+        </div>
+        <span class="text-muted small">
+            Total de registros: <strong>@Model.Count()</strong>
+        </span>
+    </div>
+</div>
+
+<!-- Grilla de Categorías -->
+<div class="card card-nr overflow-hidden">
+    @if (!Model.Any())
+    {
+        <div class="text-center py-5">
+            <i class="bi bi-tags text-muted" style="font-size: 3.5rem;"></i>
+            <h4 class="h5 fw-bold text-dark mt-3">No hay categorías para mostrar</h4>
+            <p class="text-secondary small mb-3">No se encontraron registros con el filtro actual.</p>
+            <a asp-action="Create" class="btn btn-emerald btn-sm">
+                <i class="bi bi-plus-lg me-1"></i> Registrar la primera categoría
+            </a>
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-nr align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th style="width: 70px;"># ID</th>
+                        <th>Nombre de la Categoría</th>
+                        <th>Descripción</th>
+                        <th style="width: 130px;" class="text-center">Estado</th>
+                        <th style="width: 200px;" class="text-end">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var cat in Model)
+                    {
+                        <tr>
+                            <td>
+                                <span class="code-tag">@cat.Id</span>
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="p-2 rounded-2" style="background: var(--nr-emerald-light); color: var(--nr-emerald-primary);">
+                                        <i class="bi bi-tag-fill"></i>
+                                    </div>
+                                    <span class="fw-semibold text-dark">@cat.Nombre</span>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="text-secondary small">
+                                    @(string.IsNullOrWhiteSpace(cat.Descripcion) ? "Sin descripción detallada" : cat.Descripcion)
+                                </span>
+                            </td>
+                            <td class="text-center">
+                                @if (cat.Activo)
+                                {
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1">
+                                        <i class="bi bi-check-circle-fill me-1"></i> Activo
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-2 py-1">
+                                        <i class="bi bi-slash-circle me-1"></i> Inactivo
+                                    </span>
+                                }
+                            </td>
+                            <td class="text-end">
+                                <div class="d-inline-flex gap-1">
+                                    <a asp-action="Edit" asp-route-id="@cat.Id" class="btn btn-sm btn-outline-secondary" title="Editar categoría">
+                                        <i class="bi bi-pencil me-1"></i> Editar
+                                    </a>
+
+                                    <form asp-action="CambiarEstado" method="post" class="d-inline"
+                                          onsubmit="return confirm('¿Está seguro de que desea @(cat.Activo ? "desactivar" : "activar") la categoría \'@cat.Nombre\'?');">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@cat.Id" />
+                                        <input type="hidden" name="nuevoEstado" value="@(!cat.Activo ? "true" : "false")" />
+                                        <button type="submit" class="btn btn-sm @(cat.Activo ? "btn-outline-danger" : "btn-outline-success")"
+                                                title="@(cat.Activo ? "Desactivar categoría" : "Activar categoría")">
+                                            <i class="bi @(cat.Activo ? "bi-toggle-on text-danger" : "bi-toggle-off text-success")"></i>
+                                            @(cat.Activo ? "Desactivar" : "Activar")
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
