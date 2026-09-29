@@ -1,0 +1,68 @@
+﻿@model NutriRed.Domain.Entities.FamiliaBeneficiaria
+
+@{
+    ViewData["Title"] = "Registrar Familia";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white py-3">
+                <h5 class="card-title mb-0 fw-bold"><i class="bi bi-person-plus me-2 text-emerald"></i>Registrar Nuevo Legajo Familiar</h5>
+            </div>
+            <div class="card-body">
+                <form asp-action="Create" method="post">
+                    @Html.AntiForgeryToken()
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label asp-for="NombreTitular" class="form-label fw-semibold">Nombre del Titular</label>
+                            <input asp-for="NombreTitular" class="form-control" placeholder="Ej: Juan" />
+                            <span asp-validation-for="NombreTitular" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label asp-for="ApellidoTitular" class="form-label fw-semibold">Apellido del Titular</label>
+                            <input asp-for="ApellidoTitular" class="form-control" placeholder="Ej: Pérez" />
+                            <span asp-validation-for="ApellidoTitular" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label asp-for="DniTitular" class="form-label fw-semibold">DNI del Titular</label>
+                            <input asp-for="DniTitular" class="form-control" placeholder="Sin puntos" />
+                            <span asp-validation-for="DniTitular" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label asp-for="CantidadIntegrantes" class="form-label fw-semibold">Cantidad Integrantes</label>
+                            <input asp-for="CantidadIntegrantes" class="form-control" type="number" min="1" value="1" />
+                            <span asp-validation-for="CantidadIntegrantes" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-8">
+                            <label asp-for="Telefono" class="form-label fw-semibold">Teléfono de Contacto</label>
+                            <input asp-for="Telefono" class="form-control" placeholder="Ej: 11 2345-6789" />
+                            <span asp-validation-for="Telefono" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-12">
+                            <label asp-for="Direccion" class="form-label fw-semibold">Domicilio / Dirección</label>
+                            <input asp-for="Direccion" class="form-control" placeholder="Calle, número, barrio" />
+                            <span asp-validation-for="Direccion" class="text-danger small"></span>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2 mt-4">
+                        <a asp-action="Index" class="btn btn-light border">Cancelar</a>
+                        <button type="submit" class="btn btn-emerald"><i class="bi bi-save me-1"></i> Guardar Legajo</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

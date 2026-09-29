@@ -8,26 +8,29 @@ public class FamiliaBeneficiaria
     public int Id { get; set; }
 
     [Required(ErrorMessage = "El DNI del titular es obligatorio.")]
-    [StringLength(20, ErrorMessage = "El documento no puede superar 20 caracteres.")]
+    [RegularExpression(@"^\d{7,8}$", ErrorMessage = "El DNI debe contener entre 7 y 8 dígitos numéricos, sin puntos ni espacios.")]
     [Display(Name = "DNI del Titular")]
     public string DniTitular { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "El nombre del titular es obligatorio.")]
-    [StringLength(100, ErrorMessage = "El nombre no puede superar 100 caracteres.")]
+    [StringLength(100, ErrorMessage = "El nombre no puede superar los 100 caracteres.")]
+    [RegularExpression(@"^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s'-]+$", ErrorMessage = "El nombre solo puede contener letras, espacios, guiones o apóstrofes.")]
     [Display(Name = "Nombre")]
     public string NombreTitular { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "El apellido del titular es obligatorio.")]
-    [StringLength(100, ErrorMessage = "El apellido no puede superar 100 caracteres.")]
+    [StringLength(100, ErrorMessage = "El apellido no puede superar los 100 caracteres.")]
+    [RegularExpression(@"^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s'-]+$", ErrorMessage = "El apellido solo puede contener letras, espacios, guiones o apóstrofes.")]
     [Display(Name = "Apellido")]
     public string ApellidoTitular { get; set; } = string.Empty;
 
-    [StringLength(30, ErrorMessage = "El teléfono no puede superar 30 caracteres.")]
+    [RegularExpression(@"^\+?\d{8,15}$", ErrorMessage = "Ingrese un número de teléfono válido (entre 8 y 15 dígitos).")]
+    [StringLength(30, ErrorMessage = "El teléfono no puede superar los 30 caracteres.")]
     [Display(Name = "Teléfono de Contacto")]
     public string? Telefono { get; set; }
 
     [Required(ErrorMessage = "La dirección es obligatoria.")]
-    [StringLength(250, ErrorMessage = "La dirección no puede superar 250 caracteres.")]
+    [StringLength(250, ErrorMessage = "La dirección no puede superar los 250 caracteres.")]
     [Display(Name = "Dirección Física")]
     public string Direccion { get; set; } = string.Empty;
 

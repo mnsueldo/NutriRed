@@ -40,6 +40,10 @@ public class NutriRedDbContext : DbContext
             .HasIndex(p => p.CodigoSeguimiento)
             .IsUnique();
 
+        modelBuilder.Entity<FamiliaBeneficiaria>()
+            .HasIndex(f => f.DniTitular)
+            .IsUnique();
+
         // --- Configuración de Precisión Decimal (18,2) para SQL Server ---
         foreach (var property in modelBuilder.Model.GetEntityTypes()
                      .SelectMany(t => t.GetProperties())

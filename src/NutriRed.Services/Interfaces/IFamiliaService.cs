@@ -6,7 +6,7 @@ namespace NutriRed.Services.Interfaces;
 
 public interface IFamiliaService
 {
-    Task<OperationResult<IEnumerable<FamiliaBeneficiaria>>> ObtenerTodasAsync(bool soloActivas = true);
+    Task<OperationResult<IEnumerable<FamiliaBeneficiaria>>> ObtenerTodasAsync(bool incluirInactivos = false, string? busqueda = null);
     Task<OperationResult<FamiliaBeneficiaria>> ObtenerPorIdAsync(int id, bool incluirHistorial = false);
     Task<OperationResult<FamiliaBeneficiaria>> BuscarPorDniAsync(string dni);
     Task<OperationResult<FamiliaBeneficiaria>> CrearAsync(FamiliaBeneficiaria familia);

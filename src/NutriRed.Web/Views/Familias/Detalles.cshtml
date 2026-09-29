@@ -1,0 +1,189 @@
+﻿@model NutriRed.Domain.Entities.FamiliaBeneficiaria
+
+@{
+    ViewData["Title"] = "Detalles del Legajo Familiar";
+}
+
+<div class="container-fluid px-4 py-3">
+    <!-- Encabezado de la Vista -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <h2 class="fw-bold mb-0 text-dark">Legajo #@Model.Id - @Model.ApellidoTitular, @Model.NombreTitular</h2>
+                @if (Model.Estado == NutriRed.Domain.Enums.EstadoFamilia.Activo)
+                {
+                    <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-20 px-3 py-2">
+                        <i class="bi bi-check-circle-fill me-1"></i> Activo
+                    </span>
+                }
+                else
+                {
+                    <span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-20 px-3 py-2">
+                        <i class="bi bi-dash-circle-fill me-1"></i> Suspendido
+                    </span>
+                }
+            </div>
+            <p class="text-muted small mb-0">Consulta detallada del legajo familiar e historial de paquetes asistenciales recibidos.</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a asp-action="Index" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i> Volver al Listado
+            </a>
+            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-success fw-semibold">
+                <i class="bi bi-pencil-square me-1"></i> Editar Legajo
+            </a>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Ficha Informativa del Titular y Grupo Familiar -->
+        <div class="col-lg-4">
+            <div class="card shadow-sm border-0 rounded-3 mb-4">
+                <div class="card-header bg-white py-3 border-bottom">
+                    <h5 class="card-title fw-bold text-success mb-0">
+                        <i class="bi bi-person-vcard me-2"></i>Datos del Titular
+                    </h5>
+                </div>
+                <div class="card-body p-4">
+                    <div class="mb-3">
+                        <span class="text-muted small d-block fw-semibold">DNI DEL TITULAR</span>
+                        <span class="fw-bold text-dark fs-5">@Model.DniTitular</span>
+                    </div>
+
+                    <div class="mb-3">
+                        <span class="text-muted small d-block fw-semibold">TITULAR</span>
+                        <span class="fw-semibold text-dark">@Model.ApellidoTitular, @Model.NombreTitular</span>
+                    </div>
+
+                    <div class="mb-3">
+                        <span class="text-muted small d-block fw-semibold">TELÉFONO DE CONTACTO</span>
+                        <span class="text-dark">
+                            @if (!string.IsNullOrWhiteSpace(Model.Telefono))
+                            {
+                                <i class="bi bi-telephone me-1 text-muted"></i>
+                                @Model.Telefono
+                            }
+                            else
+                            {
+                                <em class="text-muted">Sin teléfono registrado</em>
+                            }
+                        </span>
+                    </div>
+
+                    <div class="mb-3">
+                        <span class="text-muted small d-block fw-semibold">DIRECCIÓN / HOGAR</span>
+                        <span class="text-dark"><i class="bi bi-geo-alt me-1 text-muted"></i>@Model.Direccion</span>
+                    </div>
+
+                    <hr />
+
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <span class="text-muted small d-block fw-semibold">INTEGRANTES</span>
+                            <span class="fw-semibold text-dark"><i class="bi bi-people me-1 text-muted"></i>@Model.CantidadIntegrantes persona(s)</span>
+                        </div>
+                        <div class="col-6">
+                            <span class="text-muted small d-block fw-semibold">FECHA DE ALTA</span>
+                            <span class="text-dark">@Model.FechaAlta.ToString("dd/MM/yyyy")</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Historial Asistencial (Paquetes y Entregas) -->
+        <div class="col-lg-8">
+            <div class="card shadow-sm border-0 rounded-3">
+                <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                    <h5 class="card-title fw-bold text-success mb-0">
+                        <i class="bi bi-box-seam me-2"></i>Historial Asistencial
+                    </h5>
+                    <span class="badge bg-light text-dark border fw-normal">
+                        Total: @(Model.HistorialPaquetes?.Count ?? 0) Paquete(s)
+                    </span>
+                </div>
+                <div class="card-body p-0">
+                    @if (Model.HistorialPaquetes != null && Model.HistorialPaquetes.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th class="ps-3">Código QR / Seguimiento</th>
+                                        <th>Tipo de Kit</th>
+                                        <th>Fecha de Armado</th>
+                                        <th>Estado</th>
+                                        <th>Registro de Entrega</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var paquete in Model.HistorialPaquetes)
+                                    {
+                                        <tr>
+                                            <td class="ps-3">
+                                                <span class="fw-bold text-success">@paquete.CodigoSeguimiento</span>
+                                            </td>
+                                            <td>
+                                                <span class="fw-semibold">@(paquete.TipoPaquete?.Nombre ?? "Kit Nutricional")</span>
+                                            </td>
+                                            <td>
+                                                <small class="text-muted">@paquete.FechaCreacion.ToString("dd/MM/yyyy HH:mm") hs</small>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-secondary bg-opacity-10 text-secondary border">
+                                                    @paquete.Estado
+                                                </span>
+                                            </td>
+                                            <td>
+                                                @if (paquete.Entrega != null)
+                                                {
+                                                    @if (paquete.Entrega.Concretada)
+                                                    {
+                                                        <div>
+                                                            <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-20 mb-1">
+                                                                <i class="bi bi-check-lg me-1"></i>Entregado
+                                                            </span>
+                                                            <small class="text-muted d-block">
+                                                                @paquete.Entrega.FechaHoraEntrega.ToString("dd/MM/yyyy HH:mm") hs
+                                                            </small>
+                                                            <small class="text-muted d-block">
+                                                                <strong>Retiró:</strong> @paquete.Entrega.NombreReceptor (DNI: @paquete.Entrega.DniReceptor)
+                                                            </small>
+                                                        </div>
+                                                    }
+                                                    else
+                                                    {
+                                                        <div>
+                                                            <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-20 mb-1">
+                                                                No Concretada
+                                                            </span>
+                                                            <small class="text-muted d-block">@paquete.Entrega.MotivoNoEntrega</small>
+                                                        </div>
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-20">
+                                                        <i class="bi bi-clock me-1"></i>Pendiente de Despacho
+                                                    </span>
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-5">
+                            <i class="bi bi-inbox display-4 text-muted d-block mb-3"></i>
+                            <h6 class="fw-bold text-secondary">Sin paquetes ni entregas registradas</h6>
+                            <p class="text-muted small mb-0">Esta familia aún no ha recibido asignaciones de paquetes nutricionales en el sistema.</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

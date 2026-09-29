@@ -16,28 +16,29 @@ public class FamiliaService : IFamiliaService
         _context = context;
     }
 
-    public async Task<OperationResult<IEnumerable<FamiliaBeneficiaria>>> ObtenerTodasAsync(bool soloActivas = true)
+    public async Task<OperationResult<IEnumerable<FamiliaBeneficiaria>>> ObtenerTodasAsync(bool incluirInactivos = false, string? busqueda = null)
     {
-        try
+        var query = _context.FamiliasBeneficiarias.AsQueryable();
+
+        // 1. Filtrar inactivos
+        if (!incluirInactivos)
         {
-            var query = _context.FamiliasBeneficiarias.AsNoTracking();
-
-            if (soloActivas)
-            {
-                query = query.Where(f => f.Estado == EstadoFamilia.Activo);
-            }
-
-            var familias = await query
-                .OrderBy(f => f.ApellidoTitular)
-                .ThenBy(f => f.NombreTitular)
-                .ToListAsync();
-
-            return OperationResult<IEnumerable<FamiliaBeneficiaria>>.Ok(familias);
+            query = query.Where(f => f.Estado == EstadoFamilia.Activo);
         }
-        catch (Exception ex)
+
+        // 2. Filtrar por Nombre, Apellido o DNI
+        if (!string.IsNullOrWhiteSpace(busqueda))
         {
-            return OperationResult<IEnumerable<FamiliaBeneficiaria>>.Fail($"Error al obtener las familias beneficiarias: {ex.Message}");
+            busqueda = busqueda.Trim();
+            query = query.Where(f =>
+                f.NombreTitular.Contains(busqueda) ||
+                f.ApellidoTitular.Contains(busqueda) ||
+                f.DniTitular.Contains(busqueda));
         }
+
+        var familias = await query.ToListAsync();
+
+        return OperationResult<IEnumerable<FamiliaBeneficiaria>>.Ok(familias);
     }
 
     public async Task<OperationResult<FamiliaBeneficiaria>> ObtenerPorIdAsync(int id, bool incluirHistorial = false)
