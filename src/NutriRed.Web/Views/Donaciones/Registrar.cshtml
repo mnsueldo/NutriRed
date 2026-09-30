@@ -1,0 +1,478 @@
+@model NutriRed.Web.Models.RegistrarDonacionViewModel
+@using NutriRed.Domain.Entities
+@using NutriRed.Domain.Enums
+
+@{
+    ViewData["Title"] = "Recepción Física de Donación";
+    var productos = ViewBag.Productos as List<Producto> ?? new List<Producto>();
+    var hoyMasUno = DateTime.Today.AddDays(1).ToString("yyyy-MM-dd");
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div>
+        <h2 class="fw-bold mb-1">
+            <i class="bi bi-box2-heart text-success me-2"></i>Recepción Física de Donación
+        </h2>
+        <p class="text-muted mb-0">Ingreso de mercadería donada, trazabilidad por lote y validación de vencimiento (RF1)</p>
+    </div>
+    <a asp-action="Index" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left me-1"></i> Volver al Historial
+    </a>
+</div>
+
+<partial name="_Alertas" />
+
+<form asp-action="Registrar" method="post" id="formDonacion">
+    @Html.AntiForgeryToken()
+    <div asp-validation-summary="ModelOnly" class="alert alert-danger mb-4 shadow-sm border-start border-4 border-danger" role="alert"></div>
+
+    <div class="row g-4">
+        <!-- 1. IDENTIFICACIÓN DEL DONANTE -->
+        <div class="col-lg-12">
+            <div class="card card-nr border-0 shadow-sm">
+                <div class="card-nr-header d-flex align-items-center justify-content-between bg-light">
+                    <span class="fw-bold text-dark">
+                        <i class="bi bi-person-vcard text-primary me-2"></i>1. Datos del Donante
+                    </span>
+                    <span class="badge bg-secondary bg-opacity-10 text-secondary">Cabecera de Donación</span>
+                </div>
+                <div class="card-body p-4">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label asp-for="TipoDonante" class="form-label fw-semibold"></label>
+                            <select asp-for="TipoDonante" class="form-select" id="selectTipoDonante">
+                                <option value="@((int)TipoDonante.Individuo)">Individuo (Persona Física)</option>
+                                <option value="@((int)TipoDonante.Institucion)">Institución / Empresa Donante</option>
+                                <option value="@((int)TipoDonante.Anonimo)">Donante Anónimo</option>
+                            </select>
+                            <span asp-validation-for="TipoDonante" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-4" id="grpDocumento">
+                            <label asp-for="NumeroDocumento" class="form-label fw-semibold" id="lblDocumento">DNI del Donante</label>
+                            <input asp-for="NumeroDocumento" class="form-control font-mono" id="inputDocumento" placeholder="Ej: 30123456 ó 30-71234567-8" />
+                            <span asp-validation-for="NumeroDocumento" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-4" id="grpNombre">
+                            <label asp-for="NombreRazonSocial" class="form-label fw-semibold" id="lblNombre">Nombre y Apellido</label>
+                            <input asp-for="NombreRazonSocial" class="form-control" id="inputNombre" placeholder="Nombre completo o Razón Social" />
+                            <span asp-validation-for="NombreRazonSocial" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-3" id="grpTelefono">
+                            <label asp-for="Telefono" class="form-label fw-semibold"></label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light text-muted"><i class="bi bi-telephone"></i></span>
+                                <input asp-for="Telefono" class="form-control" id="inputTelefono" placeholder="Teléfono de contacto" />
+                            </div>
+                            <span asp-validation-for="Telefono" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-3" id="grpEmail">
+                            <label asp-for="Email" class="form-label fw-semibold"></label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light text-muted"><i class="bi bi-envelope"></i></span>
+                                <input asp-for="Email" class="form-control" id="inputEmail" placeholder="correo@ejemplo.com" />
+                            </div>
+                            <span asp-validation-for="Email" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-3">
+                            <label asp-for="VoluntarioReceptorId" class="form-label fw-semibold"></label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light text-muted"><i class="bi bi-person-badge"></i></span>
+                                <input asp-for="VoluntarioReceptorId" class="form-control" readonly />
+                            </div>
+                            <span asp-validation-for="VoluntarioReceptorId" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-3">
+                            <label asp-for="Observaciones" class="form-label fw-semibold"></label>
+                            <input asp-for="Observaciones" class="form-control" placeholder="Ej: Embalaje cerrado, flete propio" />
+                            <span asp-validation-for="Observaciones" class="text-danger small"></span>
+                        </div>
+                    </div>
+
+                    <div id="alertaAnonimo" class="alert alert-info border-0 mt-3 d-none mb-0">
+                        <i class="bi bi-info-circle-fill me-2"></i>
+                        Se ha seleccionado <strong>Donante Anónimo</strong>. La donación se asentará automáticamente sin vincular datos fiscales.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. ALIMENTOS Y LOTES (DETALLE DE LA DONACIÓN) -->
+        <div class="col-lg-12">
+            <div class="card card-nr border-0 shadow-sm">
+                <div class="card-nr-header d-flex align-items-center justify-content-between bg-light">
+                    <span class="fw-bold text-dark">
+                        <i class="bi bi-boxes text-success me-2"></i>2. Detalle de Alimentos Físicos Recibidos
+                    </span>
+                    <span class="badge bg-success bg-opacity-10 text-success">Control de Vencimiento FEFO</span>
+                </div>
+                <div class="card-body p-4">
+                    <!-- Barra de Entrada Rápida de Alimento -->
+                    <div class="p-3 bg-light rounded-3 border mb-4">
+                        <h6 class="fw-bold mb-3 text-secondary">
+                            <i class="bi bi-plus-circle me-1 text-success"></i> Incorporar Alimento a la Lista
+                        </h6>
+                        <div class="row g-2 align-items-end">
+                            <div class="col-lg-4 col-md-6">
+                                <label class="form-label small fw-semibold text-muted mb-1">Seleccionar del Catálogo</label>
+                                <select id="selProductoCatalogo" class="form-select">
+                                    <option value="">-- Buscar alimento por nombre o EAN --</option>
+                                    @foreach (var prod in productos)
+                                    {
+                                        <option value="@prod.CodigoBarras"
+                                                data-ean="@prod.CodigoBarras"
+                                                data-nombre="@prod.Nombre"
+                                                data-categoria="@(prod.Categoria?.Nombre ?? "General")"
+                                                data-unidad="@prod.UnidadMedida">
+                                            @prod.Nombre (@prod.Categoria?.Nombre) - [@prod.CodigoBarras]
+                                        </option>
+                                    }
+                                </select>
+                            </div>
+
+                            <div class="col-lg-2 col-md-3 col-sm-6">
+                                <label class="form-label small fw-semibold text-muted mb-1">Código EAN</label>
+                                <input type="text" id="tempEan" class="form-control font-mono" placeholder="779..." />
+                            </div>
+
+                            <div class="col-lg-2 col-md-3 col-sm-6">
+                                <label class="form-label small fw-semibold text-muted mb-1">Cantidad Recibida</label>
+                                <input type="number" id="tempCantidad" class="form-control" min="0.01" step="0.1" value="10" />
+                            </div>
+
+                            <div class="col-lg-2 col-md-4 col-sm-6">
+                                <label class="form-label small fw-semibold text-muted mb-1">Fecha Vencimiento</label>
+                                <input type="date" id="tempVencimiento" class="form-control" min="@hoyMasUno" value="@DateTime.Today.AddMonths(3).ToString("yyyy-MM-dd")" />
+                            </div>
+
+                            <div class="col-lg-2 col-md-4 col-sm-6">
+                                <label class="form-label small fw-semibold text-muted mb-1">Lote Fab. (Opcional)</label>
+                                <input type="text" id="tempLote" class="form-control font-mono" placeholder="Auto..." />
+                            </div>
+
+                            <div class="col-12 text-end mt-3">
+                                <button type="button" id="btnAgregarFila" class="btn btn-emerald px-4">
+                                    <i class="bi bi-cart-plus me-1"></i> Agregar a la Lista
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tabla de Detalle -->
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0" id="tablaDetalles">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>EAN</th>
+                                    <th>Alimento</th>
+                                    <th>Categoría</th>
+                                    <th>Lote Asignado</th>
+                                    <th>Vencimiento</th>
+                                    <th class="text-end">Cantidad</th>
+                                    <th class="text-center" style="width: 80px;">Quitar</th>
+                                </tr>
+                            </thead>
+                            <tbody id="cuerpoTablaDetalles">
+                                @if (Model.Items != null && Model.Items.Any())
+                                {
+                                    for (int i = 0; i < Model.Items.Count; i++)
+                                    {
+                                        var itm = Model.Items[i];
+                                        <tr data-row-id="@i">
+                                            <input type="hidden" name="Items.Index" value="@i" />
+                                            <input type="hidden" name="Items[@i].CodigoBarras" value="@itm.CodigoBarras" />
+                                            <input type="hidden" name="Items[@i].NombreProducto" value="@itm.NombreProducto" />
+                                            <input type="hidden" name="Items[@i].Categoria" value="@itm.Categoria" />
+                                            <input type="hidden" name="Items[@i].UnidadMedida" value="@itm.UnidadMedida" />
+                                            <input type="hidden" name="Items[@i].Cantidad" value="@itm.Cantidad" />
+                                            <input type="hidden" name="Items[@i].FechaVencimiento" value="@itm.FechaVencimiento.ToString("yyyy-MM-dd")" />
+                                            <input type="hidden" name="Items[@i].NumeroLote" value="@itm.NumeroLote" />
+
+                                            <td><span class="code-tag font-mono">@itm.CodigoBarras</span></td>
+                                            <td class="fw-semibold text-dark">@itm.NombreProducto</td>
+                                            <td><span class="badge bg-light text-secondary border">@itm.Categoria</span></td>
+                                            <td><span class="font-mono small text-muted">@(string.IsNullOrWhiteSpace(itm.NumeroLote) ? "(Automático)" : itm.NumeroLote)</span></td>
+                                            <td>
+                                                <span class="badge @itm.ClaseFefo">
+                                                    @itm.FechaVencimiento.ToString("dd/MM/yyyy") (@itm.TextoFefo)
+                                                </span>
+                                            </td>
+                                            <td class="text-end fw-bold text-success">@itm.Cantidad.ToString("N1") @itm.UnidadMedida</td>
+                                            <td class="text-center">
+                                                <button type="button" class="btn btn-sm btn-outline-danger border-0 btn-quitar" title="Eliminar fila">
+                                                    <i class="bi bi-trash3"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                            </tbody>
+                            <tfoot class="table-light fw-bold">
+                                <tr>
+                                    <td colspan="5" class="text-end">Totales Recibidos:</td>
+                                    <td class="text-end text-success fs-6" id="totalCantidadTxt">0.0</td>
+                                    <td></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+
+                    <div id="sinItemsAviso" class="text-center py-4 text-muted @(Model.Items != null && Model.Items.Any() ? "d-none" : "")">
+                        <i class="bi bi-cart-x fs-2 d-block mb-1 text-secondary opacity-50"></i>
+                        Aún no has agregado ningún alimento a la recepción.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- BOTÓN FINAL DE REGISTRO -->
+        <div class="col-lg-12 d-flex justify-content-end gap-2 pb-5">
+            <a asp-action="Index" class="btn btn-outline-secondary px-4">Cancelar</a>
+            <button type="submit" id="btnConfirmarDonacion" class="btn btn-emerald btn-lg px-5 shadow">
+                <i class="bi bi-check2-circle me-2"></i> Confirmar y Emitir Comprobante
+            </button>
+        </div>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            let rowCounter = @(Model.Items?.Count ?? 0);
+
+            const selectTipoDonante = document.getElementById("selectTipoDonante");
+            const grpDocumento = document.getElementById("grpDocumento");
+            const grpNombre = document.getElementById("grpNombre");
+            const grpTelefono = document.getElementById("grpTelefono");
+            const grpEmail = document.getElementById("grpEmail");
+            const lblDocumento = document.getElementById("lblDocumento");
+            const lblNombre = document.getElementById("lblNombre");
+            const inputDocumento = document.getElementById("inputDocumento");
+            const inputNombre = document.getElementById("inputNombre");
+            const alertaAnonimo = document.getElementById("alertaAnonimo");
+
+            const selCatalogo = document.getElementById("selProductoCatalogo");
+            const tempEan = document.getElementById("tempEan");
+            const tempCantidad = document.getElementById("tempCantidad");
+            const tempVencimiento = document.getElementById("tempVencimiento");
+            const tempLote = document.getElementById("tempLote");
+            const btnAgregar = document.getElementById("btnAgregarFila");
+
+            const cuerpoTabla = document.getElementById("cuerpoTablaDetalles");
+            const totalCantidadTxt = document.getElementById("totalCantidadTxt");
+            const sinItemsAviso = document.getElementById("sinItemsAviso");
+            const formDonacion = document.getElementById("formDonacion");
+
+            // 1. Manejo del tipo de donante
+            function actualizarTipoDonante() {
+                const tipo = parseInt(selectTipoDonante.value);
+                if (tipo === 3) { // Anónimo
+                    grpDocumento.classList.add("opacity-50");
+                    grpNombre.classList.add("opacity-50");
+                    grpTelefono.classList.add("opacity-50");
+                    grpEmail.classList.add("opacity-50");
+                    inputDocumento.disabled = true;
+                    inputNombre.disabled = true;
+                    alertaAnonimo.classList.remove("d-none");
+                } else if (tipo === 2) { // Institución / Empresa
+                    grpDocumento.classList.remove("opacity-50");
+                    grpNombre.classList.remove("opacity-50");
+                    grpTelefono.classList.remove("opacity-50");
+                    grpEmail.classList.remove("opacity-50");
+                    inputDocumento.disabled = false;
+                    inputNombre.disabled = false;
+                    lblDocumento.textContent = "CUIT de la Empresa / Org.";
+                    lblNombre.textContent = "Razón Social";
+                    alertaAnonimo.classList.add("d-none");
+                } else { // Individuo
+                    grpDocumento.classList.remove("opacity-50");
+                    grpNombre.classList.remove("opacity-50");
+                    grpTelefono.classList.remove("opacity-50");
+                    grpEmail.classList.remove("opacity-50");
+                    inputDocumento.disabled = false;
+                    inputNombre.disabled = false;
+                    lblDocumento.textContent = "DNI del Donante";
+                    lblNombre.textContent = "Nombre y Apellido";
+                    alertaAnonimo.classList.add("d-none");
+                }
+            }
+
+            selectTipoDonante.addEventListener("change", actualizarTipoDonante);
+            actualizarTipoDonante();
+
+            // 2. Selección de producto en el catálogo sincroniza el EAN
+            selCatalogo.addEventListener("change", function () {
+                const opt = selCatalogo.options[selCatalogo.selectedIndex];
+                if (opt && opt.value) {
+                    tempEan.value = opt.getAttribute("data-ean");
+                }
+            });
+
+            // 3. Escribir EAN sincroniza el selector
+            tempEan.addEventListener("input", function () {
+                const valor = tempEan.value.trim();
+                for (let i = 0; i < selCatalogo.options.length; i++) {
+                    if (selCatalogo.options[i].getAttribute("data-ean") === valor) {
+                        selCatalogo.selectedIndex = i;
+                        return;
+                    }
+                }
+                selCatalogo.selectedIndex = 0;
+            });
+
+            // 4. Calcular totales
+            function recalcularTotales() {
+                let total = 0;
+                const filas = cuerpoTabla.querySelectorAll("tr");
+                filas.forEach(f => {
+                    const cantInput = f.querySelector("input[name$='.Cantidad']");
+                    if (cantInput) {
+                        total += parseFloat(cantInput.value) || 0;
+                    }
+                });
+                totalCantidadTxt.textContent = total.toFixed(1);
+
+                if (filas.length > 0) {
+                    sinItemsAviso.classList.add("d-none");
+                } else {
+                    sinItemsAviso.classList.remove("d-none");
+                }
+            }
+
+            // 5. Agregar fila dinámicamente
+            btnAgregar.addEventListener("click", function () {
+                const ean = tempEan.value.trim();
+                const cantidad = parseFloat(tempCantidad.value);
+                const vencimiento = tempVencimiento.value;
+                const lote = tempLote.value.trim();
+
+                if (!ean) {
+                    alert("Debe seleccionar o ingresar el código EAN de un producto.");
+                    tempEan.focus();
+                    return;
+                }
+
+                if (!cantidad || cantidad <= 0) {
+                    alert("La cantidad debe ser mayor a 0.");
+                    tempCantidad.focus();
+                    return;
+                }
+
+                if (!vencimiento) {
+                    alert("Debe especificar la fecha de vencimiento.");
+                    tempVencimiento.focus();
+                    return;
+                }
+
+                const fechaVenc = new Date(vencimiento + "T00:00:00");
+                const hoy = new Date();
+                hoy.setHours(0, 0, 0, 0);
+
+                if (fechaVenc <= hoy) {
+                    alert("RF1: No se pueden recibir alimentos vencidos o que vencen en el día.");
+                    tempVencimiento.focus();
+                    return;
+                }
+
+                // Obtener datos del producto
+                let nombre = "Alimento en Catálogo";
+                let categoria = "General";
+                let unidad = "Unidades";
+
+                const opt = selCatalogo.options[selCatalogo.selectedIndex];
+                if (opt && opt.getAttribute("data-ean") === ean) {
+                    nombre = opt.getAttribute("data-nombre");
+                    categoria = opt.getAttribute("data-categoria");
+                    unidad = opt.getAttribute("data-unidad");
+                }
+
+                // Cálculo de badge FEFO para la UI
+                const diffDias = Math.round((fechaVenc - hoy) / (1000 * 60 * 60 * 24));
+                let claseFefo = "badge-fefo-optimo";
+                if (diffDias <= 5) claseFefo = "badge-fefo-urgente";
+                else if (diffDias <= 15) claseFefo = "badge-fefo-atencion";
+
+                const partesFecha = vencimiento.split("-");
+                const fechaFormateada = `${partesFecha[2]}/${partesFecha[1]}/${partesFecha[0]}`;
+
+                const nuevaFila = document.createElement("tr");
+                nuevaFila.setAttribute("data-row-id", rowCounter);
+                nuevaFila.innerHTML = `
+                    <input type="hidden" name="Items.Index" value="${rowCounter}" />
+                    <input type="hidden" name="Items[${rowCounter}].CodigoBarras" value="${ean}" />
+                    <input type="hidden" name="Items[${rowCounter}].NombreProducto" value="${nombre}" />
+                    <input type="hidden" name="Items[${rowCounter}].Categoria" value="${categoria}" />
+                    <input type="hidden" name="Items[${rowCounter}].UnidadMedida" value="${unidad}" />
+                    <input type="hidden" name="Items[${rowCounter}].Cantidad" value="${cantidad}" />
+                    <input type="hidden" name="Items[${rowCounter}].FechaVencimiento" value="${vencimiento}" />
+                    <input type="hidden" name="Items[${rowCounter}].NumeroLote" value="${lote}" />
+
+                    <td><span class="code-tag font-mono">${ean}</span></td>
+                    <td class="fw-semibold text-dark">${nombre}</td>
+                    <td><span class="badge bg-light text-secondary border">${categoria}</span></td>
+                    <td><span class="font-mono small text-muted">${lote ? lote : "(Automático)"}</span></td>
+                    <td>
+                        <span class="badge ${claseFefo}">
+                            ${fechaFormateada} (${diffDias} días)
+                        </span>
+                    </td>
+                    <td class="text-end fw-bold text-success">${cantidad.toFixed(1)} ${unidad}</td>
+                    <td class="text-center">
+                        <button type="button" class="btn btn-sm btn-outline-danger border-0 btn-quitar" title="Eliminar fila">
+                            <i class="bi bi-trash3"></i>
+                        </button>
+                    </td>
+                `;
+
+                cuerpoTabla.appendChild(nuevaFila);
+                rowCounter++;
+
+                // Reset de entradas temporales
+                tempLote.value = "";
+                tempCantidad.value = "10";
+                selCatalogo.selectedIndex = 0;
+                tempEan.value = "";
+
+                recalcularTotales();
+            });
+
+            // 6. Eliminar fila
+            cuerpoTabla.addEventListener("click", function (e) {
+                const btn = e.target.closest(".btn-quitar");
+                if (btn) {
+                    const tr = btn.closest("tr");
+                    tr.remove();
+                    recalcularTotales();
+                }
+            });
+
+            // 7. Validación antes del Submit
+            formDonacion.addEventListener("submit", function (e) {
+                const filas = cuerpoTabla.querySelectorAll("tr");
+                if (filas.length === 0) {
+                    e.preventDefault();
+                    alert("Detalle vacío: Bloquear la confirmación de la donación si no se ha cargado al menos un producto en la lista.");
+                    return false;
+                }
+
+                const tipo = parseInt(selectTipoDonante.value);
+                if (tipo !== 3) {
+                    if (!inputDocumento.value.trim() || !inputNombre.value.trim()) {
+                        e.preventDefault();
+                        alert("Datos de donante incompletos: Ingrese el Documento y Nombre/Razón Social antes de continuar.");
+                        return false;
+                    }
+                }
+            });
+
+            recalcularTotales();
+        });
+    </script>
+}

@@ -1,0 +1,216 @@
+@model NutriRed.Services.DTOs.DonacionComprobanteDto
+@using NutriRed.Domain.Enums
+
+@{
+    ViewData["Title"] = $"Comprobante {Model.CodigoComprobante}";
+}
+
+<style>
+    @@media print {
+        header, footer, .no-print, .navbar, .btn {
+            display: none !important;
+        }
+        body {
+            background-color: #ffffff !important;
+            color: #000000 !important;
+            font-size: 12pt;
+        }
+        .comprobante-hoja {
+            border: none !important;
+            box-shadow: none !important;
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+        .table {
+            border-color: #dee2e6 !important;
+        }
+    }
+
+    .comprobante-hoja {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 2.5rem;
+    }
+</style>
+
+<!-- Barra Superior de Acciones (No se imprime) -->
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2 no-print">
+    <div>
+        <a asp-action="Index" class="btn btn-outline-secondary me-2">
+            <i class="bi bi-arrow-left me-1"></i> Listado de Donaciones
+        </a>
+        <a asp-action="Registrar" class="btn btn-emerald">
+            <i class="bi bi-plus-lg me-1"></i> Registrar Otra Donación
+        </a>
+    </div>
+    <div class="d-flex gap-2">
+        <button onclick="window.print()" class="btn btn-primary px-3 shadow-sm">
+            <i class="bi bi-printer me-2"></i> Imprimir Comprobante
+        </button>
+    </div>
+</div>
+
+<partial name="_Alertas" />
+
+<!-- Hoja de Comprobante Oficial -->
+<div class="comprobante-hoja shadow-sm mb-5">
+    <!-- Encabezado Institucional -->
+    <div class="row align-items-center pb-4 border-bottom mb-4">
+        <div class="col-sm-7">
+            <div class="d-flex align-items-center gap-3">
+                <div class="brand-icon bg-emerald-light text-success p-3 rounded-3 fs-3">
+                    <i class="bi bi-box2-heart-fill"></i>
+                </div>
+                <div>
+                    <h3 class="fw-bold mb-0 text-dark">NutriRed</h3>
+                    <div class="text-muted small">SISTEMA INTELIGENTE DE BANCO DE ALIMENTOS</div>
+                    <small class="text-secondary">Depósito Central de Almacenamiento & Rescate</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-5 text-sm-end mt-3 mt-sm-0">
+            <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-3 py-2 fs-6 mb-1 d-inline-block">
+                COMPROBANTE OFICIAL DE INGRESO
+            </span>
+            <div class="font-mono fs-4 fw-bold text-dark mt-1">@Model.CodigoComprobante</div>
+            <div class="text-muted small">
+                <i class="bi bi-calendar3 me-1"></i> @Model.FechaHora.ToString("dd/MM/yyyy HH:mm") hs
+            </div>
+        </div>
+    </div>
+
+    <!-- Bloque de Información: Donante y Recepción -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-6">
+            <div class="p-3 bg-light rounded-3 border h-100">
+                <h6 class="fw-bold text-secondary mb-3">
+                    <i class="bi bi-person-circle me-1 text-primary"></i> Datos del Donante
+                </h6>
+                <table class="table table-sm table-borderless mb-0 small">
+                    <tr>
+                        <td class="text-muted w-40">Nombre / Razón Social:</td>
+                        <td class="fw-bold text-dark">@Model.DonanteNombre</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Documento (DNI/CUIT):</td>
+                        <td class="font-mono">@(string.IsNullOrWhiteSpace(Model.DonanteDocumento) ? "No especificado / Anónimo" : Model.DonanteDocumento)</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Tipo de Donante:</td>
+                        <td>
+                            @switch (Model.TipoDonante)
+                            {
+                                case TipoDonante.Individuo:
+                                    <span class="badge bg-info bg-opacity-10 text-info">Persona Física</span>
+                                    break;
+                                case TipoDonante.Institucion:
+                                    <span class="badge bg-warning bg-opacity-10 text-warning">Institución / Empresa</span>
+                                    break;
+                                case TipoDonante.Anonimo:
+                                    <span class="badge bg-secondary bg-opacity-10 text-secondary">Donante Anónimo</span>
+                                    break;
+                            }
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="p-3 bg-light rounded-3 border h-100">
+                <h6 class="fw-bold text-secondary mb-3">
+                    <i class="bi bi-shield-check me-1 text-success"></i> Datos de Recepción y Control
+                </h6>
+                <table class="table table-sm table-borderless mb-0 small">
+                    <tr>
+                        <td class="text-muted w-40">Operador / Voluntario:</td>
+                        <td class="fw-bold text-dark">@Model.VoluntarioReceptorId</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Almacén Destino:</td>
+                        <td class="text-dark">Depósito Principal - Stock Físico</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Observaciones:</td>
+                        <td class="text-muted">@(string.IsNullOrWhiteSpace(Model.Observaciones) ? "Sin observaciones adicionales" : Model.Observaciones)</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detalle de Alimentos Físicos Recibidos -->
+    <h6 class="fw-bold text-dark mb-3">
+        <i class="bi bi-card-checklist me-1 text-success"></i> Detalle de Mercadería y Lotes Ingresados
+    </h6>
+
+    <div class="table-responsive mb-4">
+        <table class="table table-bordered align-middle">
+            <thead class="table-light small">
+                <tr>
+                    <th class="text-center" style="width: 40px;">#</th>
+                    <th>Código EAN</th>
+                    <th>Alimento Rescatado</th>
+                    <th>Categoría</th>
+                    <th>Lote Asignado</th>
+                    <th>Vencimiento</th>
+                    <th class="text-end">Cantidad</th>
+                </tr>
+            </thead>
+            <tbody>
+                @for (int i = 0; i < Model.Detalles.Count; i++)
+                {
+                    var item = Model.Detalles[i];
+                    var dias = (int)(item.FechaVencimiento.Date - DateTime.Today).TotalDays;
+                    <tr>
+                        <td class="text-center small text-muted">@(i + 1)</td>
+                        <td><span class="code-tag font-mono">@item.CodigoBarras</span></td>
+                        <td class="fw-semibold text-dark">@item.NombreProducto</td>
+                        <td><span class="badge bg-light text-secondary border">@item.Categoria</span></td>
+                        <td><span class="font-mono small">@item.NumeroLote</span></td>
+                        <td>
+                            <span>@item.FechaVencimiento.ToString("dd/MM/yyyy")</span>
+                            <small class="text-muted">(@dias d)</small>
+                        </td>
+                        <td class="text-end fw-bold text-success">
+                            @item.Cantidad.ToString("N1") @item.UnidadMedida
+                        </td>
+                    </tr>
+                }
+            </tbody>
+            <tfoot class="table-light fw-bold">
+                <tr>
+                    <td colspan="6" class="text-end">TOTAL UNIDADES / KILOGRAMOS RECIBIDOS:</td>
+                    <td class="text-end text-success fs-5">
+                        @Model.TotalUnidadesRecibidas.ToString("N1")
+                    </td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+
+    <!-- Leyenda Bromatológica y Legal -->
+    <div class="alert alert-light border small text-muted mb-5">
+        <i class="bi bi-info-circle me-1"></i>
+        <strong>Certificación de Recepción:</strong> Este comprobante acredita la entrega efectiva de los alimentos detallados en el Banco de Alimentos NutriRed.
+        Los lotes generados quedan automáticamente incorporados al sistema con control de rotación <strong>FEFO</strong> (First Expired, First Out)
+        y aptitud bromatológica verificada en depósito.
+    </div>
+
+    <!-- Firmas de Conformidad para Impresión -->
+    <div class="row pt-4 mt-5 text-center">
+        <div class="col-6">
+            <div class="border-top border-dark mx-auto pt-2" style="max-width: 250px;">
+                <small class="fw-bold d-block text-dark">Firma Donante / Transportista</small>
+                <small class="text-muted">Aclaración y DNI</small>
+            </div>
+        </div>
+        <div class="col-6">
+            <div class="border-top border-dark mx-auto pt-2" style="max-width: 250px;">
+                <small class="fw-bold d-block text-dark">Firma Receptor NutriRed</small>
+                <small class="text-muted">@Model.VoluntarioReceptorId</small>
+            </div>
+        </div>
+    </div>
+</div>
