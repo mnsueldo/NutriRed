@@ -1,0 +1,238 @@
+@model NutriRed.Services.DTOs.PaqueteDto
+@using NutriRed.Domain.Enums
+
+@{
+    ViewData["Title"] = $"Rótulo de Paquete {Model.CodigoSeguimiento}";
+    var qrUrl = $"https://api.qrserver.com/v1/create-qr-code/?size=160x160&data={Model.CodigoSeguimiento}&margin=4";
+}
+
+<style>
+    @@media print {
+        header, footer, .no-print, .navbar, .btn {
+            display: none !important;
+        }
+        body {
+            background-color: #ffffff !important;
+            color: #000000 !important;
+            font-size: 11pt;
+        }
+        .hoja-rotulo {
+            border: 2px dashed #000000 !important;
+            box-shadow: none !important;
+            padding: 1.5rem !important;
+            margin: 0 auto !important;
+            max-width: 100% !important;
+        }
+        .table {
+            border-color: #dee2e6 !important;
+        }
+    }
+
+    .hoja-rotulo {
+        background: #ffffff;
+        border: 2px dashed #cbd5e1;
+        border-radius: 12px;
+        padding: 2.5rem;
+    }
+
+    .qr-container {
+        display: inline-block;
+        border: 2px solid #0f172a;
+        padding: 0.5rem;
+        background: #ffffff;
+        border-radius: 8px;
+    }
+</style>
+
+<!-- Barra Superior de Acciones (No se imprime) -->
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2 no-print">
+    <div>
+        <a asp-action="Index" class="btn btn-outline-secondary me-2">
+            <i class="bi bi-arrow-left me-1"></i> Listado de Paquetes
+        </a>
+        <a asp-action="Armar" class="btn btn-emerald">
+            <i class="bi bi-plus-lg me-1"></i> Armar Otro Paquete
+        </a>
+    </div>
+    <div class="d-flex gap-2">
+        <button onclick="window.print()" class="btn btn-primary px-3 shadow-sm">
+            <i class="bi bi-printer me-2"></i> Imprimir Rótulo QR para Caja
+        </button>
+    </div>
+</div>
+
+<partial name="_Alertas" />
+
+<!-- Rótulo de Caja y Ficha de Armado Oficial -->
+<div class="hoja-rotulo shadow-sm mb-5">
+    <div class="row align-items-center pb-4 border-bottom mb-4">
+        <div class="col-sm-8">
+            <div class="d-flex align-items-center gap-3">
+                <div class="brand-icon bg-emerald-light text-success p-3 rounded-3 fs-3">
+                    <i class="bi bi-box2-heart-fill"></i>
+                </div>
+                <div>
+                    <h3 class="fw-bold mb-0 text-dark">NutriRed</h3>
+                    <div class="text-muted small">RÓTULO OFICIAL DE CAJA ASISTENCIAL (RF2)</div>
+                    <small class="text-secondary">Depósito Central - Línea de Armado FEFO</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-4 text-sm-end mt-3 mt-sm-0">
+            @switch (Model.Estado)
+            {
+                case EstadoPaquete.Pendiente:
+                    <span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25 px-3 py-2 fs-6 mb-1 d-inline-block">
+                        ESTADO: PENDIENTE
+                    </span>
+                    break;
+                case EstadoPaquete.Preparado:
+                    <span class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25 px-3 py-2 fs-6 mb-1 d-inline-block">
+                        ESTADO: PREPARADO PARA DESPACHO
+                    </span>
+                    break;
+                case EstadoPaquete.Entregado:
+                    <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-3 py-2 fs-6 mb-1 d-inline-block">
+                        ESTADO: ENTREGADO A BENEFICIARIO
+                    </span>
+                    break;
+                case EstadoPaquete.Cancelado:
+                    <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 px-3 py-2 fs-6 mb-1 d-inline-block">
+                        ESTADO: CANCELADO
+                    </span>
+                    break;
+            }
+            <div class="text-muted small">
+                <i class="bi bi-clock me-1"></i> Armado: @Model.FechaCreacion.ToString("dd/MM/yyyy HH:mm") hs
+            </div>
+        </div>
+    </div>
+
+    <!-- Bloque QR y Datos del Destinatario -->
+    <div class="row g-4 align-items-center mb-4 pb-3 border-bottom">
+        <div class="col-md-4 text-center">
+            <div class="qr-container shadow-sm mb-2">
+                <img src="@qrUrl" alt="Código QR @Model.CodigoSeguimiento" width="150" height="150" class="img-fluid" />
+            </div>
+            <div class="font-mono fw-bold fs-5 text-dark">@Model.CodigoSeguimiento</div>
+            <small class="text-muted d-block">Escanear desde App Android en Entrega</small>
+        </div>
+
+        <div class="col-md-8">
+            <div class="p-3 bg-light rounded-3 border">
+                <h6 class="fw-bold text-secondary mb-3">
+                    <i class="bi bi-people-fill text-primary me-2"></i>Ficha Asistencial del Destinatario
+                </h6>
+                <table class="table table-sm table-borderless mb-0">
+                    <tr>
+                        <td class="text-muted w-35">Familia Titular:</td>
+                        <td class="fw-bold fs-6 text-dark">@Model.FamiliaTitular</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">DNI Titular:</td>
+                        <td class="font-mono fw-bold text-dark">@Model.DniTitular</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Kit Asignado:</td>
+                        <td>
+                            <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-2 py-1">
+                                @Model.TipoPaqueteNombre
+                            </span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Operador Armador:</td>
+                        <td class="text-dark"><i class="bi bi-person me-1"></i>@Model.UsuarioArmadorId</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detalle de Alimentos Físicos y Lotes FEFO -->
+    <h6 class="fw-bold text-dark mb-3">
+        <i class="bi bi-card-checklist text-success me-1"></i> Contenido Físico de la Caja (Lotes Asignados por FEFO)
+    </h6>
+
+    <div class="table-responsive mb-4">
+        <table class="table table-bordered align-middle">
+            <thead class="table-light small">
+                <tr>
+                    <th class="text-center" style="width: 40px;">#</th>
+                    <th>Alimento Incluido</th>
+                    <th>Código EAN</th>
+                    <th>Lote Extraído</th>
+                    <th>Vencimiento Lote</th>
+                    <th class="text-end">Cantidad</th>
+                    <th>Trazabilidad / Observación</th>
+                </tr>
+            </thead>
+            <tbody>
+                @for (int i = 0; i < Model.Items.Count; i++)
+                {
+                    var itm = Model.Items[i];
+                    var dias = (int)(itm.FechaVencimiento.Date - DateTime.Today).TotalDays;
+                    <tr>
+                        <td class="text-center small text-muted">@(i + 1)</td>
+                        <td class="fw-semibold text-dark">@itm.NombreProducto</td>
+                        <td><span class="code-tag font-mono">@itm.CodigoBarras</span></td>
+                        <td><span class="font-mono small fw-bold">@itm.NumeroLote</span></td>
+                        <td>
+                            <span>@itm.FechaVencimiento.ToString("dd/MM/yyyy")</span>
+                            <small class="text-muted">(@dias d)</small>
+                        </td>
+                        <td class="text-end fw-bold text-success fs-6">
+                            @itm.Cantidad.ToString("N0") u.
+                        </td>
+                        <td>
+                            @if (itm.EsSustituto)
+                            {
+                                <span class="badge bg-warning text-dark border border-warning">
+                                    <i class="bi bi-arrow-repeat me-1"></i> Sustituye a @itm.NombreProductoSustituido
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25">
+                                    <i class="bi bi-check2 me-1"></i> Estándar de Receta
+                                </span>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+            <tfoot class="table-light fw-bold">
+                <tr>
+                    <td colspan="5" class="text-end">TOTAL DE ARTÍCULOS EN CAJA:</td>
+                    <td class="text-end text-success fs-5">
+                        @Model.Items.Sum(x => x.Cantidad).ToString("N0") u.
+                    </td>
+                    <td></td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+
+    <!-- Cuadro de Control y Pegado de Rótulo -->
+    <div class="row pt-4 mt-4 border-top">
+        <div class="col-sm-6">
+            <div class="p-3 bg-light rounded-3 border small">
+                <strong class="d-block mb-2 text-dark"><i class="bi bi-check-square me-1"></i> Control de Depósito:</strong>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="chk1" checked disabled>
+                    <label class="form-check-label text-muted" for="chk1">Alimentos revisados contra receta y sin roturas</label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="chk2" checked disabled>
+                    <label class="form-check-label text-muted" for="chk2">Caja sellada y rótulo QR adherido en cara frontal</label>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 text-center mt-3 mt-sm-0">
+            <div class="border-top border-dark mx-auto pt-2 mt-4" style="max-width: 250px;">
+                <small class="fw-bold d-block text-dark">Firma y Sello de Armador</small>
+                <small class="text-muted">@Model.UsuarioArmadorId</small>
+            </div>
+        </div>
+    </div>
+</div>

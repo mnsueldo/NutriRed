@@ -1,0 +1,479 @@
+@model NutriRed.Web.Models.ArmarPaqueteViewModel
+@using NutriRed.Domain.Entities
+@using NutriRed.Domain.Enums
+
+@{
+    ViewData["Title"] = "Armado Inteligente de Paquetes";
+    var familias = ViewBag.Familias as List<FamiliaBeneficiaria> ?? new List<FamiliaBeneficiaria>();
+    var tiposPaquete = ViewBag.TiposPaquete as List<TipoPaquete> ?? new List<TipoPaquete>();
+    var productosCatalogo = ViewBag.Productos as List<Producto> ?? new List<Producto>();
+    bool tienePropuestaInicial = Model.Propuesta != null;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div>
+        <h2 class="fw-bold mb-1">
+            <i class="bi bi-magic text-success me-2"></i>Asistente de Armado Inteligente (RF2)
+        </h2>
+        <p class="text-muted mb-0">Selección automática de kits por tamaño familiar, asignación FEFO de lotes y sustitución supervisada</p>
+    </div>
+    <a asp-action="Index" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left me-1"></i> Volver a Paquetes
+    </a>
+</div>
+
+<partial name="_Alertas" />
+
+<!-- Formulario Unificado de Armado -->
+<form asp-action="ConfirmarArmado" method="post" id="formArmadoPaquete">
+    @Html.AntiForgeryToken()
+    <div asp-validation-summary="ModelOnly" class="alert alert-danger mb-4 shadow-sm border-start border-4 border-danger" role="alert"></div>
+
+    <!-- PASO 1: SELECCIÓN DE FAMILIA Y KIT -->
+    <div class="card card-nr border-0 shadow-sm mb-4">
+        <div class="card-nr-header bg-light d-flex justify-content-between align-items-center">
+            <span class="fw-bold text-dark">
+                <i class="bi bi-people text-primary me-2"></i>1. Destinatario y Plantilla de Kit
+            </span>
+            <span class="badge bg-primary bg-opacity-10 text-primary">Asignación Automática</span>
+        </div>
+        <div class="card-body p-4">
+            <div class="row g-3 align-items-end">
+                <div class="col-lg-6 col-md-7">
+                    <label asp-for="FamiliaId" class="form-label fw-semibold">Familia Beneficiaria Destinataria</label>
+                    <select asp-for="FamiliaId" class="form-select" id="comboFamilia">
+                        <option value="">-- Seleccionar Familia Titular --</option>
+                        @foreach (var fam in familias)
+                        {
+                            <option value="@fam.Id" selected="@(Model.FamiliaId == fam.Id)">
+                                @fam.ApellidoTitular, @fam.NombreTitular (DNI: @fam.DniTitular) - @fam.CantidadIntegrantes @(fam.CantidadIntegrantes == 1 ? "integrante" : "integrantes")
+                            </option>
+                        }
+                    </select>
+                    <span asp-validation-for="FamiliaId" class="text-danger small"></span>
+                </div>
+
+                <div class="col-lg-6 col-md-5">
+                    <label asp-for="TipoPaqueteId" class="form-label fw-semibold">Kit Nutricional (Calculado por Integrantes)</label>
+                    <select asp-for="TipoPaqueteId" class="form-select" id="comboKit">
+                        <option value="">-- Automático por tamaño familiar --</option>
+                        @foreach (var kit in tiposPaquete)
+                        {
+                            <option value="@kit.Id" selected="@(Model.TipoPaqueteId == kit.Id)">
+                                @kit.Nombre (@kit.MinIntegrantes a @kit.MaxIntegrantes integrantes)
+                            </option>
+                        }
+                    </select>
+                    <span asp-validation-for="TipoPaqueteId" class="text-danger small"></span>
+                </div>
+            </div>
+
+            <!-- Spinner de carga reactiva -->
+            <div id="spinnerCargando" class="text-center py-3 d-none">
+                <div class="spinner-border spinner-border-sm text-success me-2" role="status"></div>
+                <span class="text-muted small">Consultando receta y verificando lotes FEFO disponibles...</span>
+            </div>
+
+            <!-- Alerta de Error Dinámica -->
+            <div id="alertaErrorDinamica" class="alert alert-danger border-start border-4 border-danger d-none mt-3 mb-0" role="alert">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                <span id="mensajeErrorDinamico"></span>
+            </div>
+
+            <!-- Ficha Resumen de Familia y Kit -->
+            <div id="cardResumenFamilia" class="mt-4 p-3 bg-light rounded-3 border @(tienePropuestaInicial ? "" : "d-none")">
+                <div class="row g-2 align-items-center">
+                    <div class="col-md-4">
+                        <small class="text-muted d-block">Titular Beneficiario:</small>
+                        <strong class="text-dark" id="txtResumenTitular">@(Model.Propuesta?.FamiliaTitular)</strong>
+                        <div class="text-secondary small font-mono" id="txtResumenDni">DNI: @(Model.Propuesta?.DniTitular)</div>
+                    </div>
+                    <div class="col-md-4">
+                        <small class="text-muted d-block">Composición del Hogar:</small>
+                        <span class="badge bg-secondary bg-opacity-10 text-secondary" id="txtResumenIntegrantes">
+                            <i class="bi bi-people me-1"></i>@(Model.Propuesta?.CantidadIntegrantes) personas
+                        </span>
+                    </div>
+                    <div class="col-md-4">
+                        <small class="text-muted d-block">Plantilla Aplicada:</small>
+                        <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-2 py-1" id="txtResumenKit">
+                            <i class="bi bi-check-circle me-1"></i>@(Model.Propuesta?.TipoPaqueteNombre)
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PASO 2: RECETA, LOTES FEFO Y CONFIRMACIÓN -->
+    <div id="contenedorPropuesta" class="@(tienePropuestaInicial ? "" : "d-none")">
+        <div class="card card-nr border-0 shadow-sm mb-4">
+            <div class="card-nr-header bg-light d-flex justify-content-between align-items-center">
+                <span class="fw-bold text-dark">
+                    <i class="bi bi-boxes text-success me-2"></i>2. Asignación Automática FEFO y Sustituciones
+                </span>
+                <span class="badge bg-success bg-opacity-10 text-success">Control de Existencias</span>
+            </div>
+            <div class="card-body p-4">
+
+                <!-- Alerta de Stock Completo -->
+                <div id="alertaCompleto" class="alert alert-success border-start border-4 border-success d-flex align-items-center mb-4 shadow-sm @(tienePropuestaInicial && !Model.Propuesta!.HayFaltantes ? "" : "d-none")" role="alert">
+                    <i class="bi bi-check-circle-fill fs-3 text-success me-3"></i>
+                    <div>
+                        <strong>¡Inventario Completo y Óptimo!</strong>
+                        <div>
+                            Se verificó la disponibilidad de todos los alimentos de la plantilla. Los lotes fueron seleccionados automáticamente priorizando las fechas de caducidad más próximas (**FEFO**).
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Alerta de Faltantes -->
+                <div id="alertaFaltantes" class="alert alert-warning border-start border-4 border-warning d-flex align-items-center mb-4 shadow-sm @(tienePropuestaInicial && Model.Propuesta!.HayFaltantes ? "" : "d-none")" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill fs-3 text-warning me-3"></i>
+                    <div>
+                        <strong>¡Alerta de Faltantes de Inventario!</strong>
+                        <div>
+                            No hay suficiente stock en los lotes activos para completar todos los alimentos de la receta estándar.
+                            Puede optar por confirmar el paquete con faltante o aplicar una <strong>sustitución supervisada</strong> en la columna derecha.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Alimento de la Receta</th>
+                                <th class="text-center">Requerido</th>
+                                <th class="text-center">Disponible FEFO</th>
+                                <th>Lotes Reservados</th>
+                                <th>Estado Cobertura</th>
+                                <th>Sustitución Supervisada</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cuerpoTablaPropuesta">
+                            @if (tienePropuestaInicial)
+                            {
+                                for (int i = 0; i < Model.Propuesta!.Items.Count; i++)
+                                {
+                                    var item = Model.Propuesta.Items[i];
+                                    <tr>
+                                        <input type="hidden" name="Items.Index" value="@i" />
+                                        <input type="hidden" name="Items[@i].ProductoId" id="prodId_@i" value="@item.ProductoId" />
+                                        <input type="hidden" name="Items[@i].NombreProducto" id="prodNombre_@i" value="@item.NombreProducto" />
+                                        <input type="hidden" name="Items[@i].CodigoBarras" value="@item.CodigoBarras" />
+                                        <input type="hidden" name="Items[@i].Cantidad" value="@item.CantidadRequerida" />
+                                        <input type="hidden" name="Items[@i].EsSustituto" id="esSustituto_@i" value="false" />
+                                        <input type="hidden" name="Items[@i].ProductoSustituidoId" id="prodSustituidoId_@i" value="" />
+
+                                        <td>
+                                            <div class="fw-bold text-dark" id="displayNombre_@i">@item.NombreProducto</div>
+                                            <small class="text-muted font-mono">EAN: @item.CodigoBarras</small>
+                                        </td>
+                                        <td class="text-center fw-bold fs-6">
+                                            @item.CantidadRequerida.ToString("N0")
+                                        </td>
+                                        <td class="text-center fw-bold @(item.CubiertoTotalmente ? "text-success" : "text-danger") fs-6">
+                                            @item.CantidadDisponible.ToString("N0")
+                                        </td>
+                                        <td>
+                                            @if (item.LotesAsignados.Any())
+                                            {
+                                                <div class="d-flex flex-wrap gap-1">
+                                                    @foreach (var lote in item.LotesAsignados)
+                                                    {
+                                                        <span class="badge bg-light text-dark border font-mono small" title="Vence @lote.FechaVencimiento.ToString("dd/MM/yyyy")">
+                                                            @lote.NumeroLote (@lote.CantidadAsignada.ToString("N0") u.)
+                                                        </span>
+                                                    }
+                                                </div>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted small fst-italic">Sin existencias disponibles</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            @if (item.CubiertoTotalmente)
+                                            {
+                                                <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-2 py-1">
+                                                    <i class="bi bi-check-all me-1"></i> 100% Cubierto
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 px-2 py-1">
+                                                    <i class="bi bi-exclamation-octagon me-1"></i> Falta @item.Faltante.ToString("N0") u.
+                                                </span>
+                                            }
+                                        </td>
+                                        <td>
+                                            <div class="input-group input-group-sm" style="max-width: 280px;">
+                                                <select class="form-select select-sustituto" data-index="@i" data-original-id="@item.ProductoId" data-original-nombre="@item.NombreProducto">
+                                                    <option value="">-- Sin sustitución --</option>
+                                                    @foreach (var alt in productosCatalogo.Where(p => p.Id != item.ProductoId))
+                                                    {
+                                                        <option value="@alt.Id">Sustituir por: @alt.Nombre</option>
+                                                    }
+                                                </select>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Datos del Armador y Observaciones -->
+                <div class="row g-3 mt-4 pt-3 border-top">
+                    <div class="col-md-4">
+                        <label asp-for="UsuarioArmadorId" class="form-label fw-semibold"></label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light text-muted"><i class="bi bi-person-gear"></i></span>
+                            <input asp-for="UsuarioArmadorId" class="form-control" />
+                        </div>
+                    </div>
+                    <div class="col-md-8">
+                        <label asp-for="Observaciones" class="form-label fw-semibold"></label>
+                        <input asp-for="Observaciones" class="form-control" placeholder="Ej: Se sustituyó arroz por fideos por rotura de stock en depósito" />
+                    </div>
+                </div>
+
+                <!-- Botón Principal de Confirmación -->
+                <div class="text-end mt-4 pt-2">
+                    <button type="submit" id="btnConfirmarArmado" class="btn btn-emerald btn-lg px-5 shadow">
+                        <i class="bi bi-check2-circle me-2"></i> Confirmar Armado y Generar Rótulo QR
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Placeholder cuando aún no se ha seleccionado familia -->
+    <div id="placeholderSinFamilia" class="card border-0 shadow-sm text-center py-5 @(tienePropuestaInicial ? "d-none" : "")">
+        <div class="card-body">
+            <i class="bi bi-person-check fs-1 text-secondary opacity-50 d-block mb-3"></i>
+            <h5 class="fw-bold text-dark">Selecciona una Familia Beneficiaria</h5>
+            <p class="text-muted mx-auto" style="max-width: 520px;">
+                Al seleccionar una familia del listado superior, el sistema determinará automáticamente el kit nutricional correspondiente y calculará de inmediato la rotación de lotes según el algoritmo FEFO.
+            </p>
+        </div>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        // Catálogo de productos para selectores dinámicos de sustitutos
+        const catalogoProductos = [
+            @foreach (var prod in productosCatalogo)
+            {
+                <text>{ id: @prod.Id, nombre: "@Html.Raw(prod.Nombre.Replace("\"", "\\\""))" },</text>
+            }
+        ];
+
+        document.addEventListener("DOMContentLoaded", function () {
+            const comboFamilia = document.getElementById("comboFamilia");
+            const comboKit = document.getElementById("comboKit");
+            const spinnerCargando = document.getElementById("spinnerCargando");
+            const alertaErrorDinamica = document.getElementById("alertaErrorDinamica");
+            const mensajeErrorDinamico = document.getElementById("mensajeErrorDinamico");
+            const cardResumenFamilia = document.getElementById("cardResumenFamilia");
+            const txtResumenTitular = document.getElementById("txtResumenTitular");
+            const txtResumenDni = document.getElementById("txtResumenDni");
+            const txtResumenIntegrantes = document.getElementById("txtResumenIntegrantes");
+            const txtResumenKit = document.getElementById("txtResumenKit");
+
+            const contenedorPropuesta = document.getElementById("contenedorPropuesta");
+            const placeholderSinFamilia = document.getElementById("placeholderSinFamilia");
+            const cuerpoTablaPropuesta = document.getElementById("cuerpoTablaPropuesta");
+            const alertaCompleto = document.getElementById("alertaCompleto");
+            const alertaFaltantes = document.getElementById("alertaFaltantes");
+
+            // Función para vincular eventos a selectores de sustitución
+            function vincularSustitutos() {
+                document.querySelectorAll(".select-sustituto").forEach(select => {
+                    select.removeEventListener("change", manejarCambioSustituto);
+                    select.addEventListener("change", manejarCambioSustituto);
+                });
+            }
+
+            function manejarCambioSustituto() {
+                const idx = this.getAttribute("data-index");
+                const origId = this.getAttribute("data-original-id");
+                const origNombre = this.getAttribute("data-original-nombre");
+
+                const prodIdInput = document.getElementById("prodId_" + idx);
+                const prodNombreInput = document.getElementById("prodNombre_" + idx);
+                const esSustitutoInput = document.getElementById("esSustituto_" + idx);
+                const prodSustituidoIdInput = document.getElementById("prodSustituidoId_" + idx);
+                const displayNombre = document.getElementById("displayNombre_" + idx);
+
+                if (this.value) {
+                    const nuevoId = this.value;
+                    const nuevoNombre = this.options[this.selectedIndex].text.replace("Sustituir por: ", "");
+
+                    prodIdInput.value = nuevoId;
+                    prodNombreInput.value = nuevoNombre;
+                    esSustitutoInput.value = "true";
+                    prodSustituidoIdInput.value = origId;
+
+                    displayNombre.innerHTML = `${nuevoNombre} <span class="badge bg-warning text-dark ms-1">Sustituto de ${origNombre}</span>`;
+                } else {
+                    prodIdInput.value = origId;
+                    prodNombreInput.value = origNombre;
+                    esSustitutoInput.value = "false";
+                    prodSustituidoIdInput.value = "";
+
+                    displayNombre.textContent = origNombre;
+                }
+            }
+
+            vincularSustitutos();
+
+            // Carga Reactiva Instantánea al seleccionar Familia o Kit
+            async function cargarPropuestaReactiva() {
+                const famId = comboFamilia.value;
+                const kitId = comboKit.value;
+
+                alertaErrorDinamica.classList.add("d-none");
+
+                if (!famId) {
+                    cardResumenFamilia.classList.add("d-none");
+                    contenedorPropuesta.classList.add("d-none");
+                    placeholderSinFamilia.classList.remove("d-none");
+                    cuerpoTablaPropuesta.innerHTML = "";
+                    return;
+                }
+
+                spinnerCargando.classList.remove("d-none");
+
+                try {
+                    let url = `@Url.Action("ObtenerPropuestaJson", "Paquetes")?familiaId=${famId}`;
+                    if (kitId) {
+                        url += `&tipoPaqueteId=${kitId}`;
+                    }
+
+                    const response = await fetch(url);
+                    const data = await response.json();
+
+                    spinnerCargando.classList.add("d-none");
+
+                    if (!data.success || !data.data) {
+                        alertaErrorDinamica.classList.remove("d-none");
+                        mensajeErrorDinamico.textContent = data.errorMessage || "No se pudo obtener la propuesta de kit.";
+                        contenedorPropuesta.classList.add("d-none");
+                        cardResumenFamilia.classList.add("d-none");
+                        placeholderSinFamilia.classList.remove("d-none");
+                        return;
+                    }
+
+                    const prop = data.data;
+
+                    // 1. Sincronizar Ficha Resumen
+                    txtResumenTitular.textContent = prop.familiaTitular;
+                    txtResumenDni.textContent = `DNI: ${prop.dniTitular}`;
+                    txtResumenIntegrantes.innerHTML = `<i class="bi bi-people me-1"></i>${prop.cantidadIntegrantes} personas`;
+                    txtResumenKit.innerHTML = `<i class="bi bi-check-circle me-1"></i>${prop.tipoPaqueteNombre}`;
+                    cardResumenFamilia.classList.remove("d-none");
+
+                    // 2. Sincronizar el combo de kit con el asignado
+                    comboKit.value = prop.tipoPaqueteId;
+
+                    // 3. Renderizar Alertas de Cobertura
+                    if (prop.hayFaltantes) {
+                        alertaFaltantes.classList.remove("d-none");
+                        alertaCompleto.classList.add("d-none");
+                    } else {
+                        alertaCompleto.classList.remove("d-none");
+                        alertaFaltantes.classList.add("d-none");
+                    }
+
+                    // 4. Renderizar Filas de Alimentos
+                    cuerpoTablaPropuesta.innerHTML = "";
+
+                    prop.items.forEach((item, i) => {
+                        let lotesHtml = "";
+                        if (item.lotesAsignados && item.lotesAsignados.length > 0) {
+                            lotesHtml = '<div class="d-flex flex-wrap gap-1">';
+                            item.lotesAsignados.forEach(l => {
+                                const fv = new Date(l.fechaVencimiento);
+                                const fvStr = `${String(fv.getDate()).padStart(2, '0')}/${String(fv.getMonth() + 1).padStart(2, '0')}/${fv.getFullYear()}`;
+                                lotesHtml += `<span class="badge bg-light text-dark border font-mono small" title="Vence ${fvStr}">
+                                    ${l.numeroLote} (${Math.round(l.cantidadAsignada)} u.)
+                                </span>`;
+                            });
+                            lotesHtml += '</div>';
+                        } else {
+                            lotesHtml = '<span class="text-muted small fst-italic">Sin existencias disponibles</span>';
+                        }
+
+                        let badgeCobertura = "";
+                        if (item.cubiertoTotalmente) {
+                            badgeCobertura = `<span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-2 py-1">
+                                <i class="bi bi-check-all me-1"></i> 100% Cubierto
+                            </span>`;
+                        } else {
+                            badgeCobertura = `<span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 px-2 py-1">
+                                <i class="bi bi-exclamation-octagon me-1"></i> Falta ${Math.round(item.faltante)} u.
+                            </span>`;
+                        }
+
+                        let opcionesSustitutos = '<option value="">-- Sin sustitución --</option>';
+                        catalogoProductos.forEach(p => {
+                            if (p.id !== item.productoId) {
+                                opcionesSustitutos += `<option value="${p.id}">Sustituir por: ${p.nombre}</option>`;
+                            }
+                        });
+
+                        const tr = document.createElement("tr");
+                        tr.innerHTML = `
+                            <input type="hidden" name="Items.Index" value="${i}" />
+                            <input type="hidden" name="Items[${i}].ProductoId" id="prodId_${i}" value="${item.productoId}" />
+                            <input type="hidden" name="Items[${i}].NombreProducto" id="prodNombre_${i}" value="${item.nombreProducto}" />
+                            <input type="hidden" name="Items[${i}].CodigoBarras" value="${item.codigoBarras}" />
+                            <input type="hidden" name="Items[${i}].Cantidad" value="${item.cantidadRequerida}" />
+                            <input type="hidden" name="Items[${i}].EsSustituto" id="esSustituto_${i}" value="false" />
+                            <input type="hidden" name="Items[${i}].ProductoSustituidoId" id="prodSustituidoId_${i}" value="" />
+
+                            <td>
+                                <div class="fw-bold text-dark" id="displayNombre_${i}">${item.nombreProducto}</div>
+                                <small class="text-muted font-mono">EAN: ${item.codigoBarras}</small>
+                            </td>
+                            <td class="text-center fw-bold fs-6">
+                                ${Math.round(item.cantidadRequerida)}
+                            </td>
+                            <td class="text-center fw-bold ${item.cubiertoTotalmente ? 'text-success' : 'text-danger'} fs-6">
+                                ${Math.round(item.cantidadDisponible)}
+                            </td>
+                            <td>${lotesHtml}</td>
+                            <td>${badgeCobertura}</td>
+                            <td>
+                                <div class="input-group input-group-sm" style="max-width: 280px;">
+                                    <select class="form-select select-sustituto" data-index="${i}" data-original-id="${item.productoId}" data-original-nombre="${item.nombreProducto}">
+                                        ${opcionesSustitutos}
+                                    </select>
+                                </div>
+                            </td>
+                        `;
+                        cuerpoTablaPropuesta.appendChild(tr);
+                    });
+
+                    vincularSustitutos();
+                    contenedorPropuesta.classList.remove("d-none");
+                    placeholderSinFamilia.classList.add("d-none");
+
+                } catch (err) {
+                    spinnerCargando.classList.add("d-none");
+                    alertaErrorDinamica.classList.remove("d-none");
+                    mensajeErrorDinamico.textContent = "Ocurrió un error de red al consultar el kit para la familia.";
+                }
+            }
+
+            comboFamilia.addEventListener("change", cargarPropuestaReactiva);
+            comboKit.addEventListener("change", cargarPropuestaReactiva);
+        });
+    </script>
+}
