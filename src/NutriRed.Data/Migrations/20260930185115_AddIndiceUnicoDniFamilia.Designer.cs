@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using NutriRed.Data;
 
@@ -11,9 +12,11 @@ using NutriRed.Data;
 namespace NutriRed.Data.Migrations
 {
     [DbContext(typeof(NutriRedDbContext))]
-    partial class NutriRedDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260930185115_AddIndiceUnicoDniFamilia")]
+    partial class AddIndiceUnicoDniFamilia
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
