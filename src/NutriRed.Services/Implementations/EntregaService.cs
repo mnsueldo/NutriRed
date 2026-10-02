@@ -127,11 +127,11 @@ public class EntregaService : IEntregaService
 
             // Regla de Negocio (Pág. 10 del PDF):
             // "Discrepancia de identidad: Advertir si el receptor no coincide con el titular ni se encuentra autorizado para retirar el paquete."
-            var dniReceptorNormalizado = request.DniReceptor.Trim();
+            var dniReceptorNormalizado = System.Text.RegularExpressions.Regex.Replace(request.DniReceptor ?? "", @"\D", "");
 
             if (request.TipoReceptor == TipoReceptor.Titular)
             {
-                var dniTitular = paquete.FamiliaBeneficiaria?.DniTitular?.Trim() ?? string.Empty;
+                var dniTitular = System.Text.RegularExpressions.Regex.Replace(paquete.FamiliaBeneficiaria?.DniTitular ?? "", @"\D", "");
                 if (!string.Equals(dniReceptorNormalizado, dniTitular, StringComparison.OrdinalIgnoreCase))
                 {
                     return OperationResult<ComprobanteEntregaDto>.Fail("Discrepancia de identidad: Advertir si el receptor no coincide con el titular ni se encuentra autorizado para retirar el paquete.");
@@ -255,6 +255,10 @@ public class EntregaService : IEntregaService
             };
 
             _context.Entregas.Add(entregaFallida);
+
+            // Transición a Cancelado para que deje de figurar como disponible para despacho
+            paquete.Estado = EstadoPaquete.Cancelado;
+
             await _context.SaveChangesAsync();
 
             return OperationResult.Ok();
@@ -324,6 +328,75 @@ public class EntregaService : IEntregaService
         catch (Exception ex)
         {
             return OperationResult<ComprobanteEntregaDto>.Fail($"Error al consultar el comprobante de entrega: {ex.Message}");
+        }
+    }
+
+    public async Task<OperationResult<IEnumerable<PaqueteDespachoHistorialDto>>> ObtenerHistorialDespachosAsync(EstadoPaquete? estado = null)
+    {
+        try
+        {
+            var query = _context.Paquetes
+                .AsNoTracking()
+                .Include(p => p.FamiliaBeneficiaria)
+                .Include(p => p.TipoPaquete)
+                .Include(p => p.Entrega)
+                .Include(p => p.Detalles)
+                    .ThenInclude(d => d.Producto)
+                .Include(p => p.Detalles)
+                    .ThenInclude(d => d.Lote)
+                .Include(p => p.Detalles)
+                    .ThenInclude(d => d.ProductoSustituido)
+                .AsQueryable();
+
+            if (estado.HasValue)
+            {
+                query = query.Where(p => p.Estado == estado.Value);
+            }
+
+            var paquetes = await query
+                .OrderByDescending(p => p.FechaCreacion)
+                .ToListAsync();
+
+            var resultado = paquetes.Select(p => new PaqueteDespachoHistorialDto
+            {
+                PaqueteId = p.Id,
+                CodigoSeguimiento = p.CodigoSeguimiento,
+                FamiliaId = p.FamiliaBeneficiariaId,
+                FamiliaTitular = p.FamiliaBeneficiaria != null
+                    ? $"{p.FamiliaBeneficiaria.ApellidoTitular}, {p.FamiliaBeneficiaria.NombreTitular}"
+                    : "Sin Titular",
+                DniTitular = p.FamiliaBeneficiaria?.DniTitular ?? string.Empty,
+                TipoPaqueteNombre = p.TipoPaquete?.Nombre ?? "Kit",
+                Estado = p.Estado,
+                FechaCreacion = p.FechaCreacion,
+                CantidadVariedades = p.Detalles.Count,
+                TotalUnidades = p.Detalles.Sum(d => d.Cantidad),
+                TieneEntrega = p.Entrega != null,
+                EntregaConcretada = p.Entrega?.Concretada,
+                EntregaId = p.Entrega?.Id,
+                FechaEntrega = p.Entrega?.FechaHoraEntrega,
+                ReceptorNombre = p.Entrega?.NombreReceptor,
+                TipoReceptor = p.Entrega?.TipoReceptor,
+                MotivoNoEntrega = p.Entrega?.MotivoNoEntrega,
+                Alimentos = p.Detalles.Select(d => new PaqueteItemDto
+                {
+                    ProductoId = d.ProductoId,
+                    NombreProducto = d.Producto?.Nombre ?? "Alimento",
+                    CodigoBarras = d.Producto?.CodigoBarras ?? string.Empty,
+                    LoteId = d.LoteId,
+                    NumeroLote = d.Lote?.NumeroLote ?? string.Empty,
+                    FechaVencimiento = d.Lote?.FechaVencimiento ?? DateTime.MinValue,
+                    Cantidad = d.Cantidad,
+                    EsSustituto = d.EsSustituto,
+                    NombreProductoSustituido = d.ProductoSustituido?.Nombre
+                }).ToList()
+            }).ToList();
+
+            return OperationResult<IEnumerable<PaqueteDespachoHistorialDto>>.Ok(resultado);
+        }
+        catch (Exception ex)
+        {
+            return OperationResult<IEnumerable<PaqueteDespachoHistorialDto>>.Fail($"Error al consultar historial de despachos: {ex.Message}");
         }
     }
 

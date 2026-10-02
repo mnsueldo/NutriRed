@@ -338,7 +338,7 @@ public static class DbInitializer
         // ==========================================
         var familia1 = new FamiliaBeneficiaria
         {
-            DniTitular = "28.456.789",
+            DniTitular = "28456789",
             NombreTitular = "Mario",
             ApellidoTitular = "González",
             Telefono = "11-4567-8901",
@@ -349,7 +349,7 @@ public static class DbInitializer
 
         var familia2 = new FamiliaBeneficiaria
         {
-            DniTitular = "32.789.123",
+            DniTitular = "32789123",
             NombreTitular = "Romina",
             ApellidoTitular = "Fernández",
             Telefono = "11-9876-5432",
@@ -360,7 +360,7 @@ public static class DbInitializer
 
         var familia3 = new FamiliaBeneficiaria
         {
-            DniTitular = "24.321.654",
+            DniTitular = "24321654",
             NombreTitular = "Carlos",
             ApellidoTitular = "Benítez",
             Telefono = "11-3322-1144",

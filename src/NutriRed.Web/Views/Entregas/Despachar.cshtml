@@ -1,0 +1,379 @@
+@model NutriRed.Web.Models.DespacharPaqueteViewModel
+@using NutriRed.Domain.Enums
+
+@{
+    ViewData["Title"] = $"Despacho de Paquete {Model.CodigoSeguimiento}";
+    var pkg = Model.Paquete;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div>
+        <h2 class="fw-bold mb-1">
+            <i class="bi bi-box-seam text-success me-2"></i>Despacho y Entrega Asistencial
+        </h2>
+        <p class="text-muted mb-0">Control de identidad del receptor, verificación de kit y firma digital (RF3)</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a asp-action="Index" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i> Volver al Listado
+        </a>
+        <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#modalNoConcretada">
+            <i class="bi bi-x-circle me-1"></i> Registrar Entrega Fallida
+        </button>
+    </div>
+</div>
+
+<partial name="_Alertas" />
+
+<div class="row g-4">
+    <!-- FICHA DEL PAQUETE Y ALIMENTOS -->
+    <div class="col-lg-5">
+        <div class="card card-nr border-0 shadow-sm mb-4">
+            <div class="card-nr-header bg-light d-flex justify-content-between align-items-center">
+                <span class="fw-bold text-dark">
+                    <i class="bi bi-qr-code text-primary me-2"></i>Caja Asistencial
+                </span>
+                <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25">
+                    Listo para Retiro
+                </span>
+            </div>
+            <div class="card-body p-4">
+                <div class="text-center pb-3 border-bottom mb-3">
+                    <div class="font-mono fs-4 fw-bold text-dark">@Model.CodigoSeguimiento</div>
+                    <small class="text-muted">Rótulo QR Verificado en Depósito</small>
+                </div>
+
+                <table class="table table-sm table-borderless small mb-0">
+                    <tr>
+                        <td class="text-muted w-40">Familia Titular:</td>
+                        <td class="fw-bold text-dark">@(pkg?.FamiliaTitular ?? "-")</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">DNI Titular:</td>
+                        <td class="font-mono fw-bold text-dark">@(pkg?.DniTitular ?? "-")</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Kit Asignado:</td>
+                        <td><span class="badge bg-light text-dark border">@(pkg?.TipoPaqueteNombre ?? "-")</span></td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Domicilio:</td>
+                        <td class="text-secondary">@(pkg?.Direccion ?? "-")</td>
+                    </tr>
+                </table>
+
+                <h6 class="fw-bold text-secondary mt-4 mb-2 small text-uppercase">
+                    <i class="bi bi-basket me-1 text-success"></i> Contenido Físico del Paquete
+                </h6>
+                <div class="table-responsive">
+                    <table class="table table-sm table-bordered align-middle mb-0 small">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Alimento</th>
+                                <th>Lote</th>
+                                <th class="text-end">Cant.</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (pkg?.Alimentos != null)
+                            {
+                                foreach (var itm in pkg.Alimentos)
+                                {
+                                    <tr>
+                                        <td>
+                                            @itm.NombreProducto
+                                            @if (itm.EsSustituto)
+                                            {
+                                                <span class="badge bg-warning text-dark ms-1" style="font-size: 0.68rem;">Sustituto</span>
+                                            }
+                                        </td>
+                                        <td><span class="font-mono small">@itm.NumeroLote</span></td>
+                                        <td class="text-end fw-bold text-success">@itm.Cantidad.ToString("N0") u.</td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FORMULARIO DE DESPACHO Y FIRMA DIGITAL -->
+    <div class="col-lg-7">
+        <form asp-action="Despachar" method="post" id="formDespacho">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="CodigoSeguimiento" />
+            <input type="hidden" asp-for="FirmaDigital" id="inputFirmaBase64" />
+
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger mb-4 shadow-sm border-start border-4 border-danger" role="alert"></div>
+
+            <div class="card card-nr border-0 shadow-sm mb-4">
+                <div class="card-nr-header bg-light">
+                    <span class="fw-bold text-dark">
+                        <i class="bi bi-person-check text-primary me-2"></i>Validación del Receptor (RF3)
+                    </span>
+                </div>
+                <div class="card-body p-4">
+                    <!-- Selector Titular o Tercero -->
+                    <div class="mb-3">
+                        <label asp-for="TipoReceptor" class="form-label fw-semibold"></label>
+                        <div class="d-flex gap-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" asp-for="TipoReceptor" id="radioTitular" value="@((int)TipoReceptor.Titular)" checked>
+                                <label class="form-check-label fw-semibold" for="radioTitular">
+                                    <i class="bi bi-person-fill text-success me-1"></i> Titular del Legajo
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" asp-for="TipoReceptor" id="radioTercero" value="@((int)TipoReceptor.TerceroAutorizado)">
+                                <label class="form-check-label fw-semibold" for="radioTercero">
+                                    <i class="bi bi-people-fill text-primary me-1"></i> Tercero Autorizado
+                                </label>
+                            </div>
+                        </div>
+                        <span asp-validation-for="TipoReceptor" class="text-danger small"></span>
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label asp-for="DniReceptor" class="form-label fw-semibold"></label>
+                            <input asp-for="DniReceptor" class="form-control font-mono" id="inputDniReceptor" placeholder="DNI sin puntos" />
+                            <span asp-validation-for="DniReceptor" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label asp-for="NombreReceptor" class="form-label fw-semibold"></label>
+                            <input asp-for="NombreReceptor" class="form-control" id="inputNombreReceptor" placeholder="Nombre y Apellido" />
+                            <span asp-validation-for="NombreReceptor" class="text-danger small"></span>
+                        </div>
+
+                        <!-- Vínculo con el Titular (Obligatorio para Tercero) -->
+                        <div class="col-12 d-none" id="grpVinculo">
+                            <label asp-for="VinculoConTitular" class="form-label fw-semibold text-danger">Parentesco / Vínculo con el Titular *</label>
+                            <input asp-for="VinculoConTitular" class="form-control" id="inputVinculo" placeholder="Ej: Cónyuge, Hijo/a mayor, Hermano/a, Vecino autorizado" />
+                            <span asp-validation-for="VinculoConTitular" class="text-danger small"></span>
+                            <small class="text-muted">Requerimiento RF3: Es obligatorio especificar el vínculo cuando no retira el titular.</small>
+                        </div>
+
+                        <div class="col-12">
+                            <label asp-for="VoluntarioDespachoId" class="form-label fw-semibold"></label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light text-muted"><i class="bi bi-person-badge"></i></span>
+                                <input asp-for="VoluntarioDespachoId" class="form-control" readonly />
+                            </div>
+                            <span asp-validation-for="VoluntarioDespachoId" class="text-danger small"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- LIENZO DE FIRMA DIGITAL MANUSCRITA (HTML5 CANVAS) -->
+            <div class="card card-nr border-0 shadow-sm mb-4">
+                <div class="card-nr-header bg-light d-flex justify-content-between align-items-center">
+                    <span class="fw-bold text-dark">
+                        <i class="bi bi-pen text-success me-2"></i>Firma Digital del Receptor (RF3)
+                    </span>
+                    <button type="button" id="btnLimpiarCanvas" class="btn btn-sm btn-outline-secondary">
+                        <i class="bi bi-eraser me-1"></i> Limpiar Trazo
+                    </button>
+                </div>
+                <div class="card-body p-4 text-center">
+                    <p class="text-muted small mb-2">
+                        Por favor, solicite al receptor firmar dentro del recuadro usando el ratón, lápiz óptico o pantalla táctil:
+                    </p>
+
+                    <div class="d-inline-block border rounded-3 p-2 bg-light shadow-sm" style="max-width: 100%;">
+                        <canvas id="signatureCanvas" width="480" height="180" style="background: #ffffff; border: 1px dashed #94a3b8; border-radius: 6px; cursor: crosshair; touch-action: none; width: 100%; max-width: 480px;"></canvas>
+                    </div>
+
+                    <span asp-validation-for="FirmaDigital" class="text-danger small d-block mt-2" id="errorFirma"></span>
+
+                    <div class="alert alert-light border small text-muted text-start mt-3 mb-0">
+                        <i class="bi bi-shield-lock me-1 text-success"></i>
+                        <strong>Constancia Inmutable:</strong> La firma manuscrita será convertida a formato digital criptográfico Base64 y quedará asociada de manera permanente a este despacho y comprobante oficial.
+                    </div>
+                </div>
+            </div>
+
+            <!-- ACCIÓN FINAL -->
+            <div class="text-end mb-5">
+                <button type="submit" id="btnConfirmarDespacho" class="btn btn-emerald btn-lg px-5 shadow">
+                    <i class="bi bi-check2-circle me-2"></i> Confirmar Entrega y Emitir Comprobante
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- MODAL: REGISTRAR ENTREGA NO CONCRETADA -->
+<div class="modal fade" id="modalNoConcretada" tabindex="-1" aria-labelledby="modalNoConcretadaLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content border-0 shadow">
+            <form asp-action="RegistrarNoConcretada" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="CodigoSeguimiento" value="@Model.CodigoSeguimiento" />
+                <input type="hidden" name="VoluntarioDespachoId" value="@Model.VoluntarioDespachoId" />
+
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title" id="modalNoConcretadaLabel">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>Registrar Entrega Fallida
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <p class="text-secondary small">
+                        Indique el motivo por el cual la caja <strong>@Model.CodigoSeguimiento</strong> no pudo ser entregada a la familia <strong>@(pkg?.FamiliaTitular)</strong>:
+                    </p>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Motivo de no entrega</label>
+                        <select name="MotivoNoEntrega" class="form-select" required>
+                            <option value="">-- Seleccionar motivo --</option>
+                            <option value="Titular ausente en domicilio">Titular ausente en domicilio / retiro</option>
+                            <option value="Rechazado por el destinatario">Rechazado por el destinatario</option>
+                            <option value="Domicilio o persona inubicable">Domicilio o persona inubicable</option>
+                            <option value="Falta de documentación o autorización">Falta de documentación o autorización</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-check-circle me-1"></i> Asentar Intento Fallido
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            // 1. Manejo de Tipo de Receptor (Titular vs Tercero)
+            const radioTitular = document.getElementById("radioTitular");
+            const radioTercero = document.getElementById("radioTercero");
+            const grpVinculo = document.getElementById("grpVinculo");
+            const inputVinculo = document.getElementById("inputVinculo");
+            const inputDni = document.getElementById("inputDniReceptor");
+            const inputNombre = document.getElementById("inputNombreReceptor");
+
+            const titularDniOriginal = "@(pkg?.DniTitular?.Replace(".", "") ?? "")";
+            const titularNombreOriginal = "@(pkg?.FamiliaTitular ?? "")";
+
+            // Restringir entrada a solo números en tiempo real
+            inputDni.addEventListener("input", function () {
+                this.value = this.value.replace(/\D/g, "");
+            });
+
+            function actualizarReceptor() {
+                if (radioTitular.checked) {
+                    grpVinculo.classList.add("d-none");
+                    inputVinculo.required = false;
+                    inputVinculo.value = "";
+                    inputDni.value = titularDniOriginal;
+                    inputNombre.value = titularNombreOriginal;
+                } else {
+                    grpVinculo.classList.remove("d-none");
+                    inputVinculo.required = true;
+                    inputVinculo.value = "";
+                    inputDni.value = "";
+                    inputNombre.value = "";
+                    inputDni.focus();
+                }
+            }
+
+            radioTitular.addEventListener("change", actualizarReceptor);
+            radioTercero.addEventListener("change", actualizarReceptor);
+
+            // 2. Lienzo HTML5 Canvas para Firma Digital Manuscrita
+            const canvas = document.getElementById("signatureCanvas");
+            const ctx = canvas.getContext("2d");
+            const btnLimpiar = document.getElementById("btnLimpiarCanvas");
+            const inputFirmaBase64 = document.getElementById("inputFirmaBase64");
+            const formDespacho = document.getElementById("formDespacho");
+            const errorFirma = document.getElementById("errorFirma");
+
+            let dibujando = false;
+            let trazosRealizados = 0;
+
+            ctx.strokeStyle = "#0f172a";
+            ctx.lineWidth = 2.5;
+            ctx.lineCap = "round";
+            ctx.lineJoin = "round";
+
+            function obtenerPosicion(e) {
+                const rect = canvas.getBoundingClientRect();
+                const scaleX = canvas.width / rect.width;
+                const scaleY = canvas.height / rect.height;
+
+                let clientX = e.clientX;
+                let clientY = e.clientY;
+
+                if (e.touches && e.touches.length > 0) {
+                    clientX = e.touches[0].clientX;
+                    clientY = e.touches[0].clientY;
+                }
+
+                return {
+                    x: (clientX - rect.left) * scaleX,
+                    y: (clientY - rect.top) * scaleY
+                };
+            }
+
+            function iniciarTrazo(e) {
+                e.preventDefault();
+                dibujando = true;
+                const pos = obtenerPosicion(e);
+                ctx.beginPath();
+                ctx.moveTo(pos.x, pos.y);
+            }
+
+            function moverTrazo(e) {
+                if (!dibujando) return;
+                e.preventDefault();
+                const pos = obtenerPosicion(e);
+                ctx.lineTo(pos.x, pos.y);
+                ctx.stroke();
+                trazosRealizados++;
+            }
+
+            function terminarTrazo() {
+                dibujando = false;
+            }
+
+            // Eventos Ratón
+            canvas.addEventListener("mousedown", iniciarTrazo);
+            canvas.addEventListener("mousemove", moverTrazo);
+            window.addEventListener("mouseup", terminarTrazo);
+
+            // Eventos Táctiles (Celular, Tablet, Touchscreen)
+            canvas.addEventListener("touchstart", iniciarTrazo, { passive: false });
+            canvas.addEventListener("touchmove", moverTrazo, { passive: false });
+            canvas.addEventListener("touchend", terminarTrazo);
+
+            btnLimpiar.addEventListener("click", function () {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                trazosRealizados = 0;
+                inputFirmaBase64.value = "";
+                if (errorFirma) errorFirma.textContent = "";
+            });
+
+            // Validación al enviar el formulario
+            formDespacho.addEventListener("submit", function (e) {
+                if (trazosRealizados < 8) {
+                    e.preventDefault();
+                    if (errorFirma) errorFirma.textContent = "Firma digital vacía: Impedir la confirmación de la entrega si el campo de firma está vacío.";
+                    alert("Requerimiento RF3: Es obligatorio capturar la firma digital manuscrita en el recuadro antes de despachar.");
+                    canvas.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    return false;
+                }
+
+                // Convertir lienzo a imagen Base64
+                inputFirmaBase64.value = canvas.toDataURL("image/png");
+            });
+        });
+    </script>
+}

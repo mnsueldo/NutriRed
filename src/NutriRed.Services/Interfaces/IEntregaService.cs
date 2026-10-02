@@ -1,3 +1,4 @@
+using NutriRed.Domain.Enums;
 using NutriRed.Services.Common;
 using NutriRed.Services.DTOs;
 
@@ -10,4 +11,5 @@ public interface IEntregaService
     Task<OperationResult<ComprobanteEntregaDto>> ConfirmarEntregaAsync(RegistrarEntregaRequest request);
     Task<OperationResult> RegistrarEntregaNoConcretadaAsync(RegistrarEntregaFallidaRequest request);
     Task<OperationResult<ComprobanteEntregaDto>> ObtenerComprobanteEntregaAsync(int entregaId);
+    Task<OperationResult<IEnumerable<PaqueteDespachoHistorialDto>>> ObtenerHistorialDespachosAsync(EstadoPaquete? estado = null);
 }

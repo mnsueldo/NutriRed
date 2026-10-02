@@ -53,3 +53,26 @@ public class ComprobanteEntregaDto
     public string? MotivoNoEntrega { get; set; }
     public List<PaqueteItemDto> AlimentosEntregados { get; set; } = new();
 }
+
+public class PaqueteDespachoHistorialDto
+{
+    public int PaqueteId { get; set; }
+    public string CodigoSeguimiento { get; set; } = string.Empty;
+    public int FamiliaId { get; set; }
+    public string FamiliaTitular { get; set; } = string.Empty;
+    public string DniTitular { get; set; } = string.Empty;
+    public string TipoPaqueteNombre { get; set; } = string.Empty;
+    public EstadoPaquete Estado { get; set; }
+    public DateTime FechaCreacion { get; set; }
+    public int CantidadVariedades { get; set; }
+    public decimal TotalUnidades { get; set; }
+    public bool TieneEntrega { get; set; }
+    public bool? EntregaConcretada { get; set; }
+    public int? EntregaId { get; set; }
+    public DateTime? FechaEntrega { get; set; }
+    public string? ReceptorNombre { get; set; }
+    public TipoReceptor? TipoReceptor { get; set; }
+    public string? MotivoNoEntrega { get; set; }
+    public List<PaqueteItemDto> Alimentos { get; set; } = new();
+}
+

@@ -1,0 +1,241 @@
+@model NutriRed.Services.DTOs.ComprobanteEntregaDto
+@using NutriRed.Domain.Enums
+
+@{
+    ViewData["Title"] = $"Constancia de Entrega {Model.CodigoSeguimiento}";
+    string firmaSrc = Model.FirmaDigital.StartsWith("data:")
+        ? Model.FirmaDigital
+        : $"data:image/png;base64,{Model.FirmaDigital}";
+}
+
+<style>
+    @@media print {
+        header, footer, .no-print, .navbar, .btn {
+            display: none !important;
+        }
+        body {
+            background-color: #ffffff !important;
+            color: #000000 !important;
+            font-size: 11pt;
+        }
+        .comprobante-hoja {
+            border: none !important;
+            box-shadow: none !important;
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+        .table {
+            border-color: #dee2e6 !important;
+        }
+    }
+
+    .comprobante-hoja {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 2.5rem;
+    }
+
+    .firma-box {
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        background: #f8fafc;
+        padding: 10px;
+        display: inline-block;
+        min-width: 250px;
+        max-width: 320px;
+    }
+</style>
+
+<!-- Barra Superior de Acciones (No se imprime) -->
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2 no-print">
+    <div>
+        <a asp-action="Index" class="btn btn-outline-secondary me-2">
+            <i class="bi bi-arrow-left me-1"></i> Volver a Despacho
+        </a>
+    </div>
+    <div class="d-flex gap-2">
+        <button onclick="window.print()" class="btn btn-primary px-3 shadow-sm">
+            <i class="bi bi-printer me-2"></i> Imprimir Constancia de Entrega
+        </button>
+    </div>
+</div>
+
+<partial name="_Alertas" />
+
+<!-- Hoja de Comprobante Oficial -->
+<div class="comprobante-hoja shadow-sm mb-5">
+    <!-- Encabezado Institucional -->
+    <div class="row align-items-center pb-4 border-bottom mb-4">
+        <div class="col-sm-7">
+            <div class="d-flex align-items-center gap-3">
+                <div class="brand-icon bg-emerald-light text-success p-3 rounded-3 fs-3">
+                    <i class="bi bi-box2-heart-fill"></i>
+                </div>
+                <div>
+                    <h3 class="fw-bold mb-0 text-dark">NutriRed</h3>
+                    <div class="text-muted small">SISTEMA INTELIGENTE DE BANCO DE ALIMENTOS</div>
+                    <small class="text-secondary">Constancia Oficial de Despacho y Entrega Asistencial (RF3)</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-5 text-sm-end mt-3 mt-sm-0">
+            <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-3 py-2 fs-6 mb-1 d-inline-block">
+                ENTREGA CONCRETADA
+            </span>
+            <div class="font-mono fs-4 fw-bold text-dark mt-1">@Model.CodigoSeguimiento</div>
+            <div class="text-muted small">
+                <i class="bi bi-calendar3 me-1"></i> @Model.FechaHoraEntrega.ToString("dd/MM/yyyy HH:mm") hs
+            </div>
+        </div>
+    </div>
+
+    <!-- Bloque de Información del Receptor y Operador -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-6">
+            <div class="p-3 bg-light rounded-3 border h-100">
+                <h6 class="fw-bold text-secondary mb-3">
+                    <i class="bi bi-person-badge text-primary me-2"></i>Receptor Acreditado
+                </h6>
+                <table class="table table-sm table-borderless mb-0 small">
+                    <tr>
+                        <td class="text-muted w-40">Nombre Receptor:</td>
+                        <td class="fw-bold text-dark fs-6">@Model.NombreReceptor</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">DNI Receptor:</td>
+                        <td class="font-mono fw-bold">@Model.DniReceptor</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Condición:</td>
+                        <td>
+                            @if (Model.TipoReceptor == TipoReceptor.Titular)
+                            {
+                                <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25">
+                                    Titular del Legajo Familiar
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25">
+                                    Tercero Autorizado (@Model.VinculoConTitular)
+                                </span>
+                            }
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Familia Destinataria:</td>
+                        <td class="text-dark">@Model.FamiliaTitular (DNI: @Model.DniFamilia)</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="p-3 bg-light rounded-3 border h-100">
+                <h6 class="fw-bold text-secondary mb-3">
+                    <i class="bi bi-shield-check text-success me-2"></i>Datos de Fiscalización y Entrega
+                </h6>
+                <table class="table table-sm table-borderless mb-0 small">
+                    <tr>
+                        <td class="text-muted w-40">Operador Despacho:</td>
+                        <td class="fw-bold text-dark">@Model.VoluntarioDespachoId</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Modalidad:</td>
+                        <td class="text-dark">Sede Central / Depósito Presencial</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">ID de Entrega:</td>
+                        <td class="font-mono text-muted">#@Model.EntregaId</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Inmutabilidad:</td>
+                        <td>
+                            <span class="badge bg-light text-secondary border font-mono">
+                                Blindado / Inmutable
+                            </span>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detalle de Alimentos Entregados -->
+    <h6 class="fw-bold text-dark mb-3">
+        <i class="bi bi-box2 me-1 text-success"></i> Alimentos Retirados
+    </h6>
+
+    <div class="table-responsive mb-4">
+        <table class="table table-bordered align-middle">
+            <thead class="table-light small">
+                <tr>
+                    <th class="text-center" style="width: 40px;">#</th>
+                    <th>Alimento</th>
+                    <th>Código EAN</th>
+                    <th>Lote Entregado</th>
+                    <th>Vencimiento</th>
+                    <th class="text-end">Cantidad</th>
+                </tr>
+            </thead>
+            <tbody>
+                @for (int i = 0; i < Model.AlimentosEntregados.Count; i++)
+                {
+                    var itm = Model.AlimentosEntregados[i];
+                    <tr>
+                        <td class="text-center small text-muted">@(i + 1)</td>
+                        <td class="fw-semibold text-dark">
+                            @itm.NombreProducto
+                            @if (itm.EsSustituto)
+                            {
+                                <span class="badge bg-warning text-dark ms-1" style="font-size: 0.7rem;">Sustituto</span>
+                            }
+                        </td>
+                        <td><span class="code-tag font-mono">@itm.CodigoBarras</span></td>
+                        <td><span class="font-mono small">@itm.NumeroLote</span></td>
+                        <td class="small">@itm.FechaVencimiento.ToString("dd/MM/yyyy")</td>
+                        <td class="text-end fw-bold text-success">@itm.Cantidad.ToString("N0") u.</td>
+                    </tr>
+                }
+            </tbody>
+            <tfoot class="table-light fw-bold">
+                <tr>
+                    <td colspan="5" class="text-end">TOTAL DE ALIMENTOS ENTREGADOS:</td>
+                    <td class="text-end text-success fs-5">
+                        @Model.AlimentosEntregados.Sum(x => x.Cantidad).ToString("N0") u.
+                    </td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+
+    <!-- Firma Digital Manuscrita Estampada -->
+    <div class="row pt-4 mt-3 border-top align-items-center">
+        <div class="col-sm-6 text-center text-sm-start mb-3 mb-sm-0">
+            <small class="text-muted d-block mb-2 fw-semibold">Firma Manuscrita Registrada:</small>
+            <div class="firma-box shadow-sm">
+                @if (!string.IsNullOrWhiteSpace(Model.FirmaDigital))
+                {
+                    <img src="@firmaSrc" alt="Firma Digital del Receptor" class="img-fluid" style="max-height: 100px; display: block; margin: 0 auto;" />
+                }
+                else
+                {
+                    <span class="text-muted small">Sin firma registrada</span>
+                }
+            </div>
+            <div class="mt-2">
+                <small class="fw-bold d-block text-dark">@Model.NombreReceptor</small>
+                <small class="text-muted font-mono">DNI: @Model.DniReceptor</small>
+            </div>
+        </div>
+
+        <div class="col-sm-6 text-center text-sm-end">
+            <div class="border-top border-dark d-inline-block pt-2 text-center" style="min-width: 200px;">
+                <small class="fw-bold d-block text-dark">Operador Responsable</small>
+                <small class="text-muted">@Model.VoluntarioDespachoId</small>
+                <small class="text-secondary d-block font-mono" style="font-size: 0.72rem;">NutriRed Depósito Central</small>
+            </div>
+        </div>
+    </div>
+</div>

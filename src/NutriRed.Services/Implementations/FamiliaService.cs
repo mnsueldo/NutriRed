@@ -80,7 +80,7 @@ public class FamiliaService : IFamiliaService
                 return OperationResult<FamiliaBeneficiaria>.Fail("El DNI no puede estar vacío.");
             }
 
-            var dniNormalizado = dni.Trim();
+            var dniNormalizado = System.Text.RegularExpressions.Regex.Replace(dni ?? "", @"\D", "");
 
             var familia = await _context.FamiliasBeneficiarias
                 .AsNoTracking()
@@ -103,7 +103,7 @@ public class FamiliaService : IFamiliaService
     {
         try
         {
-            var dniNormalizado = familia.DniTitular.Trim();
+            var dniNormalizado = System.Text.RegularExpressions.Regex.Replace(familia.DniTitular ?? "", @"\D", "");
 
             // Regla de Negocio: DNI de titular único
             bool yaExiste = await _context.FamiliasBeneficiarias
@@ -148,7 +148,7 @@ public class FamiliaService : IFamiliaService
                 return OperationResult<FamiliaBeneficiaria>.Fail("La familia que intenta actualizar no existe.");
             }
 
-            var dniNormalizado = familia.DniTitular.Trim();
+            var dniNormalizado = System.Text.RegularExpressions.Regex.Replace(familia.DniTitular ?? "", @"\D", "");
 
             // Regla de Negocio: No duplicar DNI con otra familia
             bool dniDuplicado = await _context.FamiliasBeneficiarias

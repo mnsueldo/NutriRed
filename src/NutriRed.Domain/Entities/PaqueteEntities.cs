@@ -7,10 +7,18 @@ public class FamiliaBeneficiaria
 {
     public int Id { get; set; }
 
+    private string _dniTitular = string.Empty;
+
     [Required(ErrorMessage = "El DNI del titular es obligatorio.")]
     [RegularExpression(@"^\d{7,8}$", ErrorMessage = "El DNI debe contener entre 7 y 8 dígitos numéricos, sin puntos ni espacios.")]
     [Display(Name = "DNI del Titular")]
-    public string DniTitular { get; set; } = string.Empty;
+    public string DniTitular
+    {
+        get => _dniTitular;
+        set => _dniTitular = string.IsNullOrWhiteSpace(value)
+            ? string.Empty
+            : System.Text.RegularExpressions.Regex.Replace(value, @"\D", "");
+    }
 
     [Required(ErrorMessage = "El nombre del titular es obligatorio.")]
     [StringLength(100, ErrorMessage = "El nombre no puede superar los 100 caracteres.")]

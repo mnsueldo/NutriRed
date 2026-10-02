@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using NutriRed.Domain.Entities;
 using NutriRed.Domain.Enums;
+using NutriRed.Services.Common;
 using NutriRed.Services.DTOs;
 using NutriRed.Services.Interfaces;
 using NutriRed.Web.Models;
@@ -236,15 +237,24 @@ public class PaquetesController : Controller
         return RedirectToAction(nameof(Detalles), new { id = result.Data.Id });
     }
 
-    // GET: Paquetes/Detalles/5
-    public async Task<IActionResult> Detalles(int id)
+    // GET: Paquetes/Detalles/5 o Paquetes/Detalles?codigo=PKG-2026-00001
+    public async Task<IActionResult> Detalles(int? id, string? codigo = null)
     {
-        if (id <= 0)
+        OperationResult<PaqueteDto> result;
+
+        if (!string.IsNullOrWhiteSpace(codigo))
+        {
+            result = await _paqueteService.ObtenerPorCodigoSeguimientoAsync(codigo.Trim());
+        }
+        else if (id.HasValue && id.Value > 0)
+        {
+            result = await _paqueteService.ObtenerPorIdAsync(id.Value);
+        }
+        else
         {
             return NotFound();
         }
 
-        var result = await _paqueteService.ObtenerPorIdAsync(id);
         if (!result.Success || result.Data == null)
         {
             TempData["Error"] = result.ErrorMessage ?? "No se encontró el paquete solicitado.";
