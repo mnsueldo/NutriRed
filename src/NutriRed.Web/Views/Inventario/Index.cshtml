@@ -1,0 +1,445 @@
+﻿@model IEnumerable<NutriRed.Services.DTOs.StockProductoDto>
+@{
+    ViewData["Title"] = "Stock Consolidado & FEFO";
+
+    // Métricas de resumen calculadas automáticamente
+    var totalProductos = Model.Count();
+    var stockTotal = Model.Sum(x => x.StockActual);
+    var productosEnAlerta = Model.Count(x => x.ProximoVencimiento.HasValue &&
+        (x.ProximoVencimiento.Value.Date - DateTime.Today).Days > 0 &&
+        (x.ProximoVencimiento.Value.Date - DateTime.Today).Days <= 15);
+    var productosVencidos = Model.Count(x => x.ProximoVencimiento.HasValue &&
+        (x.ProximoVencimiento.Value.Date - DateTime.Today).Days <= 0);
+}
+
+<style>
+    /* Badges de Categoría con ancho fijo y texto truncado si es muy largo */
+    .badge-categoria-fijo {
+        width: 175px;
+        display: inline-block;
+        text-align: center;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        padding: 6px 10px;
+        font-size: 0.81rem;
+        font-weight: 500;
+        vertical-align: middle;
+    }
+
+    /* Badges de Estado FEFO con ancho fijo y formato píldora */
+    .badge-fefo-fijo {
+        width: 125px;
+        display: inline-block;
+        text-align: center;
+        padding: 6px 10px;
+        font-size: 0.82rem;
+        font-weight: 600;
+        border-radius: 50rem;
+        vertical-align: middle;
+    }
+
+    /* Paleta de colores temáticos FEFO */
+    .fefo-optimo {
+        background-color: #d1e7dd;
+        color: #0f5132;
+        border: 1px solid #badbcc;
+    }
+
+    .fefo-atencion {
+        background-color: #fff3cd;
+        color: #664d03;
+        border: 1px solid #ffecb5;
+    }
+
+    .fefo-urgente {
+        background-color: #ffe5d0;
+        color: #842029;
+        border: 1px solid #fecba1;
+    }
+
+    .fefo-critico {
+        background-color: #f8d7da;
+        color: #842029;
+        border: 1px solid #f5c2c7;
+    }
+
+    .fefo-sin-stock {
+        background-color: #e2e3e5;
+        color: #41464b;
+        border: 1px solid #d3d6d8;
+    }
+</style>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold text-dark mb-1">
+            <i class="bi bi-hourglass-split text-warning"></i> Stock Consolidado & FEFO
+        </h2>
+        <p class="text-muted mb-0">Gestión de existencias por alimento y semáforo de vencimiento de primer ingreso/primer egreso.</p>
+    </div>
+    <div>
+        <a asp-action="RegistrarMerma" class="btn btn-outline-danger shadow-sm fw-semibold">
+            <i class="bi bi-trash me-1"></i> Registrar Merma / Baja
+        </a>
+    </div>
+</div>
+
+<!-- TARJETAS DE RESUMEN (KPIS SOLO LECTURA) -->
+<div class="row g-3 mb-4">
+    <!-- 1. Total de productos -->
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="card border-0 shadow-sm h-100 py-1">
+            <div class="card-body d-flex align-items-center py-2 px-3">
+                <div class="rounded-circle bg-success bg-opacity-10 p-3 me-3 d-flex align-items-center justify-content-center" style="width: 52px; height: 52px;">
+                    <i class="bi bi-box-seam-fill text-success fs-3"></i>
+                </div>
+                <div>
+                    <span class="text-secondary small fw-semibold d-block">Total de productos</span>
+                    <h3 class="fw-bold text-dark mb-0">@totalProductos</h3>
+                    <small class="text-primary fw-normal">alimentos diferentes</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. Stock disponible -->
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="card border-0 shadow-sm h-100 py-1">
+            <div class="card-body d-flex align-items-center py-2 px-3">
+                <div class="rounded-circle bg-primary bg-opacity-10 p-3 me-3 d-flex align-items-center justify-content-center" style="width: 52px; height: 52px;">
+                    <i class="bi bi-archive-fill text-primary fs-3"></i>
+                </div>
+                <div>
+                    <span class="text-secondary small fw-semibold d-block">Stock disponible</span>
+                    <h3 class="fw-bold text-dark mb-0">@stockTotal.ToString("N0") <span class="fs-6 text-muted fw-normal">kg / L / u</span></h3>
+                    <small class="text-primary fw-normal">cantidad total</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. Productos en alerta -->
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="card border-0 shadow-sm h-100 py-1">
+            <div class="card-body d-flex align-items-center py-2 px-3">
+                <div class="rounded-circle bg-warning bg-opacity-10 p-3 me-3 d-flex align-items-center justify-content-center" style="width: 52px; height: 52px;">
+                    <i class="bi bi-exclamation-triangle-fill text-warning fs-3"></i>
+                </div>
+                <div>
+                    <span class="text-secondary small fw-semibold d-block">Productos en alerta</span>
+                    <h3 class="fw-bold text-dark mb-0">@productosEnAlerta</h3>
+                    <small class="text-primary fw-normal">por vencimiento próximo</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. Productos vencidos -->
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="card border-0 shadow-sm h-100 py-1">
+            <div class="card-body d-flex align-items-center py-2 px-3">
+                <div class="rounded-circle bg-danger bg-opacity-10 p-3 me-3 d-flex align-items-center justify-content-center" style="width: 52px; height: 52px;">
+                    <i class="bi bi-exclamation-circle-fill text-danger fs-3"></i>
+                </div>
+                <div>
+                    <span class="text-secondary small fw-semibold d-block">Productos vencidos</span>
+                    <h3 class="fw-bold text-dark mb-0">@productosVencidos</h3>
+                    <small class="text-primary fw-normal">requieren atención inmediata</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- BARRA DE FILTROS EN TIEMPO REAL -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body p-3">
+        <div class="row g-3 align-items-end">
+            <!-- 1. Buscador por Nombre o Código de Barras (EAN) -->
+            <div class="col-md-4">
+                <label for="txtBuscar" class="form-label small fw-semibold text-secondary mb-1">Buscar producto</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-white text-muted border-end-0">
+                        <i class="bi bi-search"></i>
+                    </span>
+                    <input type="text"
+                           id="txtBuscar"
+                           class="form-control border-start-0 ps-0"
+                           placeholder="-- Escriba el nombre o código de barras (EAN) --" />
+                </div>
+            </div>
+
+            <!-- 2. Filtro Categoría -->
+            <div class="col-md-3">
+                <label for="cboCategoria" class="form-label small fw-semibold text-secondary mb-1">Categoría</label>
+                <select id="cboCategoria" class="form-select">
+                    <option value="">Todas</option>
+                    @if (ViewBag.Categorias != null)
+                    {
+                        foreach (var cat in (IEnumerable<string>)ViewBag.Categorias)
+                        {
+                            <option value="@cat">@cat</option>
+                        }
+                    }
+                </select>
+            </div>
+
+            <!-- 3. Filtro Estado de lote -->
+            <div class="col-md-2">
+                <label for="cboEstadoLote" class="form-label small fw-semibold text-secondary mb-1">Estado de lote</label>
+                <select id="cboEstadoLote" class="form-select">
+                    <option value="">Todos</option>
+                    <option value="disponible">Con Stock / Disponible</option>
+                    <option value="reponer">Bajo Stock Mínimo</option>
+                    <option value="sinstock">Sin Stock</option>
+                </select>
+            </div>
+
+            <!-- 4. Filtro Semáforo FEFO -->
+            <div class="col-md-3">
+                <label for="cboFefo" class="form-label small fw-semibold text-secondary mb-1">Semáforo FEFO</label>
+                <select id="cboFefo" class="form-select">
+                    <option value="">Todos</option>
+                    <option value="optimo">🟢 FEFO Óptimo (> 15 días)</option>
+                    <option value="atencion">🟡 FEFO Atención (≤ 15 días)</option>
+                    <option value="urgente">🟠 FEFO Urgente (≤ 5 días)</option>
+                    <option value="critico">🔴 FEFO Crítico (Vencido)</option>
+                </select>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- TABLA DE PRODUCTOS -->
+<div class="card border-0 shadow-sm">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0" id="tablaStock">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-3" style="width: 27%;">Alimento</th>
+                        <th class="text-center" style="width: 18%;">Categoría</th>
+                        <th class="text-center" style="width: 15%;">Stock Actual</th>
+                        <th class="text-center" style="width: 13%;">Stock Mínimo</th>
+                        <th class="text-center" style="width: 13%;">Próximo Vencimiento</th>
+                        <th class="text-center" style="width: 14%;">Estado FEFO</th>
+                        <th class="text-center pe-3" style="width: 10%;">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.Any())
+                    {
+                        <tr>
+                            <td colspan="7" class="text-center py-4 text-muted">
+                                No hay productos registrados con existencias en el depósito.
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var item in Model)
+                        {
+                            var tieneVencimiento = item.ProximoVencimiento.HasValue;
+                            var dias = tieneVencimiento ? (item.ProximoVencimiento!.Value.Date - DateTime.Today).Days : 999;
+                            bool requiereReposicion = item.StockActual <= item.StockMinimo;
+
+                            string estadoLoteVal = item.StockActual == 0 ? "sinstock" : (requiereReposicion ? "reponer" : "disponible");
+                            string fefoVal = !tieneVencimiento ? "sinstock" : (dias <= 0 ? "critico" : (dias <= 5 ? "urgente" : (dias <= 15 ? "atencion" : "optimo")));
+
+                            <tr class="fila-producto"
+                                data-busqueda="@(item.NombreProducto.ToLower()) @(item.CodigoBarras.ToLower())"
+                                data-categoria="@item.Categoria"
+                                data-estado-lote="@estadoLoteVal"
+                                data-fefo="@fefoVal">
+
+                                <!-- Alimento -->
+                                <td class="ps-3 py-3">
+                                    <div class="fw-bold text-dark mb-0" style="font-size: 0.95rem;">@item.NombreProducto</div>
+                                    <small class="text-muted font-monospace" style="font-size: 0.78rem;">EAN: @item.CodigoBarras</small>
+                                </td>
+
+                                <!-- Categoría (Badges de ancho fijo) -->
+                                <td class="text-center">
+                                    <span class="badge bg-secondary badge-categoria-fijo" title="@item.Categoria">
+                                        @item.Categoria
+                                    </span>
+                                </td>
+
+                                <!-- Stock Actual -->
+                                <td class="text-center">
+                                    <div class="fw-bold text-dark fs-6">
+                                        @item.StockActual.ToString("N0") <span class="fw-normal text-secondary fs-7">@item.UnidadMedida</span>
+                                    </div>
+                                    @if (requiereReposicion)
+                                    {
+                                        <div class="mt-1">
+                                            <span class="badge bg-danger bg-opacity-90 px-2 py-1" style="font-size: 0.72rem;" title="Existencias bajo el stock mínimo">
+                                                <i class="bi bi-arrow-down-square-fill me-1"></i>Reponer
+                                            </span>
+                                        </div>
+                                    }
+                                </td>
+
+                                <!-- Stock Mínimo -->
+                                <td class="text-center text-secondary" style="font-size: 0.9rem;">
+                                    @item.StockMinimo.ToString("N0") @item.UnidadMedida
+                                </td>
+
+                                <!-- Próximo Vencimiento -->
+                                <td class="text-center">
+                                    @if (tieneVencimiento)
+                                    {
+                                        <span class="font-monospace text-dark fw-medium" style="font-size: 0.88rem;">
+                                            @item.ProximoVencimiento!.Value.ToString("dd/MM/yyyy")
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-light text-secondary border font-monospace px-2 py-1" style="font-size: 0.78rem;">
+                                            Sin Lotes
+                                        </span>
+                                    }
+                                </td>
+
+                                <!-- Estado FEFO (Semáforo estandarizado) -->
+                                <td class="text-center">
+                                    @if (!tieneVencimiento)
+                                    {
+                                        <span class="badge-fefo-fijo fefo-sin-stock">Sin Stock</span>
+                                    }
+                                    else if (dias <= 0)
+                                    {
+                                        <span class="badge-fefo-fijo fefo-critico">🔴 Vencido</span>
+                                    }
+                                    else if (dias <= 5)
+                                    {
+                                        <span class="badge-fefo-fijo fefo-urgente">🟠 (@dias días)</span>
+                                    }
+                                    else if (dias <= 15)
+                                    {
+                                        <span class="badge-fefo-fijo fefo-atencion">🟡 (@dias días)</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge-fefo-fijo fefo-optimo">🟢 (@dias días)</span>
+                                    }
+                                </td>
+
+                                <!-- Acciones -->
+                                <td class="text-center pe-3">
+                                    <a asp-action="Historial" asp-route-productoId="@item.ProductoId" class="btn btn-sm btn-outline-info rounded-pill px-3" title="Ver historial de movimientos">
+                                        <i class="bi bi-clock-history me-1"></i>Historial
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    <tr id="rowSinResultadosFiltro" class="d-none">
+                        <td colspan="7" class="text-center py-4 text-muted">
+                            <i class="bi bi-funnel fs-4 d-block mb-1"></i>
+                            No se encontraron alimentos que coincidan con los filtros seleccionados.
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- LEYENDA / PIE DE PÁGINA FLOTANTE FEFO -->
+<div class="card border border-light-subtle shadow-lg mt-3 bg-white position-sticky bottom-0 z-3" style="font-size: 0.8rem; backdrop-filter: blur(5px);">
+    <div class="card-body py-2 px-3">
+        <div class="d-flex align-items-center justify-content-between flex-nowrap gap-2">
+            <div class="d-flex align-items-center flex-nowrap gap-3">
+                <span class="fw-bold text-secondary text-nowrap" style="font-size: 0.8rem;">Estándar FEFO:</span>
+
+                <div class="d-flex align-items-center gap-1 text-nowrap">
+                    <span style="font-size: 0.85rem;">🟢</span>
+                    <div>
+                        <span class="fw-bold text-dark d-block lh-1" style="font-size: 0.78rem;">FEFO Óptimo</span>
+                        <small class="text-muted d-block" style="font-size: 0.68rem;">(> 15 días)</small>
+                    </div>
+                </div>
+
+                <div class="d-flex align-items-center gap-1 text-nowrap">
+                    <span style="font-size: 0.85rem;">🟡</span>
+                    <div>
+                        <span class="fw-bold text-dark d-block lh-1" style="font-size: 0.78rem;">FEFO Atención</span>
+                        <small class="text-muted d-block" style="font-size: 0.68rem;">(≤ 15 días)</small>
+                    </div>
+                </div>
+
+                <div class="d-flex align-items-center gap-1 text-nowrap">
+                    <span style="font-size: 0.85rem;">🟠</span>
+                    <div>
+                        <span class="fw-bold text-dark d-block lh-1" style="font-size: 0.78rem;">FEFO Urgente</span>
+                        <small class="text-muted d-block" style="font-size: 0.68rem;">(≤ 5 días)</small>
+                    </div>
+                </div>
+
+                <div class="d-flex align-items-center gap-1 text-nowrap">
+                    <span style="font-size: 0.85rem;">🔴</span>
+                    <div>
+                        <span class="fw-bold text-dark d-block lh-1" style="font-size: 0.78rem;">FEFO Crítico</span>
+                        <small class="text-muted d-block" style="font-size: 0.68rem;">(Vencido)</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="alert alert-info py-1 px-2 mb-0 d-flex align-items-center gap-2 border-0 bg-info bg-opacity-10 text-primary-emphasis text-nowrap" style="font-size: 0.75rem;">
+                <i class="bi bi-info-circle-fill text-info" style="font-size: 0.85rem;"></i>
+                <span>El sistema prioriza la salida de los lotes con fecha de vencimiento más próxima.</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const txtBuscar = document.getElementById('txtBuscar');
+            const cboCategoria = document.getElementById('cboCategoria');
+            const cboEstadoLote = document.getElementById('cboEstadoLote');
+            const cboFefo = document.getElementById('cboFefo');
+            const filas = document.querySelectorAll('.fila-producto');
+            const rowSinResultados = document.getElementById('rowSinResultadosFiltro');
+
+            function filtrarTabla() {
+                const busqueda = txtBuscar.value.toLowerCase().trim();
+                const categoria = cboCategoria.value;
+                const estadoLote = cboEstadoLote.value;
+                const fefo = cboFefo.value;
+
+                let visibles = 0;
+
+                filas.forEach(fila => {
+                    const matchBusqueda = !busqueda || fila.dataset.busqueda.includes(busqueda);
+                    const matchCategoria = !categoria || fila.dataset.categoria === categoria;
+                    const matchEstadoLote = !estadoLote || fila.dataset.estadoLote === estadoLote;
+                    const matchFefo = !fefo || fila.dataset.fefo === fefo;
+
+                    if (matchBusqueda && matchCategoria && matchEstadoLote && matchFefo) {
+                        fila.style.display = '';
+                        visibles++;
+                    } else {
+                        fila.style.display = 'none';
+                    }
+                });
+
+                if (rowSinResultados) {
+                    if (visibles === 0 && filas.length > 0) {
+                        rowSinResultados.classList.remove('d-none');
+                    } else {
+                        rowSinResultados.classList.add('d-none');
+                    }
+                }
+            }
+
+            txtBuscar.addEventListener('input', filtrarTabla);
+            cboCategoria.addEventListener('change', filtrarTabla);
+            cboEstadoLote.addEventListener('change', filtrarTabla);
+            cboFefo.addEventListener('change', filtrarTabla);
+        });
+    </script>
+}

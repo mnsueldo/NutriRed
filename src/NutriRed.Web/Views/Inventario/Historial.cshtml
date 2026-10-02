@@ -1,0 +1,94 @@
+﻿@model IEnumerable<NutriRed.Domain.Entities.MovimientoStock>
+@{
+    var producto = ViewBag.Producto as NutriRed.Domain.Entities.Producto;
+    ViewData["Title"] = $"Historial de Movimientos - {producto?.Nombre}";
+}
+
+<div class="mb-4 d-flex justify-content-between align-items-center">
+    <div>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-1">
+                <li class="breadcrumb-item"><a asp-action="Index">Inventario</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Historial de Movimientos</li>
+            </ol>
+        </nav>
+        <h2 class="fw-bold text-dark mb-0">
+            <i class="bi bi-clock-history text-info me-2"></i>Historial de Movimientos
+        </h2>
+        <p class="text-muted mb-0">
+            Producto: <strong class="text-dark">@producto?.Nombre</strong>
+            <span class="badge bg-secondary ms-2">@producto?.Categoria?.Nombre</span>
+            <small class="ms-2 font-monospace">EAN: @producto?.CodigoBarras</small>
+        </p>
+    </div>
+    <div>
+        <a asp-action="Index" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Volver a Stock Consolidado
+        </a>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white py-3">
+        <h5 class="card-title fw-bold text-dark mb-0">
+            <i class="bi bi-list-check me-2 text-primary"></i>Registro Auditable de Entradas y Salidas
+        </h5>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Fecha y Hora</th>
+                        <th>Lote N°</th>
+                        <th class="text-center">Tipo de Movimiento</th>
+                        <th class="text-center">Motivo</th>
+                        <th class="text-end">Cantidad</th>
+                        <th>Usuario</th>
+                        <th>Observaciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.Any())
+                    {
+                        <tr>
+                            <td colspan="7" class="text-center py-4 text-muted">
+                                <i class="bi bi-inbox fs-3 d-block mb-2 text-muted"></i>
+                                No hay movimientos registrados para este producto.
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var m in Model)
+                        {
+                            bool esIngreso = m.TipoMovimiento == NutriRed.Domain.Enums.TipoMovimiento.IngresoDonacion || m.TipoMovimiento.ToString().StartsWith("Ingreso");
+                            string badgeTipo = esIngreso ? "bg-success" : "bg-danger";
+                            string signo = esIngreso ? "+" : "-";
+
+                            <tr>
+                                <td class="font-monospace">@m.Fecha.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</td>
+                                <td class="font-monospace fw-bold text-primary">@(m.Lote?.NumeroLote ?? "S/N")</td>
+                                <td class="text-center">
+                                    <span class="badge @badgeTipo">@m.TipoMovimiento</span>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge bg-light text-dark border">@m.Motivo</span>
+                                </td>
+                                <td class="text-end fw-bold fs-6 @(esIngreso ? "text-success" : "text-danger")">
+                                    @signo@m.Cantidad @producto?.UnidadMedida
+                                </td>
+                                <td>
+                                    <small class="text-muted"><i class="bi bi-person me-1"></i>@(string.IsNullOrWhiteSpace(m.UsuarioId) ? "Sistema" : m.UsuarioId)</small>
+                                </td>
+                                <td>
+                                    <small class="text-muted">@(string.IsNullOrWhiteSpace(m.Observaciones) ? "-" : m.Observaciones)</small>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
