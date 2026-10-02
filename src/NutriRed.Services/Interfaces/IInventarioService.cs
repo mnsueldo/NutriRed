@@ -12,4 +12,5 @@ public interface IInventarioService
     Task<OperationResult<ResultadoFefoDto>> CalcularAsignacionFefoAsync(int productoId, decimal cantidadRequerida);
     Task<OperationResult<MovimientoStock>> RegistrarAjusteOMermaAsync(AjusteMermaRequest request);
     Task<OperationResult<IEnumerable<Lote>>> ObtenerLotesProximosAVencerAsync(int diasUmbral = 30);
+    Task<OperationResult<IEnumerable<MovimientoStock>>> ObtenerMovimientosPorProductoAsync(int productoId);
 }

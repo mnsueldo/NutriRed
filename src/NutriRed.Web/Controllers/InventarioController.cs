@@ -1,7 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.EntityFrameworkCore;
-using NutriRed.Data;
 using NutriRed.Domain.Entities;
 using NutriRed.Domain.Enums;
 using NutriRed.Services.DTOs;
@@ -13,12 +11,17 @@ namespace NutriRed.Web.Controllers;
 public class InventarioController : Controller
 {
     private readonly IInventarioService _inventarioService;
-    private readonly NutriRedDbContext _context;
+    private readonly IProductoService _productoService;
+    private readonly ICategoriaService _categoriaService;
 
-    public InventarioController(IInventarioService inventarioService, NutriRedDbContext context)
+    public InventarioController(
+        IInventarioService inventarioService,
+        IProductoService productoService,
+        ICategoriaService categoriaService)
     {
         _inventarioService = inventarioService;
-        _context = context;
+        _productoService = productoService;
+        _categoriaService = categoriaService;
     }
 
     // GET: /Inventario / /Inventario/Index (Stock Consolidado & FEFO)
@@ -27,12 +30,12 @@ public class InventarioController : Controller
         var resultadoStock = await _inventarioService.ObtenerStockConsolidadoAsync();
         var stockConsolidado = resultadoStock.Data ?? Enumerable.Empty<StockProductoDto>();
 
-        // Obtener las categorías de la base de datos para cargar el desplegable de filtro
-        var categorias = await _context.Categorias
-            .AsNoTracking()
-            .OrderBy(c => c.Nombre)
+        // Obtener las categorías activas a través del servicio de categorías
+        var resultadoCategorias = await _categoriaService.ObtenerTodasAsync(soloActivas: true);
+        var categorias = resultadoCategorias.Data?
             .Select(c => c.Nombre)
-            .ToListAsync();
+            .OrderBy(n => n)
+            .ToList() ?? new List<string>();
 
         ViewBag.Categorias = categorias;
 
@@ -42,25 +45,17 @@ public class InventarioController : Controller
     // GET: /Inventario/Historial?productoId=5
     public async Task<IActionResult> Historial(int productoId)
     {
-        var producto = await _context.Productos
-            .AsNoTracking()
-            .Include(p => p.Categoria)
-            .FirstOrDefaultAsync(p => p.Id == productoId);
-
-        if (producto == null)
+        var resultadoProducto = await _productoService.ObtenerPorIdAsync(productoId);
+        if (!resultadoProducto.Success || resultadoProducto.Data == null)
         {
-            TempData["Error"] = "El producto especificado no existe.";
+            TempData["Error"] = resultadoProducto.ErrorMessage ?? "El producto especificado no existe.";
             return RedirectToAction(nameof(Index));
         }
 
-        var movimientos = await _context.MovimientosStock
-            .AsNoTracking()
-            .Include(m => m.Lote)
-            .Where(m => m.Lote != null && m.Lote.ProductoId == productoId)
-            .OrderByDescending(m => m.Fecha)
-            .ToListAsync();
+        var resultadoMovimientos = await _inventarioService.ObtenerMovimientosPorProductoAsync(productoId);
+        var movimientos = resultadoMovimientos.Data ?? Enumerable.Empty<MovimientoStock>();
 
-        ViewBag.Producto = producto;
+        ViewBag.Producto = resultadoProducto.Data;
         return View(movimientos);
     }
 
@@ -104,8 +99,8 @@ public class InventarioController : Controller
             Cantidad = model.Cantidad,
             TipoMovimiento = TipoMovimiento.BajaPorMerma,
             Motivo = model.Motivo,
-            Observaciones = model.Observaciones,
-            UsuarioId = null
+            Observaciones = model.Observaciones?.Trim(),
+            UsuarioId = User.Identity?.Name ?? "operador_deposito"
         };
 
         var resultado = await _inventarioService.RegistrarAjusteOMermaAsync(request);
@@ -125,47 +120,45 @@ public class InventarioController : Controller
     [HttpGet]
     public async Task<IActionResult> ObtenerLotesPorProducto(int productoId)
     {
-        var lotes = await _context.Lotes
-            .AsNoTracking()
-            .Where(l => l.ProductoId == productoId && l.CantidadDisponible > 0)
-            .OrderBy(l => l.FechaVencimiento)
+        var resultadoLotes = await _inventarioService.ObtenerLotesPorProductoAsync(productoId, soloDisponibles: true);
+        var lotes = (resultadoLotes.Data ?? Enumerable.Empty<Lote>())
             .Select(l => new
             {
                 id = l.Id,
-                texto = $"[{l.NumeroLote}] — Disponible: {l.CantidadDisponible} (Vence: {l.FechaVencimiento:dd/MM/yyyy})"
+                texto = $"[{l.NumeroLote}] — Disponible: {l.CantidadDisponible:N1} (Vence: {l.FechaVencimiento:dd/MM/yyyy})"
             })
-            .ToListAsync();
+            .ToList();
 
         return Json(lotes);
     }
 
+    /// <summary>
+    /// Recarga defensiva de listas desplegables utilizando servicios de negocio (desacoplado de DbContext)
+    /// </summary>
     private async Task CargarDesplegablesMermaAsync(int? productoIdSeleccionado = null, int? loteSeleccionadoId = null)
     {
-        var productos = await _context.Productos
-            .AsNoTracking()
-            .Where(p => p.Lotes.Any(l => l.CantidadDisponible > 0))
+        var resultadoProductos = await _productoService.ObtenerTodosAsync(soloActivos: true);
+        var productos = (resultadoProductos.Data ?? Enumerable.Empty<Producto>())
             .OrderBy(p => p.Nombre)
             .Select(p => new
             {
                 Id = p.Id,
                 Texto = $"{p.Nombre} (EAN: {p.CodigoBarras})"
             })
-            .ToListAsync();
+            .ToList();
 
         ViewBag.ProductosSelectList = new SelectList(productos, "Id", "Texto", productoIdSeleccionado);
 
         if (productoIdSeleccionado.HasValue)
         {
-            var lotes = await _context.Lotes
-                .AsNoTracking()
-                .Where(l => l.ProductoId == productoIdSeleccionado.Value && l.CantidadDisponible > 0)
-                .OrderBy(l => l.FechaVencimiento)
+            var resultadoLotes = await _inventarioService.ObtenerLotesPorProductoAsync(productoIdSeleccionado.Value, soloDisponibles: true);
+            var lotes = (resultadoLotes.Data ?? Enumerable.Empty<Lote>())
                 .Select(l => new
                 {
                     Id = l.Id,
-                    Texto = $"[{l.NumeroLote}] — Disponible: {l.CantidadDisponible} (Vence: {l.FechaVencimiento:dd/MM/yyyy})"
+                    Texto = $"[{l.NumeroLote}] — Disponible: {l.CantidadDisponible:N1} (Vence: {l.FechaVencimiento:dd/MM/yyyy})"
                 })
-                .ToListAsync();
+                .ToList();
 
             ViewBag.LotesSelectList = new SelectList(lotes, "Id", "Texto", loteSeleccionadoId);
         }

@@ -1,4 +1,4 @@
-﻿@model IEnumerable<NutriRed.Domain.Entities.MovimientoStock>
+@model IEnumerable<NutriRed.Domain.Entities.MovimientoStock>
 @{
     var producto = ViewBag.Producto as NutriRed.Domain.Entities.Producto;
     ViewData["Title"] = $"Historial de Movimientos - {producto?.Nombre}";
@@ -27,6 +27,8 @@
         </a>
     </div>
 </div>
+
+<partial name="_Alertas" />
 
 <div class="card border-0 shadow-sm">
     <div class="card-header bg-white py-3">

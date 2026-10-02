@@ -253,4 +253,23 @@ public class InventarioService : IInventarioService
             return OperationResult<IEnumerable<Lote>>.Fail($"Error al consultar lotes próximos a vencer: {ex.Message}");
         }
     }
+
+    public async Task<OperationResult<IEnumerable<MovimientoStock>>> ObtenerMovimientosPorProductoAsync(int productoId)
+    {
+        try
+        {
+            var movimientos = await _context.MovimientosStock
+                .AsNoTracking()
+                .Include(m => m.Lote)
+                .Where(m => m.Lote != null && m.Lote.ProductoId == productoId)
+                .OrderByDescending(m => m.Fecha)
+                .ToListAsync();
+
+            return OperationResult<IEnumerable<MovimientoStock>>.Ok(movimientos);
+        }
+        catch (Exception ex)
+        {
+            return OperationResult<IEnumerable<MovimientoStock>>.Fail($"Error al obtener el historial de movimientos del producto: {ex.Message}");
+        }
+    }
 }
