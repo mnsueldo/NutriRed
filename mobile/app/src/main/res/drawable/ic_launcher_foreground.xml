@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- White Plate / Food Distribution Symbol -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,22 A32,32 0 1,0 54,86 A32,32 0 1,0 54,22 Z" />
+
+    <!-- Apple Stem -->
+    <path
+        android:strokeColor="#16A34A"
+        android:strokeWidth="3"
+        android:strokeLineCap="round"
+        android:pathData="M54,42 C54,38 56,35 59,33" />
+
+    <!-- Vibrant Green Leaf -->
+    <path
+        android:fillColor="#16A34A"
+        android:pathData="M57,35 C63,35 69,31 69,24 C60,24 57,29 57,35 Z" />
+
+    <!-- Stylized Red Apple Body -->
+    <path
+        android:fillColor="#EF4444"
+        android:pathData="M54,43 C59,37 72,37 72,52 C72,64 63,72 54,75 C45,72 36,64 36,52 C36,37 49,37 54,43 Z" />
+
+    <!-- Health & Care Heart Symbol -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,51 C57,47 63,47 63,53 C63,59 58,64 54,67 C50,64 45,59 45,53 C45,47 51,47 54,51 Z" />
+
+</vector>

@@ -480,3 +480,22 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+
+# ==========================================
+# Android & Gradle (Mobile App)
+# ==========================================
+.gradle/
+**/build/
+*.iml
+.idea/
+local.properties
+.externalNativeBuild/
+.cxx/
+captures/
+*.apk
+*.aab
+mobile/local.properties
+mobile/.gradle/
+mobile/**/build/
+mobile/.idea/
+
