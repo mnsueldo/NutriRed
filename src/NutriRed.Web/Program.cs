@@ -18,6 +18,17 @@ builder.Services.AddControllersWithViews();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+// 5. Configuración de CORS para clientes móviles y desarrollo
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyMethod()
+              .AllowAnyHeader();
+    });
+});
+
 var app = builder.Build();
 
 // Sembrado de Datos Iniciales (Seed Data en desarrollo / inicio)
@@ -48,8 +59,10 @@ else
     app.UseHsts();
 }
 
-app.UseHttpsRedirection();
 app.UseRouting();
+
+// CORS debe ejecutarse después de UseRouting y antes de UseAuthorization
+app.UseCors("AllowAll");
 
 app.UseAuthorization();
 
