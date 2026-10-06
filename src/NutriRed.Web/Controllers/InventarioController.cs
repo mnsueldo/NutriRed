@@ -28,7 +28,7 @@ public class InventarioController : Controller
     public async Task<IActionResult> Index(int diasAlerta = 30)
     {
         var resultadoStock = await _inventarioService.ObtenerStockConsolidadoAsync();
-        var stockConsolidado = resultadoStock.Data ?? Enumerable.Empty<StockProductoDto>();
+        var stockConsolidado = (resultadoStock.Data ?? Enumerable.Empty<StockProductoDto>()).ToList();
 
         // Obtener las categorías activas a través del servicio de categorías
         var resultadoCategorias = await _categoriaService.ObtenerTodasAsync(soloActivas: true);
@@ -38,6 +38,12 @@ public class InventarioController : Controller
             .ToList() ?? new List<string>();
 
         ViewBag.Categorias = categorias;
+
+        // KPIs de resumen para los bloques superiores
+        ViewBag.TotalProductos = stockConsolidado.Count;
+        ViewBag.StockDisponibleTotal = stockConsolidado.Sum(s => s.StockActual);
+        ViewBag.ProductosEnAlerta = stockConsolidado.Count(s => s.EstadoFEFO == "Alerta");
+        ViewBag.ProductosVencidos = stockConsolidado.Count(s => s.EstadoFEFO == "Vencido");
 
         return View(stockConsolidado);
     }
@@ -60,9 +66,12 @@ public class InventarioController : Controller
     }
 
     // GET: /Inventario/RegistrarMerma
-    public async Task<IActionResult> RegistrarMerma(int? loteId)
+    public async Task<IActionResult> RegistrarMerma(int? productoId, int? loteId)
     {
-        var model = new RegistrarMermaViewModel();
+        var model = new RegistrarMermaViewModel
+        {
+            Motivo = MotivoMovimiento.Vencido // Motivo por defecto cuando viene de la alerta
+        };
 
         if (loteId.HasValue)
         {
@@ -74,7 +83,27 @@ public class InventarioController : Controller
                 model.LoteId = lote.Id;
                 model.CodigoLote = lote.NumeroLote;
                 model.NombreProducto = lote.Producto?.Nombre;
+                model.Cantidad = lote.CantidadDisponible; // Cantidad total del lote vencido a dar de baja
                 model.ExistenciaActual = lote.CantidadDisponible;
+            }
+        }
+        else if (productoId.HasValue)
+        {
+            model.ProductoId = productoId.Value;
+
+            // Cargar el primer lote vencido o con fecha menor/igual a hoy para este producto
+            var resultadoLotes = await _inventarioService.ObtenerLotesPorProductoAsync(productoId.Value, soloDisponibles: true);
+            var loteVencido = (resultadoLotes.Data ?? Enumerable.Empty<Lote>())
+                .Where(l => l.FechaVencimiento.Date <= DateTime.Today)
+                .OrderBy(l => l.FechaVencimiento)
+                .FirstOrDefault();
+
+            if (loteVencido != null)
+            {
+                model.LoteId = loteVencido.Id;
+                model.CodigoLote = loteVencido.NumeroLote;
+                model.Cantidad = loteVencido.CantidadDisponible;
+                model.ExistenciaActual = loteVencido.CantidadDisponible;
             }
         }
 

@@ -19,47 +19,73 @@ public class InventarioService : IInventarioService
 
     public async Task<OperationResult<IEnumerable<StockProductoDto>>> ObtenerStockConsolidadoAsync()
     {
-        try
+        var productosConStock = await _context.Productos
+                    .Include(p => p.Categoria)
+                    .Include(p => p.Lotes)
+                    .Select(p => new StockProductoDto
+                    {
+                        ProductoId = p.Id,
+                        NombreProducto = p.Nombre,
+                        CodigoBarras = p.CodigoBarras,
+                        Categoria = p.Categoria != null ? p.Categoria.Nombre : "Sin Categoría",
+                        StockMinimo = p.StockMinimo,
+                        UnidadMedida = p.UnidadMedida,
+
+                        // Lotes disponibles con existencias físicas en depósito
+                        CantidadLotesActivos = p.Lotes.Count(l => l.Estado == EstadoLote.Disponible && l.CantidadDisponible > 0),
+
+                        // Stock Apto (Lotes no vencidos)
+                        StockActual = p.Lotes
+                            .Where(l => l.Estado == EstadoLote.Disponible && l.CantidadDisponible > 0 && l.FechaVencimiento.Date > DateTime.Today)
+                            .Sum(l => (decimal?)l.CantidadDisponible) ?? 0,
+
+                        // Stock Vencido pendiente de merma
+                        StockVencido = p.Lotes
+                            .Where(l => l.Estado == EstadoLote.Disponible && l.CantidadDisponible > 0 && l.FechaVencimiento.Date <= DateTime.Today)
+                            .Sum(l => (decimal?)l.CantidadDisponible) ?? 0,
+
+                        // Próxima fecha de vencimiento entre todos los lotes con existencias físicas
+                        ProximoVencimiento = p.Lotes
+                            .Where(l => l.Estado == EstadoLote.Disponible && l.CantidadDisponible > 0)
+                            .OrderBy(l => l.FechaVencimiento)
+                            .Select(l => (DateTime?)l.FechaVencimiento)
+                            .FirstOrDefault()
+                    })
+                    .ToListAsync();
+
+        // Evaluación del Estado FEFO para la vista y el semáforo
+        foreach (var dto in productosConStock)
         {
-            var hoy = DateTime.Today;
+            var stockFisicoTotal = dto.StockActual + dto.StockVencido;
 
-            var productos = await _context.Productos
-                .AsNoTracking()
-                .Include(p => p.Categoria)
-                .Include(p => p.Lotes)
-                .Where(p => p.Activo)
-                .OrderBy(p => p.Nombre)
-                .ToListAsync();
-
-            var resultado = productos.Select(p =>
+            if (stockFisicoTotal == 0 || !dto.ProximoVencimiento.HasValue)
             {
-                var lotesAptos = p.Lotes
-                    .Where(l => l.Estado == EstadoLote.Disponible && l.FechaVencimiento > hoy && l.CantidadDisponible > 0)
-                    .ToList();
+                dto.EstadoFEFO = "SinStock";
+            }
+            else
+            {
+                var diasRestantes = (dto.ProximoVencimiento.Value.Date - DateTime.Today).Days;
 
-                var stockActual = lotesAptos.Sum(l => l.CantidadDisponible);
-                var proximoVencimiento = lotesAptos.OrderBy(l => l.FechaVencimiento).FirstOrDefault()?.FechaVencimiento;
+                if (diasRestantes <= 0)
+                    dto.EstadoFEFO = "Vencido";
+                else if (diasRestantes <= 5)
+                    dto.EstadoFEFO = "Urgente";
+                else if (diasRestantes <= 15)
+                    dto.EstadoFEFO = "Alerta";
+                else
+                    dto.EstadoFEFO = "Optimo";
+            }
 
-                return new StockProductoDto
-                {
-                    ProductoId = p.Id,
-                    CodigoBarras = p.CodigoBarras,
-                    NombreProducto = p.Nombre,
-                    Categoria = p.Categoria?.Nombre ?? "Sin Categoría",
-                    UnidadMedida = p.UnidadMedida,
-                    StockActual = stockActual,
-                    StockMinimo = p.StockMinimo,
-                    CantidadLotesActivos = lotesAptos.Count,
-                    ProximoVencimiento = proximoVencimiento
-                };
-            }).ToList();
-
-            return OperationResult<IEnumerable<StockProductoDto>>.Ok(resultado);
+            // Si el producto no tiene stock apto pero conserva stock vencido sin dar de baja, 
+            // asignamos StockActual = StockVencido para mostrar la cantidad física en la tabla hasta que se registre la merma.
+            if (dto.StockActual == 0 && dto.StockVencido > 0)
+            {
+                dto.StockActual = dto.StockVencido;
+            }
         }
-        catch (Exception ex)
-        {
-            return OperationResult<IEnumerable<StockProductoDto>>.Fail($"Error al obtener el inventario consolidado: {ex.Message}");
-        }
+
+        // Retorno estandarizado usando OperationResult<T>
+        return OperationResult<IEnumerable<StockProductoDto>>.Ok(productosConStock);
     }
 
     public async Task<OperationResult<IEnumerable<Lote>>> ObtenerLotesPorProductoAsync(int productoId, bool soloDisponibles = true)
@@ -73,8 +99,9 @@ public class InventarioService : IInventarioService
 
             if (soloDisponibles)
             {
-                var hoy = DateTime.Today;
-                query = query.Where(l => l.Estado == EstadoLote.Disponible && l.CantidadDisponible > 0 && l.FechaVencimiento > hoy);
+                // Para registrar una baja/merma se requiere que el lote tenga existencias físicas,
+                // sin importar si ya venció (los vencidos son justamente los que se deben dar de baja).
+                query = query.Where(l => l.CantidadDisponible > 0 && l.Estado != EstadoLote.Agotado);
             }
 
             var lotes = await query.OrderBy(l => l.FechaVencimiento).ToListAsync();
@@ -270,6 +297,46 @@ public class InventarioService : IInventarioService
         catch (Exception ex)
         {
             return OperationResult<IEnumerable<MovimientoStock>>.Fail($"Error al obtener el historial de movimientos del producto: {ex.Message}");
+        }
+    }
+
+    public async Task<OperationResult<decimal>> ObtenerTotalMermasKgAsync()
+    {
+        try
+        {
+            var totalMerma = await _context.Set<MovimientoStock>()
+                .AsNoTracking()
+                .Where(m => m.Motivo == MotivoMovimiento.Vencido ||
+                            m.Motivo == MotivoMovimiento.Deteriorado ||
+                            m.Motivo == MotivoMovimiento.RoturaEnvase)
+                .SumAsync(m => (decimal?)m.Cantidad) ?? 0m;
+
+            return OperationResult<decimal>.Ok(totalMerma);
+        }
+        catch (Exception ex)
+        {
+            return OperationResult<decimal>.Fail($"Error al obtener el total de mermas: {ex.Message}");
+        }
+    }
+
+    public async Task<OperationResult<decimal>> ObtenerTotalAlimentosDistribuidosAsync()
+    {
+        try
+        {
+            // Relacionamos la entrega concretada con el detalle de los productos entregados
+            var totalDistribuidos = await (
+                from entrega in _context.Set<Entrega>()
+                where entrega.Concretada
+                join detalle in _context.Set<PaqueteDetalle>()
+                    on entrega.PaqueteId equals detalle.PaqueteId
+                select (decimal?)detalle.Cantidad
+            ).SumAsync() ?? 0m;
+
+            return OperationResult<decimal>.Ok(totalDistribuidos);
+        }
+        catch (Exception ex)
+        {
+            return OperationResult<decimal>.Fail($"Error al obtener el total de alimentos distribuidos: {ex.Message}");
         }
     }
 }

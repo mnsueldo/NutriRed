@@ -329,10 +329,31 @@
                                 </td>
 
                                 <!-- Acciones -->
-                                <td class="text-center pe-3">
-                                    <a asp-action="Historial" asp-route-productoId="@item.ProductoId" class="btn btn-sm btn-outline-info rounded-pill px-3" title="Ver historial de movimientos">
-                                        <i class="bi bi-clock-history me-1"></i>Historial
-                                    </a>
+                                <td class="text-center align-middle pe-3">
+                                    <div class="d-inline-flex align-items-center justify-content-center gap-2">
+
+                                        <!-- Botón Historial -->
+                                        <a asp-action="Historial"
+                                           asp-route-productoId="@item.ProductoId"
+                                           class="btn btn-sm btn-outline-info rounded-pill px-3 py-1 d-inline-flex align-items-center text-nowrap fw-semibold shadow-sm"
+                                           title="Ver historial de movimientos">
+                                            <i class="bi bi-clock-history me-1 fs-6"></i>
+                                            <span>Historial</span>
+                                        </a>
+
+                                        <!-- Botón Dar de Baja (Solo visible cuando está vencido) -->
+                                        @if (item.EstadoFEFO == "Vencido" || (item.ProximoVencimiento.HasValue && (item.ProximoVencimiento.Value.Date - DateTime.Today).Days <= 0))
+                                        {
+                                            <a asp-action="RegistrarMerma"
+                                               asp-route-productoId="@item.ProductoId"
+                                               class="btn btn-sm btn-danger rounded-pill px-3 py-1 d-inline-flex align-items-center text-nowrap fw-semibold shadow-sm"
+                                               title="Registrar baja por vencimiento inmediato">
+                                                <i class="bi bi-trash-fill me-1 fs-6"></i>
+                                                <span>Dar de baja</span>
+                                            </a>
+                                        }
+
+                                    </div>
                                 </td>
                             </tr>
                         }
@@ -406,6 +427,7 @@
             const cboFefo = document.getElementById('cboFefo');
             const filas = document.querySelectorAll('.fila-producto');
             const rowSinResultados = document.getElementById('rowSinResultadosFiltro');
+
 
             function filtrarTabla() {
                 const busqueda = txtBuscar.value.toLowerCase().trim();
