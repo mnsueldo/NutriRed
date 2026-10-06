@@ -6,7 +6,7 @@ using NutriRed.Services.Interfaces;
 namespace NutriRed.Web.Controllers.Api;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/entregas")]
 [Produces("application/json")]
 public class EntregasApiController : ControllerBase
 {

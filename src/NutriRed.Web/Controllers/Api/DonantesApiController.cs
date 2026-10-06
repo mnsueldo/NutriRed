@@ -7,7 +7,7 @@ using NutriRed.Domain.Enums;
 namespace NutriRed.Web.Controllers.Api;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/donantes")]
 [Produces("application/json")]
 public class DonantesApiController : ControllerBase
 {

@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace NutriRed.Web.Controllers.Api;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/auth")]
 [Produces("application/json")]
 public class AuthApiController : ControllerBase
 {
