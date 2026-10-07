@@ -122,16 +122,21 @@ public class InventarioController : Controller
     [HttpGet]
     public async Task<IActionResult> ObtenerLotesPorProducto(int productoId)
     {
+        var resultadoProducto = await _productoService.ObtenerPorIdAsync(productoId);
+        var unidad = resultadoProducto.Data?.UnidadMedida.ToString() ?? "Unidades";
+
         var resultadoLotes = await _inventarioService.ObtenerLotesPorProductoAsync(productoId, soloDisponibles: true);
         var lotes = (resultadoLotes.Data ?? Enumerable.Empty<Lote>())
             .Select(l => new
             {
                 id = l.Id,
-                texto = $"[{l.NumeroLote}] — Disponible: {l.CantidadDisponible:N1} (Vence: {l.FechaVencimiento:dd/MM/yyyy})"
+                texto = $"[{l.NumeroLote}] — Disponible: {l.CantidadDisponible:N0} {unidad} (Vence: {l.FechaVencimiento:dd/MM/yyyy})",
+                disponible = (int)l.CantidadDisponible,
+                unidadMedida = unidad
             })
             .ToList();
 
-        return Json(lotes);
+        return Json(new { unidad, lotes });
     }
 
     /// <summary>
@@ -153,12 +158,15 @@ public class InventarioController : Controller
 
         if (productoIdSeleccionado.HasValue)
         {
+            var resultadoProducto = await _productoService.ObtenerPorIdAsync(productoIdSeleccionado.Value);
+            var unidad = resultadoProducto.Data?.UnidadMedida.ToString() ?? "Unidades";
+
             var resultadoLotes = await _inventarioService.ObtenerLotesPorProductoAsync(productoIdSeleccionado.Value, soloDisponibles: true);
             var lotes = (resultadoLotes.Data ?? Enumerable.Empty<Lote>())
                 .Select(l => new
                 {
                     Id = l.Id,
-                    Texto = $"[{l.NumeroLote}] — Disponible: {l.CantidadDisponible:N1} (Vence: {l.FechaVencimiento:dd/MM/yyyy})"
+                    Texto = $"[{l.NumeroLote}] — Disponible: {l.CantidadDisponible:N0} {unidad} (Vence: {l.FechaVencimiento:dd/MM/yyyy})"
                 })
                 .ToList();
 
