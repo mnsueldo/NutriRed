@@ -9,11 +9,11 @@
         <nav aria-label="breadcrumb">
             <ol class="breadcrumb mb-1">
                 <li class="breadcrumb-item"><a asp-action="Index">Inventario</a></li>
-                <li class="breadcrumb-item active" aria-current="page">Historial de Movimientos</li>
+                <li class="breadcrumb-item active" aria-current="page">Historial de movimientos</li>
             </ol>
         </nav>
         <h2 class="fw-bold text-dark mb-0">
-            <i class="bi bi-clock-history text-info me-2"></i>Historial de Movimientos
+            <i class="bi bi-clock-history text-info me-2"></i>Historial de movimientos
         </h2>
         <p class="text-muted mb-0">
             Producto: <strong class="text-dark">@producto?.Nombre</strong>
@@ -23,7 +23,7 @@
     </div>
     <div>
         <a asp-action="Index" class="btn btn-outline-secondary">
-            <i class="bi bi-arrow-left"></i> Volver a Stock Consolidado
+            <i class="bi bi-arrow-left"></i> Volver a stock de alimentos
         </a>
     </div>
 </div>
@@ -33,7 +33,7 @@
 <div class="card border-0 shadow-sm">
     <div class="card-header bg-white py-3">
         <h5 class="card-title fw-bold text-dark mb-0">
-            <i class="bi bi-list-check me-2 text-primary"></i>Registro Auditable de Entradas y Salidas
+            <i class="bi bi-list-check me-2 text-primary"></i>Registro auditable de entradas y salidas
         </h5>
     </div>
     <div class="card-body p-0">
@@ -41,9 +41,9 @@
             <table class="table table-hover align-middle mb-0">
                 <thead class="table-light">
                     <tr>
-                        <th>Fecha y Hora</th>
+                        <th>Fecha y hora</th>
                         <th>Lote N°</th>
-                        <th class="text-center">Tipo de Movimiento</th>
+                        <th class="text-center">Tipo de movimiento</th>
                         <th class="text-center">Motivo</th>
                         <th class="text-end">Cantidad</th>
                         <th>Usuario</th>

@@ -9,16 +9,16 @@
 <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
     <div>
         <h2 class="fw-bold mb-1">
-            <i class="bi bi-box-seam text-success me-2"></i>Despacho y Entrega Asistencial
+            <i class="bi bi-box-seam text-success me-2"></i>Despacho y entrega Asistencial
         </h2>
-        <p class="text-muted mb-0">Control de identidad del receptor, verificación de kit y firma digital (RF3)</p>
+        <p class="text-muted mb-0">Control de identidad del receptor, verificación de kit y firma digital</p>
     </div>
     <div class="d-flex gap-2">
         <a asp-action="Index" class="btn btn-outline-secondary">
-            <i class="bi bi-arrow-left me-1"></i> Volver al Listado
+            <i class="bi bi-arrow-left me-1"></i> Volver al listado
         </a>
         <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#modalNoConcretada">
-            <i class="bi bi-x-circle me-1"></i> Registrar Entrega Fallida
+            <i class="bi bi-x-circle me-1"></i> Registrar entrega fallida
         </button>
     </div>
 </div>
@@ -31,29 +31,29 @@
         <div class="card card-nr border-0 shadow-sm mb-4">
             <div class="card-nr-header bg-light d-flex justify-content-between align-items-center">
                 <span class="fw-bold text-dark">
-                    <i class="bi bi-qr-code text-primary me-2"></i>Caja Asistencial
+                    <i class="bi bi-qr-code text-primary me-2"></i>Caja asistencial
                 </span>
                 <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25">
-                    Listo para Retiro
+                    Listo para retiro
                 </span>
             </div>
             <div class="card-body p-4">
                 <div class="text-center pb-3 border-bottom mb-3">
                     <div class="font-mono fs-4 fw-bold text-dark">@Model.CodigoSeguimiento</div>
-                    <small class="text-muted">Rótulo QR Verificado en Depósito</small>
+                    <small class="text-muted">Rótulo QR verificado en depósito</small>
                 </div>
 
                 <table class="table table-sm table-borderless small mb-0">
                     <tr>
-                        <td class="text-muted w-40">Familia Titular:</td>
+                        <td class="text-muted w-40">Familia titular:</td>
                         <td class="fw-bold text-dark">@(pkg?.FamiliaTitular ?? "-")</td>
                     </tr>
                     <tr>
-                        <td class="text-muted">DNI Titular:</td>
+                        <td class="text-muted">DNI titular:</td>
                         <td class="font-mono fw-bold text-dark">@(pkg?.DniTitular ?? "-")</td>
                     </tr>
                     <tr>
-                        <td class="text-muted">Kit Asignado:</td>
+                        <td class="text-muted">Kit asignado:</td>
                         <td><span class="badge bg-light text-dark border">@(pkg?.TipoPaqueteNombre ?? "-")</span></td>
                     </tr>
                     <tr>
@@ -63,7 +63,7 @@
                 </table>
 
                 <h6 class="fw-bold text-secondary mt-4 mb-2 small text-uppercase">
-                    <i class="bi bi-basket me-1 text-success"></i> Contenido Físico del Paquete
+                    <i class="bi bi-basket me-1 text-success"></i> Contenido físico del paquete
                 </h6>
                 <div class="table-responsive">
                     <table class="table table-sm table-bordered align-middle mb-0 small">
@@ -111,7 +111,7 @@
             <div class="card card-nr border-0 shadow-sm mb-4">
                 <div class="card-nr-header bg-light">
                     <span class="fw-bold text-dark">
-                        <i class="bi bi-person-check text-primary me-2"></i>Validación del Receptor (RF3)
+                        <i class="bi bi-person-check text-primary me-2"></i>Validación del receptor
                     </span>
                 </div>
                 <div class="card-body p-4">
@@ -122,13 +122,13 @@
                             <div class="form-check">
                                 <input class="form-check-input" type="radio" asp-for="TipoReceptor" id="radioTitular" value="@((int)TipoReceptor.Titular)" checked>
                                 <label class="form-check-label fw-semibold" for="radioTitular">
-                                    <i class="bi bi-person-fill text-success me-1"></i> Titular del Legajo
+                                    <i class="bi bi-person-fill text-success me-1"></i> Titular del legajo
                                 </label>
                             </div>
                             <div class="form-check">
                                 <input class="form-check-input" type="radio" asp-for="TipoReceptor" id="radioTercero" value="@((int)TipoReceptor.TerceroAutorizado)">
                                 <label class="form-check-label fw-semibold" for="radioTercero">
-                                    <i class="bi bi-people-fill text-primary me-1"></i> Tercero Autorizado
+                                    <i class="bi bi-people-fill text-primary me-1"></i> Tercero autorizado
                                 </label>
                             </div>
                         </div>
@@ -150,10 +150,10 @@
 
                         <!-- Vínculo con el Titular (Obligatorio para Tercero) -->
                         <div class="col-12 d-none" id="grpVinculo">
-                            <label asp-for="VinculoConTitular" class="form-label fw-semibold text-danger">Parentesco / Vínculo con el Titular *</label>
+                            <label asp-for="VinculoConTitular" class="form-label fw-semibold text-danger">Parentesco / Vínculo con el titular *</label>
                             <input asp-for="VinculoConTitular" class="form-control" id="inputVinculo" placeholder="Ej: Cónyuge, Hijo/a mayor, Hermano/a, Vecino autorizado" />
                             <span asp-validation-for="VinculoConTitular" class="text-danger small"></span>
-                            <small class="text-muted">Requerimiento RF3: Es obligatorio especificar el vínculo cuando no retira el titular.</small>
+                            <small class="text-muted">Es obligatorio especificar el vínculo cuando no retira el titular.</small>
                         </div>
 
                         <div class="col-12">
@@ -175,10 +175,10 @@
             <div class="card card-nr border-0 shadow-sm mb-4">
                 <div class="card-nr-header bg-light d-flex justify-content-between align-items-center">
                     <span class="fw-bold text-dark">
-                        <i class="bi bi-pen text-success me-2"></i>Firma Digital del Receptor (RF3)
+                        <i class="bi bi-pen text-success me-2"></i>Firma digital del receptor
                     </span>
                     <button type="button" id="btnLimpiarCanvas" class="btn btn-sm btn-outline-secondary">
-                        <i class="bi bi-eraser me-1"></i> Limpiar Trazo
+                        <i class="bi bi-eraser me-1"></i> Limpiar trazo
                     </button>
                 </div>
                 <div class="card-body p-4 text-center">
@@ -194,7 +194,7 @@
 
                     <div class="alert alert-light border small text-muted text-start mt-3 mb-0">
                         <i class="bi bi-shield-lock me-1 text-success"></i>
-                        <strong>Constancia Inmutable:</strong> La firma manuscrita será convertida a formato digital criptográfico Base64 y quedará asociada de manera permanente a este despacho y comprobante oficial.
+                        <strong>Constancia Inmutable:</strong> La firma manuscrita será convertida a formato digital criptográfico y quedará asociada de manera permanente a este despacho y comprobante oficial.
                     </div>
                 </div>
             </div>
@@ -202,7 +202,7 @@
             <!-- ACCIÓN FINAL -->
             <div class="text-end mb-5">
                 <button type="submit" id="btnConfirmarDespacho" class="btn btn-emerald btn-lg px-5 shadow">
-                    <i class="bi bi-check2-circle me-2"></i> Confirmar Entrega y Emitir Comprobante
+                    <i class="bi bi-check2-circle me-2"></i> Confirmar entrega y emitir comprobante
                 </button>
             </div>
         </form>
@@ -231,7 +231,7 @@
                     <div class="mb-3">
                         <label class="form-label fw-semibold">Motivo de no entrega</label>
                         <select name="MotivoNoEntrega" class="form-select" required>
-                            <option value="">-- Seleccionar motivo --</option>
+                            <option value=""> Seleccionar motivo </option>
                             <option value="Titular ausente en domicilio">Titular ausente en domicilio / retiro</option>
                             <option value="Rechazado por el destinatario">Rechazado por el destinatario</option>
                             <option value="Domicilio o persona inubicable">Domicilio o persona inubicable</option>
@@ -242,7 +242,7 @@
                 <div class="modal-footer bg-light">
                     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
                     <button type="submit" class="btn btn-danger">
-                        <i class="bi bi-check-circle me-1"></i> Asentar Intento Fallido
+                        <i class="bi bi-check-circle me-1"></i> Asentar intento fallido
                     </button>
                 </div>
             </form>

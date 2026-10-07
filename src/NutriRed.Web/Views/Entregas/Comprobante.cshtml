@@ -51,12 +51,12 @@
 <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2 no-print">
     <div>
         <a asp-action="Index" class="btn btn-outline-secondary me-2">
-            <i class="bi bi-arrow-left me-1"></i> Volver a Despacho
+            <i class="bi bi-arrow-left me-1"></i> Volver a despacho
         </a>
     </div>
     <div class="d-flex gap-2">
         <button onclick="window.print()" class="btn btn-primary px-3 shadow-sm">
-            <i class="bi bi-printer me-2"></i> Imprimir Constancia de Entrega
+            <i class="bi bi-printer me-2"></i> Imprimir constancia de entrega
         </button>
     </div>
 </div>
@@ -74,8 +74,8 @@
                 </div>
                 <div>
                     <h3 class="fw-bold mb-0 text-dark">NutriRed</h3>
-                    <div class="text-muted small">SISTEMA INTELIGENTE DE BANCO DE ALIMENTOS</div>
-                    <small class="text-secondary">Constancia Oficial de Despacho y Entrega Asistencial (RF3)</small>
+                    <div class="text-muted small">SISTEMA PARA BANCOS DE ALIMENTOS</div>
+                    <small class="text-secondary">Constancia oficial de despacho y entrega asistencial</small>
                 </div>
             </div>
         </div>
@@ -95,15 +95,15 @@
         <div class="col-md-6">
             <div class="p-3 bg-light rounded-3 border h-100">
                 <h6 class="fw-bold text-secondary mb-3">
-                    <i class="bi bi-person-badge text-primary me-2"></i>Receptor Acreditado
+                    <i class="bi bi-person-badge text-primary me-2"></i>Receptor acreditado
                 </h6>
                 <table class="table table-sm table-borderless mb-0 small">
                     <tr>
-                        <td class="text-muted w-40">Nombre Receptor:</td>
+                        <td class="text-muted w-40">Nombre receptor:</td>
                         <td class="fw-bold text-dark fs-6">@Model.NombreReceptor</td>
                     </tr>
                     <tr>
-                        <td class="text-muted">DNI Receptor:</td>
+                        <td class="text-muted">DNI receptor:</td>
                         <td class="font-mono fw-bold">@Model.DniReceptor</td>
                     </tr>
                     <tr>
@@ -112,19 +112,19 @@
                             @if (Model.TipoReceptor == TipoReceptor.Titular)
                             {
                                 <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25">
-                                    Titular del Legajo Familiar
+                                    Titular del legajo familiar
                                 </span>
                             }
                             else
                             {
                                 <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25">
-                                    Tercero Autorizado (@Model.VinculoConTitular)
+                                    Tercero autorizado (@Model.VinculoConTitular)
                                 </span>
                             }
                         </td>
                     </tr>
                     <tr>
-                        <td class="text-muted">Familia Destinataria:</td>
+                        <td class="text-muted">Familia destinataria:</td>
                         <td class="text-dark">@Model.FamiliaTitular (DNI: @Model.DniFamilia)</td>
                     </tr>
                 </table>
@@ -134,19 +134,19 @@
         <div class="col-md-6">
             <div class="p-3 bg-light rounded-3 border h-100">
                 <h6 class="fw-bold text-secondary mb-3">
-                    <i class="bi bi-shield-check text-success me-2"></i>Datos de Fiscalización y Entrega
+                    <i class="bi bi-shield-check text-success me-2"></i>Datos de fiscalización y entrega
                 </h6>
                 <table class="table table-sm table-borderless mb-0 small">
                     <tr>
-                        <td class="text-muted w-40">Operador Despacho:</td>
+                        <td class="text-muted w-40">Operador despacho:</td>
                         <td class="fw-bold text-dark">@Model.VoluntarioDespachoId</td>
                     </tr>
                     <tr>
                         <td class="text-muted">Modalidad:</td>
-                        <td class="text-dark">Sede Central / Depósito Presencial</td>
+                        <td class="text-dark">Sede Central </td>
                     </tr>
                     <tr>
-                        <td class="text-muted">ID de Entrega:</td>
+                        <td class="text-muted">ID de entrega:</td>
                         <td class="font-mono text-muted">#@Model.EntregaId</td>
                     </tr>
                     <tr>
@@ -164,7 +164,7 @@
 
     <!-- Detalle de Alimentos Entregados -->
     <h6 class="fw-bold text-dark mb-3">
-        <i class="bi bi-box2 me-1 text-success"></i> Alimentos Retirados
+        <i class="bi bi-box2 me-1 text-success"></i> Alimentos retirados
     </h6>
 
     <div class="table-responsive mb-4">
@@ -173,8 +173,8 @@
                 <tr>
                     <th class="text-center" style="width: 40px;">#</th>
                     <th>Alimento</th>
-                    <th>Código EAN</th>
-                    <th>Lote Entregado</th>
+                    <th>Código de barras</th>
+                    <th>Lote entregado</th>
                     <th>Vencimiento</th>
                     <th class="text-end">Cantidad</th>
                 </tr>
@@ -213,7 +213,7 @@
     <!-- Firma Digital Manuscrita Estampada -->
     <div class="row pt-4 mt-3 border-top align-items-center">
         <div class="col-sm-6 text-center text-sm-start mb-3 mb-sm-0">
-            <small class="text-muted d-block mb-2 fw-semibold">Firma Manuscrita Registrada:</small>
+            <small class="text-muted d-block mb-2 fw-semibold">Firma registrada:</small>
             <div class="firma-box shadow-sm">
                 @if (!string.IsNullOrWhiteSpace(Model.FirmaDigital))
                 {
@@ -232,9 +232,9 @@
 
         <div class="col-sm-6 text-center text-sm-end">
             <div class="border-top border-dark d-inline-block pt-2 text-center" style="min-width: 200px;">
-                <small class="fw-bold d-block text-dark">Operador Responsable</small>
+                <small class="fw-bold d-block text-dark">Operador responsable</small>
                 <small class="text-muted">@Model.VoluntarioDespachoId</small>
-                <small class="text-secondary d-block font-mono" style="font-size: 0.72rem;">NutriRed Depósito Central</small>
+                <small class="text-secondary d-block font-mono" style="font-size: 0.72rem;">NutriRed depósito central</small>
             </div>
         </div>
     </div>

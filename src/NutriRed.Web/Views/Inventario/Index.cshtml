@@ -74,13 +74,13 @@
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
         <h2 class="fw-bold text-dark mb-1">
-            <i class="bi bi-hourglass-split text-warning"></i> Stock Consolidado & FEFO
+            <i class="bi bi-hourglass-split text-warning"></i> Stock de alimentos
         </h2>
-        <p class="text-muted mb-0">Gestión de existencias por alimento y semáforo de vencimiento de primer ingreso/primer egreso.</p>
+        <p class="text-muted mb-0">Gestión de existencias por alimento y semáforo de vencimiento de primer ingreso / primer egreso.</p>
     </div>
     <div>
         <a asp-action="RegistrarMerma" class="btn btn-outline-danger shadow-sm fw-semibold">
-            <i class="bi bi-trash me-1"></i> Registrar Merma / Baja
+            <i class="bi bi-trash me-1"></i> Registrar merma / maja
         </a>
     </div>
 </div>
@@ -99,7 +99,7 @@
                 <div>
                     <span class="text-secondary small fw-semibold d-block">Total de productos</span>
                     <h3 class="fw-bold text-dark mb-0">@totalProductos</h3>
-                    <small class="text-primary fw-normal">alimentos diferentes</small>
+                    <small class="text-primary fw-normal">Alimentos diferentes</small>
                 </div>
             </div>
         </div>
@@ -115,7 +115,7 @@
                 <div>
                     <span class="text-secondary small fw-semibold d-block">Stock disponible</span>
                     <h3 class="fw-bold text-dark mb-0">@stockTotal.ToString("N0") <span class="fs-6 text-muted fw-normal">kg / L / u</span></h3>
-                    <small class="text-primary fw-normal">cantidad total</small>
+                    <small class="text-primary fw-normal">Cantidad total</small>
                 </div>
             </div>
         </div>
@@ -131,7 +131,7 @@
                 <div>
                     <span class="text-secondary small fw-semibold d-block">Productos en alerta</span>
                     <h3 class="fw-bold text-dark mb-0">@productosEnAlerta</h3>
-                    <small class="text-primary fw-normal">por vencimiento próximo</small>
+                    <small class="text-primary fw-normal">Por vencimiento próximo</small>
                 </div>
             </div>
         </div>
@@ -147,7 +147,7 @@
                 <div>
                     <span class="text-secondary small fw-semibold d-block">Productos vencidos</span>
                     <h3 class="fw-bold text-dark mb-0">@productosVencidos</h3>
-                    <small class="text-primary fw-normal">requieren atención inmediata</small>
+                    <small class="text-primary fw-normal">Requieren atención inmediata</small>
                 </div>
             </div>
         </div>
@@ -168,7 +168,7 @@
                     <input type="text"
                            id="txtBuscar"
                            class="form-control border-start-0 ps-0"
-                           placeholder="-- Escriba el nombre o código de barras (EAN) --" />
+                           placeholder=" Escriba el nombre o código de barras " />
                 </div>
             </div>
 
@@ -192,21 +192,21 @@
                 <label for="cboEstadoLote" class="form-label small fw-semibold text-secondary mb-1">Estado de lote</label>
                 <select id="cboEstadoLote" class="form-select">
                     <option value="">Todos</option>
-                    <option value="disponible">Con Stock / Disponible</option>
-                    <option value="reponer">Bajo Stock Mínimo</option>
-                    <option value="sinstock">Sin Stock</option>
+                    <option value="disponible">Con stock</option>
+                    <option value="reponer">Bajo stock </option>
+                    <option value="sinstock">Sin stock</option>
                 </select>
             </div>
 
             <!-- 4. Filtro Semáforo FEFO -->
             <div class="col-md-3">
-                <label for="cboFefo" class="form-label small fw-semibold text-secondary mb-1">Semáforo FEFO</label>
+                <label for="cboFefo" class="form-label small fw-semibold text-secondary mb-1">Semáforo</label>
                 <select id="cboFefo" class="form-select">
                     <option value="">Todos</option>
-                    <option value="optimo">🟢 FEFO Óptimo (> 15 días)</option>
-                    <option value="atencion">🟡 FEFO Atención (≤ 15 días)</option>
-                    <option value="urgente">🟠 FEFO Urgente (≤ 5 días)</option>
-                    <option value="critico">🔴 FEFO Crítico (Vencido)</option>
+                    <option value="optimo">🟢 Óptimo (> 15 días)</option>
+                    <option value="atencion">🟡 Atención (≤ 15 días)</option>
+                    <option value="urgente">🟠 Urgente (≤ 5 días)</option>
+                    <option value="critico">🔴 Crítico (Vencido)</option>
                 </select>
             </div>
         </div>
@@ -222,10 +222,10 @@
                     <tr>
                         <th class="ps-3" style="width: 27%;">Alimento</th>
                         <th class="text-center" style="width: 18%;">Categoría</th>
-                        <th class="text-center" style="width: 15%;">Stock Actual</th>
-                        <th class="text-center" style="width: 13%;">Stock Mínimo</th>
-                        <th class="text-center" style="width: 13%;">Próximo Vencimiento</th>
-                        <th class="text-center" style="width: 14%;">Estado FEFO</th>
+                        <th class="text-center" style="width: 15%;">Stock actual</th>
+                        <th class="text-center" style="width: 13%;">Stock mínimo</th>
+                        <th class="text-center" style="width: 13%;">Próximo vencimiento</th>
+                        <th class="text-center" style="width: 14%;">Estado</th>
                         <th class="text-center pe-3" style="width: 10%;">Acciones</th>
                     </tr>
                 </thead>
@@ -354,12 +354,12 @@
     <div class="card-body py-2 px-3">
         <div class="d-flex align-items-center justify-content-between flex-nowrap gap-2">
             <div class="d-flex align-items-center flex-nowrap gap-3">
-                <span class="fw-bold text-secondary text-nowrap" style="font-size: 0.8rem;">Estándar FEFO:</span>
+                <span class="fw-bold text-secondary text-nowrap" style="font-size: 0.8rem;">Estándar:</span>
 
                 <div class="d-flex align-items-center gap-1 text-nowrap">
                     <span style="font-size: 0.85rem;">🟢</span>
                     <div>
-                        <span class="fw-bold text-dark d-block lh-1" style="font-size: 0.78rem;">FEFO Óptimo</span>
+                        <span class="fw-bold text-dark d-block lh-1" style="font-size: 0.78rem;"> Óptimo</span>
                         <small class="text-muted d-block" style="font-size: 0.68rem;">(> 15 días)</small>
                     </div>
                 </div>
@@ -367,7 +367,7 @@
                 <div class="d-flex align-items-center gap-1 text-nowrap">
                     <span style="font-size: 0.85rem;">🟡</span>
                     <div>
-                        <span class="fw-bold text-dark d-block lh-1" style="font-size: 0.78rem;">FEFO Atención</span>
+                        <span class="fw-bold text-dark d-block lh-1" style="font-size: 0.78rem;"> Atención</span>
                         <small class="text-muted d-block" style="font-size: 0.68rem;">(≤ 15 días)</small>
                     </div>
                 </div>
@@ -375,7 +375,7 @@
                 <div class="d-flex align-items-center gap-1 text-nowrap">
                     <span style="font-size: 0.85rem;">🟠</span>
                     <div>
-                        <span class="fw-bold text-dark d-block lh-1" style="font-size: 0.78rem;">FEFO Urgente</span>
+                        <span class="fw-bold text-dark d-block lh-1" style="font-size: 0.78rem;"> Urgente</span>
                         <small class="text-muted d-block" style="font-size: 0.68rem;">(≤ 5 días)</small>
                     </div>
                 </div>
@@ -383,7 +383,7 @@
                 <div class="d-flex align-items-center gap-1 text-nowrap">
                     <span style="font-size: 0.85rem;">🔴</span>
                     <div>
-                        <span class="fw-bold text-dark d-block lh-1" style="font-size: 0.78rem;">FEFO Crítico</span>
+                        <span class="fw-bold text-dark d-block lh-1" style="font-size: 0.78rem;"> Crítico</span>
                         <small class="text-muted d-block" style="font-size: 0.68rem;">(Vencido)</small>
                     </div>
                 </div>

@@ -38,15 +38,15 @@
 <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2 no-print">
     <div>
         <a asp-action="Index" class="btn btn-outline-secondary me-2">
-            <i class="bi bi-arrow-left me-1"></i> Listado de Donaciones
+            <i class="bi bi-arrow-left me-1"></i> Listado de donaciones
         </a>
         <a asp-action="Registrar" class="btn btn-emerald">
-            <i class="bi bi-plus-lg me-1"></i> Registrar Otra Donación
+            <i class="bi bi-plus-lg me-1"></i> Registrar otra donación
         </a>
     </div>
     <div class="d-flex gap-2">
         <button onclick="window.print()" class="btn btn-primary px-3 shadow-sm">
-            <i class="bi bi-printer me-2"></i> Imprimir Comprobante
+            <i class="bi bi-printer me-2"></i> Imprimir comprobante
         </button>
     </div>
 </div>
@@ -64,8 +64,8 @@
                 </div>
                 <div>
                     <h3 class="fw-bold mb-0 text-dark">NutriRed</h3>
-                    <div class="text-muted small">SISTEMA INTELIGENTE DE BANCO DE ALIMENTOS</div>
-                    <small class="text-secondary">Depósito Central de Almacenamiento & Rescate</small>
+                    <div class="text-muted small">SISTEMA PARA BANCOS DE ALIMENTOS</div>
+                    <small class="text-secondary">Depósito central de almacenamiento </small>
                 </div>
             </div>
         </div>
@@ -85,11 +85,11 @@
         <div class="col-md-6">
             <div class="p-3 bg-light rounded-3 border h-100">
                 <h6 class="fw-bold text-secondary mb-3">
-                    <i class="bi bi-person-circle me-1 text-primary"></i> Datos del Donante
+                    <i class="bi bi-person-circle me-1 text-primary"></i> Datos del donante
                 </h6>
                 <table class="table table-sm table-borderless mb-0 small">
                     <tr>
-                        <td class="text-muted w-40">Nombre / Razón Social:</td>
+                        <td class="text-muted w-40">Nombre / Razón social:</td>
                         <td class="fw-bold text-dark">@Model.DonanteNombre</td>
                     </tr>
                     <tr>
@@ -97,18 +97,18 @@
                         <td class="font-mono">@(string.IsNullOrWhiteSpace(Model.DonanteDocumento) ? "No especificado / Anónimo" : Model.DonanteDocumento)</td>
                     </tr>
                     <tr>
-                        <td class="text-muted">Tipo de Donante:</td>
+                        <td class="text-muted">Tipo de donante:</td>
                         <td>
                             @switch (Model.TipoDonante)
                             {
                                 case TipoDonante.Individuo:
-                                    <span class="badge bg-info bg-opacity-10 text-info">Persona Física</span>
+                                    <span class="badge bg-info bg-opacity-10 text-info">Persona física</span>
                                     break;
                                 case TipoDonante.Institucion:
                                     <span class="badge bg-warning bg-opacity-10 text-warning">Institución / Empresa</span>
                                     break;
                                 case TipoDonante.Anonimo:
-                                    <span class="badge bg-secondary bg-opacity-10 text-secondary">Donante Anónimo</span>
+                                    <span class="badge bg-secondary bg-opacity-10 text-secondary">Donante anónimo</span>
                                     break;
                             }
                         </td>
@@ -120,7 +120,7 @@
         <div class="col-md-6">
             <div class="p-3 bg-light rounded-3 border h-100">
                 <h6 class="fw-bold text-secondary mb-3">
-                    <i class="bi bi-shield-check me-1 text-success"></i> Datos de Recepción y Control
+                    <i class="bi bi-shield-check me-1 text-success"></i> Datos de recepción y control
                 </h6>
                 <table class="table table-sm table-borderless mb-0 small">
                     <tr>
@@ -128,8 +128,8 @@
                         <td class="fw-bold text-dark">@Model.VoluntarioReceptorId</td>
                     </tr>
                     <tr>
-                        <td class="text-muted">Almacén Destino:</td>
-                        <td class="text-dark">Depósito Principal - Stock Físico</td>
+                        <td class="text-muted">Almacén destino:</td>
+                        <td class="text-dark">Depósito principal </td>
                     </tr>
                     <tr>
                         <td class="text-muted">Observaciones:</td>
@@ -142,7 +142,7 @@
 
     <!-- Detalle de Alimentos Físicos Recibidos -->
     <h6 class="fw-bold text-dark mb-3">
-        <i class="bi bi-card-checklist me-1 text-success"></i> Detalle de Mercadería y Lotes Ingresados
+        <i class="bi bi-card-checklist me-1 text-success"></i> Detalle de mercadería y lotes ingresados
     </h6>
 
     <div class="table-responsive mb-4">
@@ -151,9 +151,9 @@
                 <tr>
                     <th class="text-center" style="width: 40px;">#</th>
                     <th>Código EAN</th>
-                    <th>Alimento Rescatado</th>
+                    <th>Alimento </th>
                     <th>Categoría</th>
-                    <th>Lote Asignado</th>
+                    <th>Lote asignado</th>
                     <th>Vencimiento</th>
                     <th class="text-end">Cantidad</th>
                 </tr>
@@ -181,7 +181,7 @@
             </tbody>
             <tfoot class="table-light fw-bold">
                 <tr>
-                    <td colspan="6" class="text-end">TOTAL UNIDADES / KILOGRAMOS RECIBIDOS:</td>
+                    <td colspan="6" class="text-end">TOTAL RECIBIDOS:</td>
                     <td class="text-end text-success fs-5">
                         @Model.TotalUnidadesRecibidas.ToString("N1")
                     </td>
@@ -193,22 +193,22 @@
     <!-- Leyenda Bromatológica y Legal -->
     <div class="alert alert-light border small text-muted mb-5">
         <i class="bi bi-info-circle me-1"></i>
-        <strong>Certificación de Recepción:</strong> Este comprobante acredita la entrega efectiva de los alimentos detallados en el Banco de Alimentos NutriRed.
-        Los lotes generados quedan automáticamente incorporados al sistema con control de rotación <strong>FEFO</strong> (First Expired, First Out)
-        y aptitud bromatológica verificada en depósito.
+        <strong>Certificación de Recepción:</strong> El presente documento certifica la recepción conforme de los alimentos consignados en el Banco de Alimentos NutriRed.
+        Las partidas quedan asentadas en el inventario general con trazabilidad bajo política<strong>FEFO</strong> (First expired, first out)
+        y aptitud bromatológica validada en depósito.
     </div>
 
     <!-- Firmas de Conformidad para Impresión -->
     <div class="row pt-4 mt-5 text-center">
         <div class="col-6">
             <div class="border-top border-dark mx-auto pt-2" style="max-width: 250px;">
-                <small class="fw-bold d-block text-dark">Firma Donante / Transportista</small>
+                <small class="fw-bold d-block text-dark"> Firma donante </small>
                 <small class="text-muted">Aclaración y DNI</small>
             </div>
         </div>
         <div class="col-6">
             <div class="border-top border-dark mx-auto pt-2" style="max-width: 250px;">
-                <small class="fw-bold d-block text-dark">Firma Receptor NutriRed</small>
+                <small class="fw-bold d-block text-dark">Firma receptor NutriRed</small>
                 <small class="text-muted">@Model.VoluntarioReceptorId</small>
             </div>
         </div>

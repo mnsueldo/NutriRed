@@ -21,7 +21,7 @@
                     <i class="bi bi-pencil-square fs-5"></i>
                 </div>
                 <div>
-                    <h1 class="h5 fw-bold text-dark mb-0">Modificar Categoría</h1>
+                    <h1 class="h5 fw-bold text-dark mb-0">Modificar categoría</h1>
                     <small class="text-muted">Actualice la información de la categoría seleccionada.</small>
                 </div>
             </div>
@@ -35,7 +35,7 @@
 
                     <!-- Código identificador interno -->
                     <div class="mb-3">
-                        <label class="form-label text-muted small fw-semibold">Identificador de Sistema</label>
+                        <label class="form-label text-muted small fw-semibold">Identificador de sistema</label>
                         <div>
                             <span class="code-tag">ID: #@Model.Id</span>
                         </div>
@@ -44,11 +44,11 @@
                     <!-- Nombre de la Categoría -->
                     <div class="mb-3">
                         <label asp-for="Nombre" class="form-label fw-semibold text-dark">
-                            Nombre de la Categoría <span class="text-danger">*</span>
+                            Nombre de la categoría <span class="text-danger">*</span>
                         </label>
                         <input asp-for="Nombre" class="form-control" placeholder="Ej: Lácteos, Legumbres..." />
                         <span asp-validation-for="Nombre" class="text-danger small"></span>
-                        <div class="form-text">Si modifica el nombre, no debe colisionar con otra categoría existente.</div>
+                        <div class="form-text">Si modifica el nombre, no debe coincidir con el de otra categoría existente.</div>
                     </div>
 
                     <!-- Descripción -->
@@ -65,17 +65,17 @@
                     <div class="form-check form-switch mb-4 p-3 bg-light rounded-3 border">
                         <input asp-for="Activo" class="form-check-input ms-0 me-3" type="checkbox" role="switch" id="switchActivoEdit" />
                         <label class="form-check-label fw-semibold text-dark" for="switchActivoEdit">
-                            Categoría Activa
+                            Categoría activa
                         </label>
-                        <div class="text-muted small">Desactivar una categoría impedirá asociarla a nuevos alimentos, preservando el histórico.</div>
+                        <div class="text-muted small">Desactivar una categoría impedirá asociarla a nuevos alimentos.</div>
                     </div>
 
                     <div class="d-flex justify-content-between align-items-center pt-3 border-top">
                         <a asp-action="Index" class="btn btn-outline-secondary">
-                            <i class="bi bi-arrow-left me-1"></i> Volver al Listado
+                            <i class="bi bi-arrow-left me-1"></i> Volver al listado
                         </a>
                         <button type="submit" class="btn btn-emerald">
-                            <i class="bi bi-save me-1"></i> Guardar Modificaciones
+                            <i class="bi bi-save me-1"></i> Guardar modificaciones
                         </button>
                     </div>
                 </form>

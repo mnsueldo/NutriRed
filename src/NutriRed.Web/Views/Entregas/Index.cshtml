@@ -9,9 +9,9 @@
 <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
     <div>
         <h2 class="fw-bold mb-1">
-            <i class="bi bi-truck text-primary me-2"></i>Despacho y Entrega Asistencial (RF3)
+            <i class="bi bi-truck text-primary me-2"></i>Despacho y entrega asistencial
         </h2>
-        <p class="text-muted mb-0">Control de entrega en sede o móvil, validación de receptor, captura de firma digital manuscrita y trazabilidad integral</p>
+        <p class="text-muted mb-0">Control de entrega en sede o móvil, validación de receptor, captura de firma digital y seguimiento</p>
     </div>
 </div>
 
@@ -26,7 +26,7 @@
                     <i class="bi bi-box-seam fs-4"></i>
                 </div>
                 <div>
-                    <div class="text-muted small">Listos para Despacho</div>
+                    <div class="text-muted small">Listos para despacho</div>
                     <div class="fs-4 fw-bold text-dark">@Model.TotalListos</div>
                 </div>
             </div>
@@ -39,7 +39,7 @@
                     <i class="bi bi-check-circle-fill fs-4"></i>
                 </div>
                 <div>
-                    <div class="text-muted small">Entregas Concretadas</div>
+                    <div class="text-muted small">Entregas concretadas</div>
                     <div class="fs-4 fw-bold text-success">@Model.TotalEntregados</div>
                 </div>
             </div>
@@ -52,7 +52,7 @@
                     <i class="bi bi-x-circle-fill fs-4"></i>
                 </div>
                 <div>
-                    <div class="text-muted small">Entregas Fallidas / Canceladas</div>
+                    <div class="text-muted small">Entregas fallidas / Canceladas</div>
                     <div class="fs-4 fw-bold text-danger">@Model.TotalCancelados</div>
                 </div>
             </div>
@@ -65,7 +65,7 @@
                     <i class="bi bi-boxes fs-4"></i>
                 </div>
                 <div>
-                    <div class="text-muted small">Total de Paquetes</div>
+                    <div class="text-muted small">Total de paquetes</div>
                     <div class="fs-4 fw-bold text-dark">@Model.TotalTodos</div>
                 </div>
             </div>
@@ -80,7 +80,7 @@
            asp-action="Index"
            asp-route-tab="pendientes"
            role="tab">
-            <i class="bi bi-box-seam me-2 text-primary"></i>Cajas Listas para Entrega
+            <i class="bi bi-box-seam me-2 text-primary"></i>Cajas listas para entrega
             <span class="badge bg-primary ms-1">@Model.TotalListos</span>
         </a>
     </li>
@@ -89,7 +89,7 @@
            asp-action="Index"
            asp-route-tab="todos"
            role="tab">
-            <i class="bi bi-clock-history me-2 text-secondary"></i>Trazabilidad y Estado de Paquetes
+            <i class="bi bi-clock-history me-2 text-secondary"></i>Trazabilidad y estado de paquetes
             <span class="badge bg-secondary ms-1">@Model.TotalTodos</span>
         </a>
     </li>
@@ -125,7 +125,7 @@
                 </div>
                 <div class="col-lg-3 col-md-4 pt-md-4">
                     <button type="submit" class="btn btn-emerald btn-lg w-100 shadow-sm">
-                        <i class="bi bi-search me-1"></i> Consultar Paquete
+                        <i class="bi bi-search me-1"></i> Consultar paquete
                     </button>
                 </div>
             </form>
@@ -137,7 +137,7 @@
         <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
             <div>
                 <h5 class="card-title fw-bold text-dark mb-0">
-                    <i class="bi bi-box-seam me-2 text-success"></i>Cajas Listas en Depósito para Retiro
+                    <i class="bi bi-box-seam me-2 text-success"></i>Cajas listas en depósito para retiro
                 </h5>
                 <small class="text-muted">Paquetes en estado <strong>Preparado</strong> sin entrega registrada, listos para entrega inmediata.</small>
             </div>
@@ -151,9 +151,9 @@
                     <thead class="table-light">
                         <tr>
                             <th class="ps-3">Código QR</th>
-                            <th>Familia Destinataria</th>
+                            <th>Familia destinataria</th>
                             <th>Domicilio</th>
-                            <th>Kit Nutricional</th>
+                            <th>Kit nutricional</th>
                             <th>Alimentos</th>
                             <th>Preparado</th>
                             <th class="text-end pe-3">Acción</th>
@@ -225,7 +225,7 @@ else
             <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
                 <div>
                     <h5 class="card-title fw-bold text-dark mb-0">
-                        <i class="bi bi-list-check me-2 text-primary"></i>Listado Integral de Paquetes Asistenciales
+                        <i class="bi bi-list-check me-2 text-primary"></i>Listado de paquetes asistenciales
                     </h5>
                     <small class="text-muted">Estado en tiempo real de cada orden de caja, entrega concretada o intento fallido.</small>
                 </div>
@@ -256,11 +256,11 @@ else
                     <thead class="table-light">
                         <tr>
                             <th class="ps-3">Código QR</th>
-                            <th>Familia Beneficiaria</th>
-                            <th>Kit Nutricional</th>
+                            <th>Familia beneficiaria</th>
+                            <th>Kit nutricional</th>
                             <th>Alimentos</th>
                             <th>Estado Actual</th>
-                            <th>Información de Despacho / Incidencia</th>
+                            <th>Información de despacho</th>
                             <th class="text-end pe-3">Acciones</th>
                         </tr>
                     </thead>
@@ -311,7 +311,7 @@ else
                                                 break;
                                             case EstadoPaquete.Cancelado:
                                                 <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25">
-                                                    <i class="bi bi-x-circle me-1"></i> No Concretada / Cancelado
+                                                    <i class="bi bi-x-circle me-1"></i> No concretada / Cancelado
                                                 </span>
                                                 break;
                                             default:

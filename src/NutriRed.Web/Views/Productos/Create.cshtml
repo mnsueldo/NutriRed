@@ -1,7 +1,7 @@
 @model Producto
 
 @{
-    ViewData["Title"] = "Nuevo Alimento";
+    ViewData["Title"] = "Nuevo alimento";
 }
 
 <div class="row justify-content-center">
@@ -11,7 +11,7 @@
             <ol class="breadcrumb mb-1 small">
                 <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index" class="text-decoration-none text-muted">Inicio</a></li>
                 <li class="breadcrumb-item"><a asp-action="Index" class="text-decoration-none text-muted">Alimentos</a></li>
-                <li class="breadcrumb-item active text-dark fw-semibold" aria-current="page">Alta de Alimento</li>
+                <li class="breadcrumb-item active text-dark fw-semibold" aria-current="page">Alta de alimento</li>
             </ol>
         </nav>
 
@@ -21,7 +21,7 @@
                     <i class="bi bi-egg-fried fs-5"></i>
                 </div>
                 <div>
-                    <h1 class="h5 fw-bold text-dark mb-0">Registrar Alimento en Catálogo</h1>
+                    <h1 class="h5 fw-bold text-dark mb-0">Registrar alimento en catálogo</h1>
                     <small class="text-muted">Complete los datos técnicos para habilitar el alimento para donaciones y kits.</small>
                 </div>
             </div>
@@ -35,7 +35,7 @@
                     <!-- Código de Barras Comercial (EAN-13) -->
                     <div class="mb-3">
                         <label asp-for="CodigoBarras" class="form-label fw-semibold text-dark">
-                            Código de Barras Comercial (EAN) <span class="text-danger">*</span>
+                            Código de barras comercial <span class="text-danger">*</span>
                         </label>
                         <div class="input-group">
                             <span class="input-group-text bg-light text-muted">
@@ -50,9 +50,9 @@
                     <!-- Nombre del Alimento -->
                     <div class="mb-3">
                         <label asp-for="Nombre" class="form-label fw-semibold text-dark">
-                            Nombre del Alimento <span class="text-danger">*</span>
+                            Nombre del alimento <span class="text-danger">*</span>
                         </label>
-                        <input asp-for="Nombre" class="form-control" placeholder="Ej: Leche Entera Larga Vida 1L, Arroz Largo Fino 1kg..." />
+                        <input asp-for="Nombre" class="form-control" placeholder="Ej: Leche Entera Larga Vida 1L, Arroz Largo Fino 1kg" />
                         <span asp-validation-for="Nombre" class="text-danger small"></span>
                     </div>
 
@@ -63,7 +63,7 @@
                                 Categoría <span class="text-danger">*</span>
                             </label>
                             <select asp-for="CategoriaId" asp-items="ViewBag.Categorias" class="form-select">
-                                <option value="">-- Seleccionar Categoría --</option>
+                                <option value=""> Seleccionar Categoría </option>
                             </select>
                             <span asp-validation-for="CategoriaId" class="text-danger small"></span>
                         </div>
@@ -71,7 +71,7 @@
                         <!-- Unidad de Medida -->
                         <div class="col-md-6">
                             <label asp-for="UnidadMedida" class="form-label fw-semibold text-dark">
-                                Unidad de Medida <span class="text-danger">*</span>
+                                Unidad de medida <span class="text-danger">*</span>
                             </label>
                             <select asp-for="UnidadMedida" asp-items="Html.GetEnumSelectList<UnidadMedida>()" class="form-select">
                             </select>
@@ -82,23 +82,23 @@
                     <!-- Descripción / Presentación -->
                     <div class="mb-3">
                         <label asp-for="Descripcion" class="form-label fw-semibold text-dark">
-                            Descripción / Presentación del Envase
+                            Descripción / Presentación del envase
                         </label>
-                        <input asp-for="Descripcion" class="form-control" placeholder="Ej: Paquete plástico de 500g, Botella PET de 900ml..." />
+                        <input asp-for="Descripcion" class="form-control" placeholder="Ej: Paquete plástico de 500g, Botella PET de 900ml " />
                         <span asp-validation-for="Descripcion" class="text-danger small"></span>
                     </div>
 
                     <!-- Stock Mínimo de Alerta -->
                     <div class="mb-4">
                         <label asp-for="StockMinimo" class="form-label fw-semibold text-dark">
-                            Stock Mínimo de Alerta <span class="text-danger">*</span>
+                            Stock mínimo de alerta <span class="text-danger">*</span>
                         </label>
                         <div class="input-group">
                             <input asp-for="StockMinimo" class="form-control" type="number" step="1" min="0" />
-                            <span class="input-group-text bg-light text-muted">unidades / existencias</span>
+                            <span class="input-group-text bg-light text-muted">Unidades</span>
                         </div>
                         <span asp-validation-for="StockMinimo" class="text-danger small"></span>
-                        <div class="form-text">Si el stock físico consolidado cae por debajo de este valor, el sistema emitirá alertas de reposición.</div>
+                        <div class="form-text">Si el stock físico cae por debajo de este valor, el sistema emitirá alertas de reposición.</div>
                     </div>
 
                     <!-- Estado Activo -->
@@ -112,10 +112,10 @@
 
                     <div class="d-flex justify-content-between align-items-center pt-3 border-top">
                         <a asp-action="Index" class="btn btn-outline-secondary">
-                            <i class="bi bi-arrow-left me-1"></i> Volver al Catálogo
+                            <i class="bi bi-arrow-left me-1"></i> Volver al catálogo
                         </a>
                         <button type="submit" class="btn btn-emerald">
-                            <i class="bi bi-check2-circle me-1"></i> Registrar Alimento
+                            <i class="bi bi-check2-circle me-1"></i> Registrar alimento
                         </button>
                     </div>
                 </form>

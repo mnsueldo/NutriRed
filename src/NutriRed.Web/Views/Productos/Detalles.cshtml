@@ -9,7 +9,7 @@
     <ol class="breadcrumb mb-1 small">
         <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index" class="text-decoration-none text-muted">Inicio</a></li>
         <li class="breadcrumb-item"><a asp-action="Index" class="text-decoration-none text-muted">Alimentos</a></li>
-        <li class="breadcrumb-item active text-dark fw-semibold" aria-current="page">Detalle Técnico</li>
+        <li class="breadcrumb-item active text-dark fw-semibold" aria-current="page">Detalle técnico</li>
     </ol>
 </nav>
 
@@ -33,7 +33,7 @@
     </div>
     <div class="d-flex gap-2">
         <a asp-action="Edit" asp-route-id="@Model.Producto.Id" class="btn btn-outline-secondary">
-            <i class="bi bi-pencil me-1"></i> Modificar Alimento
+            <i class="bi bi-pencil me-1"></i> Modificar alimento
         </a>
         <a asp-action="Index" class="btn btn-outline-secondary">
             <i class="bi bi-arrow-left me-1"></i> Catálogo
@@ -46,19 +46,19 @@
     <div class="col-lg-4">
         <div class="card card-nr h-100 p-4">
             <h2 class="h6 fw-bold text-dark mb-3 pb-2 border-bottom">
-                <i class="bi bi-info-circle text-primary me-2"></i> Datos de Catálogo
+                <i class="bi bi-info-circle text-primary me-2"></i> Datos de catálogo
             </h2>
             <dl class="row mb-0 small">
                 <dt class="col-sm-5 text-muted">Categoría:</dt>
                 <dd class="col-sm-7 fw-semibold text-dark">@(Model.Producto.Categoria?.Nombre ?? "General")</dd>
 
-                <dt class="col-sm-5 text-muted">Unidad Medida:</dt>
+                <dt class="col-sm-5 text-muted">Unidad medida:</dt>
                 <dd class="col-sm-7 fw-semibold text-dark">@Model.Producto.UnidadMedida</dd>
 
-                <dt class="col-sm-5 text-muted">Stock Mínimo:</dt>
+                <dt class="col-sm-5 text-muted">Stock mínimo:</dt>
                 <dd class="col-sm-7 fw-semibold text-dark">@Model.Producto.StockMinimo.ToString("N0") @Model.Producto.UnidadMedida</dd>
 
-                <dt class="col-sm-5 text-muted">Stock Físico:</dt>
+                <dt class="col-sm-5 text-muted">Stock físico:</dt>
                 <dd class="col-sm-7">
                     <span class="fw-bold @(Model.RequiereReposicion ? "text-danger" : "text-success") fs-6">
                         @Model.StockTotalDisponible.ToString("N0") @Model.Producto.UnidadMedida
@@ -71,7 +71,7 @@
                     }
                 </dd>
 
-                <dt class="col-sm-5 text-muted">Lotes Registrados:</dt>
+                <dt class="col-sm-5 text-muted">Lotes registrados:</dt>
                 <dd class="col-sm-7 fw-semibold text-dark">@Model.Lotes.Count lote(s)</dd>
             </dl>
         </div>
@@ -82,7 +82,7 @@
         <div class="card card-nr h-100 overflow-hidden">
             <div class="card-header card-nr-header d-flex justify-content-between align-items-center">
                 <div class="fw-bold text-dark">
-                    <i class="bi bi-boxes text-success me-2"></i> Lotes Físicos en Depósito (Orden FEFO)
+                    <i class="bi bi-boxes text-success me-2"></i> Lotes físicos en depósito
                 </div>
                 <small class="text-muted">Prioridad de consumo por caducidad</small>
             </div>
@@ -104,7 +104,7 @@
                                 <th>Caducidad (FEFO)</th>
                                 <th class="text-center">Disponible</th>
                                 <th class="text-center">Inicial</th>
-                                <th class="text-center">Estado Lote</th>
+                                <th class="text-center">Estado lote</th>
                             </tr>
                         </thead>
                         <tbody>

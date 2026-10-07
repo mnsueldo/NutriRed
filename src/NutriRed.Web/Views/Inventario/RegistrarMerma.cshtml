@@ -1,6 +1,6 @@
 @model NutriRed.Web.Models.RegistrarMermaViewModel
 @{
-    ViewData["Title"] = "Registro de Mermas & Bajas";
+    ViewData["Title"] = "Registro de mermas & bajas";
 }
 
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
@@ -15,7 +15,7 @@
                         <i class="bi bi-trash3-fill fs-3 text-danger"></i>
                     </div>
                     <div>
-                        <h4 class="card-title fw-bold text-dark mb-0">Registro de Mermas & Bajas</h4>
+                        <h4 class="card-title fw-bold text-dark mb-0">Registro de mermas & bajas</h4>
                         <small class="text-muted">Descarte de alimentos por vencimiento, deterioro o rotura de envase.</small>
                     </div>
                 </div>
@@ -27,18 +27,18 @@
 
                     <!-- Paso 1: Selección / Búsqueda del Producto por Nombre o Código de Barras -->
                     <div class="mb-3">
-                        <label asp-for="ProductoId" class="form-label fw-semibold">1. Buscar Alimento / Producto</label>
+                        <label asp-for="ProductoId" class="form-label fw-semibold">1. Buscar alimento</label>
                         <select asp-for="ProductoId" asp-items="ViewBag.ProductosSelectList" class="form-select select2-search" id="cboProducto">
-                            <option value="">-- Escriba el nombre o código de barras (EAN) --</option>
+                            <option value=""> Escriba el nombre o código de barras </option>
                         </select>
                         <span asp-validation-for="ProductoId" class="text-danger small"></span>
                     </div>
 
                     <!-- Paso 2: Selección de Lote Específico del Producto Elegido -->
                     <div class="mb-3">
-                        <label asp-for="LoteId" class="form-label fw-semibold">2. Seleccionar Lote Afectado</label>
+                        <label asp-for="LoteId" class="form-label fw-semibold">2. Seleccionar lote afectado</label>
                         <select asp-for="LoteId" asp-items="ViewBag.LotesSelectList" class="form-select" id="cboLote" disabled="@(Model?.ProductoId == null)">
-                            <option value="">-- Primero seleccione un producto --</option>
+                            <option value=""> Primero seleccione un alimento </option>
                         </select>
                         <span asp-validation-for="LoteId" class="text-danger small"></span>
                     </div>
@@ -46,7 +46,7 @@
                     <div class="row g-3 mb-3">
                         <!-- Cantidad -->
                         <div class="col-md-6 mb-3">
-                            <label asp-for="Cantidad" class="form-label fw-semibold text-dark">Cantidad a Dar de Baja</label>
+                            <label asp-for="Cantidad" class="form-label fw-semibold text-dark">Cantidad a dar de baja</label>
                             <input asp-for="Cantidad"
                                    type="number"
                                    class="form-control"
@@ -60,7 +60,7 @@
                         <div class="col-md-6">
                             <label asp-for="Motivo" class="form-label fw-semibold"></label>
                             <select asp-for="Motivo" asp-items="ViewBag.MotivosSelectList" class="form-select">
-                                <option value="">-- Seleccione motivo --</option>
+                                <option value=""> Seleccione motivo </option>
                             </select>
                             <span asp-validation-for="Motivo" class="text-danger small"></span>
                         </div>
@@ -76,10 +76,10 @@
                     <!-- Acciones del Formulario -->
                     <div class="d-flex justify-content-between pt-2">
                         <a asp-action="Index" class="btn btn-outline-secondary">
-                            <i class="bi bi-arrow-left"></i> Volver a Inventario
+                            <i class="bi bi-arrow-left"></i> Volver a inventario
                         </a>
                         <button type="submit" class="btn btn-danger">
-                            <i class="bi bi-check-circle"></i> Confirmar Baja de Stock
+                            <i class="bi bi-check-circle"></i> Confirmar baja de stock
                         </button>
                     </div>
                 </form>
@@ -96,7 +96,7 @@
             // Inicializar Select2 para búsqueda rápida en el combo de Producto
             $('#cboProducto').select2({
                 theme: 'bootstrap-5',
-                placeholder: '-- Escriba el nombre o código de barras (EAN) --',
+                placeholder: ' Escriba el nombre o código de barras (EAN) ',
                 allowClear: true,
                 width: '100%'
             });
@@ -109,12 +109,12 @@
                 $cboLote.empty();
 
                 if (!productoId) {
-                    $cboLote.append('<option value="">-- Primero seleccione un producto --</option>');
+                    $cboLote.append('<option value=""> Primero seleccione un producto </option>');
                     $cboLote.prop('disabled', true);
                     return;
                 }
 
-                $cboLote.append('<option value="">Cargando lotes disponibles...</option>');
+                $cboLote.append('<option value="">Cargando lotes disponibles</option>');
                 $cboLote.prop('disabled', true);
 
                 // Fetch AJAX para traer los lotes filtrados por ProductoId
@@ -123,10 +123,10 @@
                     .then(data => {
                         $cboLote.empty();
                         if (data.length === 0) {
-                            $cboLote.append('<option value="">-- No hay lotes con stock para este producto --</option>');
+                            $cboLote.append('<option value=""> No hay lotes con stock para este producto </option>');
                             $cboLote.prop('disabled', true);
                         } else {
-                            $cboLote.append('<option value="">-- Seleccione el lote afectado --</option>');
+                            $cboLote.append('<option value=""> Seleccione el lote afectado </option>');
                             data.forEach(function (lote) {
                                 $cboLote.append(new Option(lote.texto, lote.id));
                             });
