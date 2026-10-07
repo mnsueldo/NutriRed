@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using NutriRed.Domain.Entities;
@@ -8,6 +9,7 @@ using NutriRed.Web.Models;
 
 namespace NutriRed.Web.Controllers;
 
+[Authorize]
 public class InventarioController : Controller
 {
     private readonly IInventarioService _inventarioService;

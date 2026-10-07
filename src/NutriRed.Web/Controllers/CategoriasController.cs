@@ -1,9 +1,11 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NutriRed.Domain.Entities;
 using NutriRed.Services.Interfaces;
 
 namespace NutriRed.Web.Controllers;
 
+[Authorize(Roles = "Administrador")]
 public class CategoriasController : Controller
 {
     private readonly ICategoriaService _categoriaService;

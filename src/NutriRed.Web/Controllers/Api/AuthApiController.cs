@@ -1,4 +1,6 @@
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using NutriRed.Domain.Entities;
 
 namespace NutriRed.Web.Controllers.Api;
 
@@ -7,64 +9,76 @@ namespace NutriRed.Web.Controllers.Api;
 [Produces("application/json")]
 public class AuthApiController : ControllerBase
 {
+    private readonly UserManager<ApplicationUser> _userManager;
+    private readonly SignInManager<ApplicationUser> _signInManager;
     private readonly ILogger<AuthApiController> _logger;
 
-    public AuthApiController(ILogger<AuthApiController> logger)
+    public AuthApiController(
+        UserManager<ApplicationUser> userManager,
+        SignInManager<ApplicationUser> signInManager,
+        ILogger<AuthApiController> logger)
     {
+        _userManager = userManager;
+        _signInManager = signInManager;
         _logger = logger;
     }
 
     /// <summary>
     /// Endpoint de autenticación para la app móvil Android.
-    /// Valida credenciales de voluntarios y administradores.
+    /// Valida credenciales contra ASP.NET Core Identity y emite token de sesión.
     /// </summary>
     [HttpPost("login")]
-    public IActionResult Login([FromBody] LoginApiRequest request)
+    public async Task<IActionResult> Login([FromBody] LoginApiRequest request)
     {
         if (request == null || string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Password))
         {
             return BadRequest(new { success = false, message = "Debe ingresar usuario/correo y contraseña." });
         }
 
-        var email = request.Email.Trim().ToLower();
+        var input = request.Email.Trim().ToLowerInvariant();
         var pwd = request.Password.Trim();
 
-        // Usuarios y roles predefinidos del sistema NutriRed
-        if ((email == "admin" || email == "admin@nutrired.org") && pwd == "123456")
+        // Resolución flexible: si ingresa "admin" o "voluntario" sin dominio, resolvemos a su correo oficial
+        var emailCandidate = input.Contains('@') ? input : $"{input}@nutrired.org";
+
+        var user = await _userManager.FindByEmailAsync(emailCandidate) ??
+                   await _userManager.FindByNameAsync(input);
+
+        if (user == null || !user.Activo)
         {
-            return Ok(new
-            {
-                success = true,
-                token = "nutrired_token_admin_2026",
-                user = new
-                {
-                    id = "USR-001",
-                    email = "admin@nutrired.org",
-                    full_name = "Administrador General",
-                    fullName = "Administrador General",
-                    role = "ADMIN"
-                }
-            });
+            _logger.LogWarning("Intento de login móvil fallido: usuario no encontrado para '{Input}'", input);
+            return Unauthorized(new { success = false, message = "Credenciales inválidas. Verifique usuario y contraseña." });
         }
 
-        if ((email == "voluntario" || email == "voluntario@nutrired.org" || email.StartsWith("voluntario")) && pwd == "123456")
+        var passwordValid = await _userManager.CheckPasswordAsync(user, pwd);
+        if (!passwordValid)
         {
-            return Ok(new
-            {
-                success = true,
-                token = "nutrired_token_voluntario_2026",
-                user = new
-                {
-                    id = "USR-002",
-                    email = "voluntario@nutrired.org",
-                    full_name = "Voluntario Recepción y Despacho",
-                    fullName = "Voluntario Recepción y Despacho",
-                    role = "VOLUNTEER"
-                }
-            });
+            _logger.LogWarning("Intento de login móvil con contraseña incorrecta para '{Email}'", user.Email);
+            return Unauthorized(new { success = false, message = "Credenciales inválidas. Verifique usuario y contraseña." });
         }
 
-        return Unauthorized(new { success = false, message = "Credenciales inválidas. Verifique usuario y contraseña." });
+        var roles = await _userManager.GetRolesAsync(user);
+        var primaryRole = roles.FirstOrDefault() ?? "Voluntario";
+        var roleCode = primaryRole.Equals("Administrador", StringComparison.OrdinalIgnoreCase) ? "ADMIN" : "VOLUNTEER";
+
+        // Token de sesión autenticado
+        var token = $"nutrired_token_{user.Id}_{DateTime.UtcNow.Ticks}";
+
+        _logger.LogInformation("Login móvil exitoso para usuario '{Email}' con rol '{Rol}'", user.Email, primaryRole);
+
+        return Ok(new
+        {
+            success = true,
+            token = token,
+            user = new
+            {
+                id = user.Id,
+                email = user.Email,
+                full_name = user.NombreCompleto,
+                fullName = user.NombreCompleto,
+                role = roleCode
+            }
+        });
     }
 }
 

@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NutriRed.Domain.Entities;
 using NutriRed.Domain.Enums;
@@ -7,6 +8,7 @@ using NutriRed.Web.Models;
 
 namespace NutriRed.Web.Controllers;
 
+[Authorize]
 public class DonacionesController : Controller
 {
     private readonly IDonacionService _donacionService;

@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using NutriRed.Domain.Entities;
 using NutriRed.Domain.Enums;
@@ -371,5 +372,66 @@ public static class DbInitializer
 
         context.FamiliasBeneficiarias.AddRange(familia1, familia2, familia3);
         await context.SaveChangesAsync();
+    }
+
+    /// <summary>
+    /// Inicializa los roles oficiales del sistema y las cuentas de usuario por defecto
+    /// para administración y operaciones de voluntariado.
+    /// </summary>
+    public static async Task SeedIdentityAsync(
+        UserManager<ApplicationUser> userManager,
+        RoleManager<IdentityRole> roleManager)
+    {
+        // 1. Roles Oficiales
+        string[] roles = ["Administrador", "Voluntario"];
+        foreach (var rol in roles)
+        {
+            if (!await roleManager.RoleExistsAsync(rol))
+            {
+                await roleManager.CreateAsync(new IdentityRole(rol));
+            }
+        }
+
+        // 2. Administrador por defecto
+        var adminEmail = "admin@nutrired.org";
+        var adminUser = await userManager.FindByEmailAsync(adminEmail);
+        if (adminUser == null)
+        {
+            adminUser = new ApplicationUser
+            {
+                UserName = adminEmail,
+                Email = adminEmail,
+                EmailConfirmed = true,
+                NombreCompleto = "Administrador General",
+                FechaRegistro = DateTime.UtcNow,
+                Activo = true
+            };
+            var result = await userManager.CreateAsync(adminUser, "Admin123!");
+            if (result.Succeeded)
+            {
+                await userManager.AddToRoleAsync(adminUser, "Administrador");
+            }
+        }
+
+        // 3. Voluntario de Operaciones por defecto
+        var voluntarioEmail = "voluntario@nutrired.org";
+        var voluntarioUser = await userManager.FindByEmailAsync(voluntarioEmail);
+        if (voluntarioUser == null)
+        {
+            voluntarioUser = new ApplicationUser
+            {
+                UserName = voluntarioEmail,
+                Email = voluntarioEmail,
+                EmailConfirmed = true,
+                NombreCompleto = "Voluntario de Operaciones",
+                FechaRegistro = DateTime.UtcNow,
+                Activo = true
+            };
+            var result = await userManager.CreateAsync(voluntarioUser, "123456");
+            if (result.Succeeded)
+            {
+                await userManager.AddToRoleAsync(voluntarioUser, "Voluntario");
+            }
+        }
     }
 }

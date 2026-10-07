@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using NutriRed.Domain.Entities;
@@ -5,6 +6,7 @@ using NutriRed.Services.Interfaces;
 
 namespace NutriRed.Web.Controllers;
 
+[Authorize]
 public class ProductosController : Controller
 {
     private readonly IProductoService _productoService;
@@ -105,6 +107,7 @@ public class ProductosController : Controller
     }
 
     // GET: /Productos/Create
+    [Authorize(Roles = "Administrador")]
     public async Task<IActionResult> Create()
     {
         await CargarCategoriasSelectListAsync();
@@ -118,6 +121,7 @@ public class ProductosController : Controller
 
     // POST: /Productos/Create
     [HttpPost]
+    [Authorize(Roles = "Administrador")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(Producto producto)
     {
@@ -142,6 +146,7 @@ public class ProductosController : Controller
     }
 
     // GET: /Productos/Edit/5
+    [Authorize(Roles = "Administrador")]
     public async Task<IActionResult> Edit(int? id)
     {
         if (!id.HasValue)
@@ -164,6 +169,7 @@ public class ProductosController : Controller
 
     // POST: /Productos/Edit/5
     [HttpPost]
+    [Authorize(Roles = "Administrador")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Edit(int id, Producto producto)
     {
@@ -194,6 +200,7 @@ public class ProductosController : Controller
 
     // POST: /Productos/CambiarEstado/5
     [HttpPost]
+    [Authorize(Roles = "Administrador")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> CambiarEstado(int id, bool nuevoEstado)
     {

@@ -1,10 +1,12 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using NutriRed.Domain.Entities;
 using NutriRed.Domain.Enums;
 using NutriRed.Services.Interfaces;
 
 namespace NutriRed.Web.Controllers
 {
+    [Authorize]
     public class FamiliasController : Controller
     {
         private readonly IFamiliaService _familiaService;

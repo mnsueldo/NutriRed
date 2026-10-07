@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NutriRed.Domain.Enums;
 using NutriRed.Services.DTOs;
@@ -6,6 +7,7 @@ using NutriRed.Web.Models;
 
 namespace NutriRed.Web.Controllers;
 
+[Authorize]
 public class EntregasController : Controller
 {
     private readonly IEntregaService _entregaService;
