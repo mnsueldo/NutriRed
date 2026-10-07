@@ -228,15 +228,19 @@
     <script>
         document.addEventListener('DOMContentLoaded', function () {
 
-            // Gráfico de Barras: Distribución Mensual
+            // 1. Serialización de listas desde el ViewModel hacia JavaScript
+            const etiquetasMeses = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.DistribucionMensualEtiquetas));
+            const valoresKilos = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.DistribucionMensualValores));
+
+            // 2. Gráfico de Barras: Distribución Mensual
             const ctxDonaciones = document.getElementById('donacionesChart').getContext('2d');
             new Chart(ctxDonaciones, {
                 type: 'bar',
                 data: {
-                    labels: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago'],
+                    labels: etiquetasMeses && etiquetasMeses.length > 0 ? etiquetasMeses : ['Sin datos'],
                     datasets: [{
                         label: 'Distribución (Kgs)',
-                        data: [250, 420, 310, 450, 320, 350, 580, 520],
+                        data: valoresKilos && valoresKilos.length > 0 ? valoresKilos : [0],
                         backgroundColor: '#3b82f6',
                         borderRadius: 4
                     }]
@@ -244,15 +248,32 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const value = context.parsed.y || 0;
+                                    return ` Entregado: ${value.toLocaleString('es-AR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} kg`;
+                                }
+                            }
+                        }
+                    },
                     scales: {
-                        y: { beginAtZero: true, ticks: { color: '#9ca3af' }, grid: { color: '#f3f4f6', drawBorder: false } },
-                        x: { ticks: { color: '#9ca3af' }, grid: { display: false, drawBorder: false } }
+                        y: {
+                            beginAtZero: true,
+                            ticks: { color: '#9ca3af' },
+                            grid: { color: '#f3f4f6', drawBorder: false }
+                        },
+                        x: {
+                            ticks: { color: '#9ca3af' },
+                            grid: { display: false, drawBorder: false }
+                        }
                     }
                 }
             });
 
-            // Gráfico de Torta / Dona FEFO con datos reales del Modelo
+            // 3. Gráfico de Torta / Dona FEFO con datos reales del Modelo
             const cantOptimo = @Model.CantidadFefoOptimo;
             const cantAtencion = @Model.CantidadFefoAtencion;
             const cantUrgente = @Model.CantidadFefoUrgente;
@@ -267,7 +288,7 @@
                 data: {
                     labels: ['Óptimo (>15 d)', 'Atención (≤15 d)', 'Urgente (≤5 d)', 'Vencido'],
                     datasets: [{
-                        data: totalFefo === 0 ? [1] : fefoData, // Si está vacío muestra 1 gris
+                        data: totalFefo === 0 ? [1] : fefoData,
                         backgroundColor: totalFefo === 0 ? ['#e5e7eb'] : ['#10b981', '#ffc107', '#fd7e14', '#dc3545'],
                         borderWidth: 2,
                         borderColor: '#ffffff',

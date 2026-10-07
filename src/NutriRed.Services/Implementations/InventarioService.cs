@@ -339,4 +339,47 @@ public class InventarioService : IInventarioService
             return OperationResult<decimal>.Fail($"Error al obtener el total de alimentos distribuidos: {ex.Message}");
         }
     }
+
+    public async Task<OperationResult<List<DistribucionMensualDto>>> ObtenerDistribucionMensualAsync()
+    {
+        try
+        {
+            var anioActual = DateTime.Today.Year;
+            var culturaEs = new System.Globalization.CultureInfo("es-ES");
+
+            // 1. Obtener entregas concretadas del año en curso
+            var entregas = await _context.Entregas
+                .Include(e => e.Paquete)
+                    .ThenInclude(p => p!.Detalles)
+                .Where(e => e.Concretada && e.FechaHoraEntrega.Year == anioActual)
+                .ToListAsync();
+
+            // 2. Agrupar los Kgs entregados por cada mes transcurrido
+            var resultado = Enumerable.Range(1, DateTime.Today.Month).Select(mes =>
+            {
+                var totalKgMes = entregas
+                    .Where(e => e.FechaHoraEntrega.Month == mes)
+                    .Sum(e => e.Paquete?.Detalles.Sum(d => d.Cantidad) ?? 0m);
+
+                string nombreMes = culturaEs.DateTimeFormat.GetAbbreviatedMonthName(mes);
+                nombreMes = char.ToUpper(nombreMes[0]) + nombreMes.Substring(1).TrimEnd('.');
+
+                return new DistribucionMensualDto
+                {
+                    Mes = mes,
+                    Anio = anioActual,
+                    NombreMes = nombreMes,
+                    TotalKg = totalKgMes
+                };
+            }).ToList();
+
+            // 3. Retorno exitoso usando la fábrica de la clase genérica
+            return OperationResult<List<DistribucionMensualDto>>.Ok(resultado);
+        }
+        catch (Exception ex)
+        {
+            // 4. Retorno con error
+            return OperationResult<List<DistribucionMensualDto>>.Fail($"Error al obtener distribución mensual: {ex.Message}");
+        }
+    }
 }

@@ -49,3 +49,11 @@ public class AjusteMermaRequest
     public string UsuarioId { get; set; } = string.Empty;
     public string? Observaciones { get; set; }
 }
+
+public class DistribucionMensualDto
+{
+    public int Mes { get; set; }
+    public int Anio { get; set; }
+    public string NombreMes { get; set; } = string.Empty; // Ej: "Ene", "Feb", "Mar"
+    public decimal TotalKg { get; set; }
+}

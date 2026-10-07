@@ -53,7 +53,16 @@ public class DashboardController : Controller
             ? distribuidosResult.Data
             : 0m;
 
-        // 5. Obtener alertas de proximidad a vencer (próximos 30 días)
+        // 5. Obtener datos de distribución mensual (Kgs)
+        var distribucionResult = await _inventarioService.ObtenerDistribucionMensualAsync();
+        var distribucionData = (distribucionResult != null && distribucionResult.Success && distribucionResult.Data != null)
+            ? distribucionResult.Data
+            : new List<DistribucionMensualDto>();
+
+        var etiquetasMeses = distribucionData.Select(d => d.NombreMes).ToList();
+        var valoresKilos = distribucionData.Select(d => d.TotalKg).ToList();
+
+        // 6. Obtener alertas de proximidad a vencer (próximos 30 días)
         var alertasViewModel = new List<LoteAlertaItemViewModel>();
         var lotesAlertasResult = await _inventarioService.ObtenerLotesProximosAVencerAsync(30);
 
@@ -73,7 +82,7 @@ public class DashboardController : Controller
             }
         }
 
-        // 6. Construir un ÚNICO ViewModel con todos los datos integrados
+        // 7. Construir el ViewModel unificado
         var viewModel = new DashboardViewModel
         {
             // KPIs Principales
@@ -83,11 +92,15 @@ public class DashboardController : Controller
             ProductosMermaKg = mermaTotalKg,
             LotesAlertas = alertasViewModel,
 
-            // Métricas para el Semáforo FEFO (Gráfica de Torta)
+            // Métricas para el Semáforo FEFO
             CantidadFefoOptimo = totalOptimo,
             CantidadFefoAtencion = totalAtencion,
             CantidadFefoUrgente = totalUrgente,
-            CantidadFefoVencido = totalVencido
+            CantidadFefoVencido = totalVencido,
+
+            // Datos dinámicos para el gráfico de barras
+            DistribucionMensualEtiquetas = etiquetasMeses,
+            DistribucionMensualValores = valoresKilos
         };
 
         return View(viewModel);

@@ -15,5 +15,6 @@ public interface IInventarioService
     Task<OperationResult<IEnumerable<MovimientoStock>>> ObtenerMovimientosPorProductoAsync(int productoId);
     Task<OperationResult<decimal>> ObtenerTotalMermasKgAsync();
     Task<OperationResult<decimal>> ObtenerTotalAlimentosDistribuidosAsync();
+    Task<OperationResult<List<DistribucionMensualDto>>> ObtenerDistribucionMensualAsync();
 
 }
