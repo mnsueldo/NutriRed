@@ -10,30 +10,39 @@
     bool tienePropuestaInicial = Model.Propuesta != null;
 }
 
-<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
     <div>
-        <h2 class="fw-bold mb-1">
-            <i class="bi bi-magic text-success me-2"></i>Asistente de armado inteligente
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-1 small">
+                <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index" class="text-decoration-none text-muted">Inicio</a></li>
+                <li class="breadcrumb-item"><a asp-action="Index" class="text-decoration-none text-muted">Kits Nutricionales</a></li>
+                <li class="breadcrumb-item active text-dark fw-semibold" aria-current="page">Armado de Kit</li>
+            </ol>
+        </nav>
+        <h2 class="fw-bold mb-1 text-dark">
+            <i class="bi bi-magic text-success me-2"></i>Asistente de Armado Inteligente
         </h2>
-        <p class="text-muted mb-0">Selección automática de kits por tamaño familiar, asignación de lotes y sustitución supervisada</p>
+        <p class="text-secondary mb-0">Selección automática de kits por tamaño familiar, asignación FEFO de lotes y sustitución supervisada.</p>
     </div>
-    <a asp-action="Index" class="btn btn-outline-secondary">
-        <i class="bi bi-arrow-left me-1"></i> Volver a paquetes
-    </a>
+    <div>
+        <a asp-action="Index" class="btn btn-outline-secondary rounded-pill px-3 shadow-sm fw-semibold">
+            <i class="bi bi-arrow-left me-1"></i> Volver a Paquetes
+        </a>
+    </div>
 </div>
 
 <!-- Formulario Unificado de Armado -->
 <form asp-action="ConfirmarArmado" method="post" id="formArmadoPaquete">
     @Html.AntiForgeryToken()
-    <div asp-validation-summary="ModelOnly" class="alert alert-danger mb-4 shadow-sm border-start border-4 border-danger" role="alert"></div>
+    <div asp-validation-summary="ModelOnly" class="alert alert-danger mb-4 shadow-sm border-start border-4 border-danger rounded-3" role="alert"></div>
 
     <!-- PASO 1: SELECCIÓN DE FAMILIA Y KIT -->
-    <div class="card card-nr border-0 shadow-sm mb-4">
-        <div class="card-nr-header bg-light d-flex justify-content-between align-items-center">
-            <span class="fw-bold text-dark">
-                <i class="bi bi-people text-primary me-2"></i>1. Destinatario y plantilla de Kit
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden bg-white mb-4">
+        <div class="card-header border-bottom p-3 px-4 bg-white d-flex align-items-center justify-content-between">
+            <span class="fw-bold text-dark fs-6">
+                <i class="bi bi-people text-primary me-2"></i>1. Destinatario y Plantilla de Kit
             </span>
-            <span class="badge bg-primary bg-opacity-10 text-primary">Asignación automática</span>
+            <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-3 py-1">Asignación automática</span>
         </div>
         <div class="card-body p-4">
             <div class="row g-3 align-items-end">
@@ -79,22 +88,22 @@
             </div>
 
             <!-- Ficha Resumen de Familia y Kit -->
-            <div id="cardResumenFamilia" class="mt-4 p-3 bg-light rounded-3 border @(tienePropuestaInicial ? "" : "d-none")">
+            <div id="cardResumenFamilia" class="mt-4 p-3 bg-light bg-opacity-50 rounded-4 border @(tienePropuestaInicial ? "" : "d-none")">
                 <div class="row g-2 align-items-center">
                     <div class="col-md-4">
-                        <small class="text-muted d-block">Titular beneficiario:</small>
+                        <small class="text-muted d-block fw-semibold">Titular beneficiario:</small>
                         <strong class="text-dark" id="txtResumenTitular">@(Model.Propuesta?.FamiliaTitular)</strong>
                         <div class="text-secondary small font-mono" id="txtResumenDni">DNI: @(Model.Propuesta?.DniTitular)</div>
                     </div>
                     <div class="col-md-4">
-                        <small class="text-muted d-block">Composición del hogar:</small>
-                        <span class="badge bg-secondary bg-opacity-10 text-secondary" id="txtResumenIntegrantes">
+                        <small class="text-muted d-block fw-semibold">Composición del hogar:</small>
+                        <span class="badge bg-secondary bg-opacity-10 text-secondary rounded-pill px-3 py-1" id="txtResumenIntegrantes">
                             <i class="bi bi-people me-1"></i>@(Model.Propuesta?.CantidadIntegrantes) personas
                         </span>
                     </div>
                     <div class="col-md-4">
-                        <small class="text-muted d-block">Plantilla aplicada:</small>
-                        <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-2 py-1" id="txtResumenKit">
+                        <small class="text-muted d-block fw-semibold">Plantilla aplicada:</small>
+                        <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-3 py-1" id="txtResumenKit">
                             <i class="bi bi-check-circle me-1"></i>@(Model.Propuesta?.TipoPaqueteNombre)
                         </span>
                     </div>
@@ -105,17 +114,17 @@
 
     <!-- PASO 2: RECETA, LOTES FEFO Y CONFIRMACIÓN -->
     <div id="contenedorPropuesta" class="@(tienePropuestaInicial ? "" : "d-none")">
-        <div class="card card-nr border-0 shadow-sm mb-4">
-            <div class="card-nr-header bg-light d-flex justify-content-between align-items-center">
-                <span class="fw-bold text-dark">
-                    <i class="bi bi-boxes text-success me-2"></i>2. Asignación automática y sustituciones
+        <div class="card border-0 shadow-sm rounded-4 overflow-hidden bg-white mb-4">
+            <div class="card-header border-bottom p-3 px-4 bg-white d-flex align-items-center justify-content-between">
+                <span class="fw-bold text-dark fs-6">
+                    <i class="bi bi-boxes text-success me-2"></i>2. Asignación Automática y Sustituciones
                 </span>
-                <span class="badge bg-success bg-opacity-10 text-success">Control de existencias</span>
+                <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-3 py-1">Control de existencias</span>
             </div>
             <div class="card-body p-4">
 
                 <!-- Alerta de Stock Completo -->
-                <div id="alertaCompleto" class="alert alert-success border-start border-4 border-success d-flex align-items-center mb-4 shadow-sm @(tienePropuestaInicial && !Model.Propuesta!.HayFaltantes ? "" : "d-none")" role="alert">
+                <div id="alertaCompleto" class="alert alert-success border-start border-4 border-success d-flex align-items-center mb-4 shadow-sm rounded-3 @(tienePropuestaInicial && !Model.Propuesta!.HayFaltantes ? "" : "d-none")" role="alert">
                     <i class="bi bi-check-circle-fill fs-3 text-success me-3"></i>
                     <div>
                         <strong>Inventario completo y óptimo</strong>
@@ -126,7 +135,7 @@
                 </div>
 
                 <!-- Alerta de Faltantes -->
-                <div id="alertaFaltantes" class="alert alert-warning border-start border-4 border-warning d-flex align-items-center mb-4 shadow-sm @(tienePropuestaInicial && Model.Propuesta!.HayFaltantes ? "" : "d-none")" role="alert">
+                <div id="alertaFaltantes" class="alert alert-warning border-start border-4 border-warning d-flex align-items-center mb-4 shadow-sm rounded-3 @(tienePropuestaInicial && Model.Propuesta!.HayFaltantes ? "" : "d-none")" role="alert">
                     <i class="bi bi-exclamation-triangle-fill fs-3 text-warning me-3"></i>
                     <div>
                         <strong>Alerta de faltantes de inventario</strong>
@@ -139,14 +148,14 @@
 
                 <div class="table-responsive">
                     <table class="table table-hover align-middle mb-0">
-                        <thead class="table-light">
+                        <thead class="table-light text-secondary small text-uppercase">
                             <tr>
-                                <th>Alimento de la receta</th>
+                                <th class="ps-3">Alimento de la receta</th>
                                 <th class="text-center">Requerido</th>
-                                <th class="text-center">Disponible </th>
+                                <th class="text-center">Disponible</th>
                                 <th>Lotes reservados</th>
                                 <th>Estado cobertura</th>
-                                <th>Sustitución supervisada</th>
+                                <th class="pe-3">Sustitución supervisada</th>
                             </tr>
                         </thead>
                         <tbody id="cuerpoTablaPropuesta">
@@ -164,14 +173,14 @@
                                         <input type="hidden" name="Items[@i].EsSustituto" id="esSustituto_@i" value="false" />
                                         <input type="hidden" name="Items[@i].ProductoSustituidoId" id="prodSustituidoId_@i" value="" />
 
-                                        <td>
+                                        <td class="ps-3">
                                             <div class="fw-bold text-dark" id="displayNombre_@i">@item.NombreProducto</div>
                                             <small class="text-muted font-mono">EAN: @item.CodigoBarras</small>
                                         </td>
-                                        <td class="text-center fw-bold fs-6">
+                                        <td class="text-center fw-bold fs-6 font-mono">
                                             @item.CantidadRequerida.ToString("N0")
                                         </td>
-                                        <td class="text-center fw-bold @(item.CubiertoTotalmente ? "text-success" : "text-danger") fs-6">
+                                        <td class="text-center fw-bold @(item.CubiertoTotalmente ? "text-success" : "text-danger") fs-6 font-mono">
                                             @item.CantidadDisponible.ToString("N0")
                                         </td>
                                         <td>
@@ -180,7 +189,7 @@
                                                 <div class="d-flex flex-wrap gap-1">
                                                     @foreach (var lote in item.LotesAsignados)
                                                     {
-                                                        <span class="badge bg-light text-dark border font-mono small" title="Vence @lote.FechaVencimiento.ToString("dd/MM/yyyy")">
+                                                        <span class="badge bg-light text-dark border font-mono small rounded-pill px-2 py-1" title="Vence @lote.FechaVencimiento.ToString("dd/MM/yyyy")">
                                                             @lote.NumeroLote (@lote.CantidadAsignada.ToString("N0") u.)
                                                         </span>
                                                     }
@@ -194,18 +203,18 @@
                                         <td>
                                             @if (item.CubiertoTotalmente)
                                             {
-                                                <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-2 py-1">
+                                                <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-3 py-1">
                                                     <i class="bi bi-check-all me-1"></i> 100% Cubierto
                                                 </span>
                                             }
                                             else
                                             {
-                                                <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 px-2 py-1">
+                                                <span class="badge bg-danger bg-opacity-10 text-danger rounded-pill px-3 py-1">
                                                     <i class="bi bi-exclamation-octagon me-1"></i> Falta @item.Faltante.ToString("N0") u.
                                                 </span>
                                             }
                                         </td>
-                                        <td>
+                                        <td class="pe-3">
                                             <div class="input-group input-group-sm" style="max-width: 280px;">
                                                 <select class="form-select select-sustituto" data-index="@i" data-original-id="@item.ProductoId" data-original-nombre="@item.NombreProducto">
                                                     <option value="">-- Sin sustitución --</option>
@@ -228,8 +237,8 @@
                     <div class="col-md-4">
                         <label asp-for="UsuarioArmadorId" class="form-label fw-semibold"></label>
                         <div class="input-group">
-                            <span class="input-group-text bg-light text-success"><i class="bi bi-person-check-fill"></i></span>
-                            <input asp-for="UsuarioArmadorId" class="form-control bg-light text-dark fw-semibold" readonly />
+                            <span class="input-group-text bg-light text-success border-end-0"><i class="bi bi-person-check-fill"></i></span>
+                            <input asp-for="UsuarioArmadorId" class="form-control bg-light text-dark fw-semibold border-start-0" readonly />
                         </div>
                         <small class="text-muted d-block mt-1" style="font-size: 0.75rem;">
                             <i class="bi bi-shield-lock-fill text-secondary me-1"></i>Asignado al usuario en sesión
@@ -243,8 +252,8 @@
 
                 <!-- Botón Principal de Confirmación -->
                 <div class="text-end mt-4 pt-2">
-                    <button type="submit" id="btnConfirmarArmado" class="btn btn-emerald btn-lg px-5 shadow">
-                        <i class="bi bi-check2-circle me-2"></i> Confirmar armado y generar rótulo QR
+                    <button type="submit" id="btnConfirmarArmado" class="btn btn-success rounded-pill btn-lg px-5 fw-semibold shadow-sm">
+                        <i class="bi bi-check2-circle me-2"></i> Confirmar Armado y Generar Rótulo QR
                     </button>
                 </div>
             </div>
@@ -252,7 +261,7 @@
     </div>
 
     <!-- Placeholder cuando aún no se ha seleccionado familia -->
-    <div id="placeholderSinFamilia" class="card border-0 shadow-sm text-center py-5 @(tienePropuestaInicial ? "d-none" : "")">
+    <div id="placeholderSinFamilia" class="card border-0 shadow-sm rounded-4 text-center py-5 bg-white mb-4 @(tienePropuestaInicial ? "d-none" : "")">
         <div class="card-body">
             <i class="bi bi-person-check fs-1 text-secondary opacity-50 d-block mb-3"></i>
             <h5 class="fw-bold text-dark">Selecciona una familia beneficiaria</h5>
@@ -402,7 +411,7 @@
                             item.lotesAsignados.forEach(l => {
                                 const fv = new Date(l.fechaVencimiento);
                                 const fvStr = `${String(fv.getDate()).padStart(2, '0')}/${String(fv.getMonth() + 1).padStart(2, '0')}/${fv.getFullYear()}`;
-                                lotesHtml += `<span class="badge bg-light text-dark border font-mono small" title="Vence ${fvStr}">
+                                lotesHtml += `<span class="badge bg-light text-dark border font-mono small rounded-pill px-2 py-1" title="Vence ${fvStr}">
                                     ${l.numeroLote} (${Math.round(l.cantidadAsignada)} u.)
                                 </span>`;
                             });
@@ -413,11 +422,11 @@
 
                         let badgeCobertura = "";
                         if (item.cubiertoTotalmente) {
-                            badgeCobertura = `<span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-2 py-1">
+                            badgeCobertura = `<span class="badge bg-success bg-opacity-10 text-success rounded-pill px-3 py-1">
                                 <i class="bi bi-check-all me-1"></i> 100% Cubierto
                             </span>`;
                         } else {
-                            badgeCobertura = `<span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 px-2 py-1">
+                            badgeCobertura = `<span class="badge bg-danger bg-opacity-10 text-danger rounded-pill px-3 py-1">
                                 <i class="bi bi-exclamation-octagon me-1"></i> Falta ${Math.round(item.faltante)} u.
                             </span>`;
                         }

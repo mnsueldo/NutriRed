@@ -47,22 +47,22 @@
 <!-- Barra Superior de Acciones (No se imprime) -->
 <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2 no-print">
     <div>
-        <a asp-action="Index" class="btn btn-outline-secondary me-2">
-            <i class="bi bi-arrow-left me-1"></i> Listado de paquetes
+        <a asp-action="Index" class="btn btn-outline-secondary rounded-pill px-3 shadow-sm me-2">
+            <i class="bi bi-arrow-left me-1"></i> Listado de Paquetes
         </a>
-        <a asp-action="Armar" class="btn btn-emerald">
-            <i class="bi bi-plus-lg me-1"></i> Armar otro paquete
+        <a asp-action="Armar" class="btn btn-success rounded-pill px-4 shadow-sm fw-semibold">
+            <i class="bi bi-plus-lg me-1"></i> Armar Otro Paquete
         </a>
     </div>
     <div class="d-flex gap-2">
-        <button onclick="window.print()" class="btn btn-primary px-3 shadow-sm">
-            <i class="bi bi-printer me-2"></i> Imprimir rótulo QR
+        <button onclick="window.print()" class="btn btn-primary rounded-pill px-4 shadow-sm fw-semibold">
+            <i class="bi bi-printer me-2"></i> Imprimir Rótulo QR
         </button>
     </div>
 </div>
 
 <!-- Rótulo de Caja y Ficha de Armado Oficial -->
-<div class="hoja-rotulo shadow-sm mb-5">
+<div class="hoja-rotulo rounded-4 shadow-sm mb-5">
     <div class="row align-items-center pb-4 border-bottom mb-4">
         <div class="col-sm-8">
             <div class="d-flex align-items-center gap-3">
@@ -80,22 +80,22 @@
             @switch (Model.Estado)
             {
                 case EstadoPaquete.Pendiente:
-                    <span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25 px-3 py-2 fs-6 mb-1 d-inline-block">
+                    <span class="badge bg-warning bg-opacity-10 text-warning-emphasis rounded-pill px-3 py-2 fs-6 mb-1 d-inline-block">
                         ESTADO: PENDIENTE
                     </span>
                     break;
                 case EstadoPaquete.Preparado:
-                    <span class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25 px-3 py-2 fs-6 mb-1 d-inline-block">
+                    <span class="badge bg-info bg-opacity-10 text-info rounded-pill px-3 py-2 fs-6 mb-1 d-inline-block">
                         ESTADO: PREPARADO PARA DESPACHO
                     </span>
                     break;
                 case EstadoPaquete.Entregado:
-                    <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-3 py-2 fs-6 mb-1 d-inline-block">
+                    <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-3 py-2 fs-6 mb-1 d-inline-block">
                         ESTADO: ENTREGADO A BENEFICIARIO
                     </span>
                     break;
                 case EstadoPaquete.Cancelado:
-                    <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 px-3 py-2 fs-6 mb-1 d-inline-block">
+                    <span class="badge bg-danger bg-opacity-10 text-danger rounded-pill px-3 py-2 fs-6 mb-1 d-inline-block">
                         ESTADO: CANCELADO
                     </span>
                     break;
@@ -185,13 +185,13 @@
                         <td>
                             @if (itm.EsSustituto)
                             {
-                                <span class="badge bg-warning text-dark border border-warning">
+                                <span class="badge bg-warning bg-opacity-10 text-warning-emphasis border border-warning border-opacity-25 rounded-pill px-3 py-1">
                                     <i class="bi bi-arrow-repeat me-1"></i> Sustituye a @itm.NombreProductoSustituido
                                 </span>
                             }
                             else
                             {
-                                <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25">
+                                <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-3 py-1">
                                     <i class="bi bi-check2 me-1"></i> Estándar de receta
                                 </span>
                             }

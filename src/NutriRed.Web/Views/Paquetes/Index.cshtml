@@ -6,68 +6,82 @@
     bool hayFiltros = Model.EstadoFiltro.HasValue || !string.IsNullOrWhiteSpace(Model.CodigoSeguimiento);
 }
 
-<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+<!-- Encabezado Principal & Breadcrumbs -->
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
     <div>
-        <h2 class="fw-bold mb-1">
-            <i class="bi bi-box2 text-primary me-2"></i>Paquetes nutricionales
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-1 small">
+                <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index" class="text-decoration-none text-muted">Inicio</a></li>
+                <li class="breadcrumb-item text-muted">Kits Nutricionales</li>
+                <li class="breadcrumb-item active text-dark fw-semibold" aria-current="page">Paquetes</li>
+            </ol>
+        </nav>
+        <h2 class="fw-bold mb-1 text-dark">
+            <i class="bi bi-box-seam-fill text-success me-2"></i>Paquetes Nutricionales
         </h2>
-        <p class="text-muted mb-0">Armado asistencial, rotulación QR y seguimiento de entregas</p>
+        <p class="text-secondary mb-0">Armado asistencial, rotulación QR y trazabilidad de entregas en depósito.</p>
     </div>
-    <a asp-action="Armar" class="btn btn-emerald shadow-sm">
-        <i class="bi bi-magic me-1"></i> Armado inteligente de Kit
-    </a>
+    <div>
+        <a asp-action="Armar" class="btn btn-success rounded-pill shadow-sm px-4 py-2 fw-semibold">
+            <i class="bi bi-magic me-2"></i>Armar Nuevo Kit
+        </a>
+    </div>
 </div>
 
-<!-- Tarjetas de Métricas Rápidas -->
+<!-- Panel de Métricas / KPIs Rápidos (Bento Grid) -->
 <div class="row g-3 mb-4">
-    <div class="col-md-3 col-sm-6">
-        <div class="card card-nr border-0 shadow-sm p-3">
-            <div class="d-flex align-items-center">
-                <div class="rounded-circle bg-primary bg-opacity-10 p-3 text-primary me-3">
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="card border-0 shadow-sm rounded-4 p-3 bg-white h-100">
+            <div class="d-flex align-items-center gap-3">
+                <div class="rounded-circle bg-primary bg-opacity-10 p-3 text-primary d-flex align-items-center justify-content-center" style="width: 52px; height: 52px;">
                     <i class="bi bi-boxes fs-4"></i>
                 </div>
                 <div>
-                    <span class="text-muted small d-block">Total paquetes</span>
-                    <h3 class="fw-bold mb-0 text-dark">@Model.TotalPaquetes</h3>
+                    <span class="text-muted small fw-semibold text-uppercase d-block">Total Paquetes</span>
+                    <span class="fs-4 fw-bold text-dark">@Model.TotalPaquetes</span>
+                    <small class="text-muted d-block" style="font-size: 0.72rem;">Historial acumulado</small>
                 </div>
             </div>
         </div>
     </div>
-    <div class="col-md-3 col-sm-6">
-        <div class="card card-nr border-0 shadow-sm p-3">
-            <div class="d-flex align-items-center">
-                <div class="rounded-circle bg-warning bg-opacity-10 p-3 text-warning me-3">
-                    <i class="bi bi-hourglass-split fs-4"></i>
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="card border-0 shadow-sm rounded-4 p-3 bg-white h-100">
+            <div class="d-flex align-items-center gap-3">
+                <div class="rounded-circle bg-warning bg-opacity-10 p-3 text-warning-emphasis d-flex align-items-center justify-content-center" style="width: 52px; height: 52px;">
+                    <i class="bi bi-hourglass-split fs-4 text-warning"></i>
                 </div>
                 <div>
-                    <span class="text-muted small d-block">Pendientes</span>
-                    <h3 class="fw-bold mb-0 text-dark">@Model.Pendientes</h3>
+                    <span class="text-muted small fw-semibold text-uppercase d-block">Pendientes</span>
+                    <span class="fs-4 fw-bold text-warning-emphasis">@Model.Pendientes</span>
+                    <small class="text-muted d-block" style="font-size: 0.72rem;">En preparación</small>
                 </div>
             </div>
         </div>
     </div>
-    <div class="col-md-3 col-sm-6">
-        <div class="card card-nr border-0 shadow-sm p-3">
-            <div class="d-flex align-items-center">
-                <div class="rounded-circle bg-info bg-opacity-10 p-3 text-info me-3">
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="card border-0 shadow-sm rounded-4 p-3 bg-white h-100">
+            <div class="d-flex align-items-center gap-3">
+                <div class="rounded-circle bg-info bg-opacity-10 p-3 text-info d-flex align-items-center justify-content-center" style="width: 52px; height: 52px;">
                     <i class="bi bi-box-seam fs-4"></i>
                 </div>
                 <div>
-                    <span class="text-muted small d-block">Preparados (en depósito)</span>
-                    <h3 class="fw-bold mb-0 text-dark">@Model.Preparados</h3>
+                    <span class="text-muted small fw-semibold text-uppercase d-block">Listos en Depósito</span>
+                    <span class="fs-4 fw-bold text-dark">@Model.Preparados</span>
+                    <small class="text-muted d-block" style="font-size: 0.72rem;">Para retiro o despacho</small>
                 </div>
             </div>
         </div>
     </div>
-    <div class="col-md-3 col-sm-6">
-        <div class="card card-nr border-0 shadow-sm p-3">
-            <div class="d-flex align-items-center">
-                <div class="rounded-circle bg-success bg-opacity-10 p-3 text-success me-3">
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="card border-0 shadow-sm rounded-4 p-3 bg-white h-100">
+            <div class="d-flex align-items-center gap-3">
+                <div class="rounded-circle bg-success bg-opacity-10 p-3 text-success d-flex align-items-center justify-content-center" style="width: 52px; height: 52px;">
                     <i class="bi bi-check2-circle fs-4"></i>
                 </div>
                 <div>
-                    <span class="text-muted small d-block">Entregados</span>
-                    <h3 class="fw-bold mb-0 text-dark">@Model.Entregados</h3>
+                    <span class="text-muted small fw-semibold text-uppercase d-block">Entregados</span>
+                    <span class="fs-4 fw-bold text-success">@Model.Entregados</span>
+                    <small class="text-muted d-block" style="font-size: 0.72rem;">Recepción confirmada</small>
                 </div>
             </div>
         </div>
@@ -75,120 +89,124 @@
 </div>
 
 <!-- Filtros de Búsqueda -->
-<div class="card border-0 shadow-sm mb-4">
-    <div class="card-body p-3">
-        <form method="get" asp-action="Index" class="row g-2 align-items-end">
-            <div class="col-md-4 col-sm-6">
-                <label class="form-label small text-muted mb-1">Filtrar por estado</label>
-                <select name="estado" class="form-select form-select-sm">
-                    <option value=""> Todos los estados </option>
-                    @foreach (var estado in Enum.GetValues<EstadoPaquete>())
-                    {
-                        <option value="@estado" selected="@(Model.EstadoFiltro == estado)">
-                            @estado
-                        </option>
-                    }
-                </select>
-            </div>
-            <div class="col-md-5 col-sm-6">
-                <label class="form-label small text-muted mb-1">Código QR / Seguimiento</label>
-                <div class="input-group input-group-sm">
-                    <span class="input-group-text bg-light text-muted"><i class="bi bi-qr-code"></i></span>
-                    <input type="text" name="codigo" value="@Model.CodigoSeguimiento" placeholder="Ej: PKG-2026-00001" class="form-control form-control-sm font-mono" />
-                </div>
-            </div>
-            <div class="col-md-3 col-sm-12 d-flex gap-2">
-                <button type="submit" class="btn btn-sm btn-primary w-100">
-                    <i class="bi bi-funnel me-1"></i> Filtrar
-                </button>
-                @if (hayFiltros)
+<div class="card border-0 shadow-sm rounded-4 p-3 bg-white mb-4">
+    <form method="get" asp-action="Index" class="row g-2 align-items-end">
+        <div class="col-12 col-sm-6 col-md-4">
+            <label class="form-label small text-muted mb-1 fw-semibold">Filtrar por estado</label>
+            <select name="estado" class="form-select bg-light">
+                <option value="">Todos los estados</option>
+                @foreach (var estado in Enum.GetValues<EstadoPaquete>())
                 {
-                    <a asp-action="Index" class="btn btn-sm btn-outline-secondary" title="Limpiar filtros">
-                        <i class="bi bi-x-lg"></i>
-                    </a>
+                    <option value="@estado" selected="@(Model.EstadoFiltro == estado)">
+                        @estado
+                    </option>
                 }
+            </select>
+        </div>
+        <div class="col-12 col-sm-6 col-md-5">
+            <label class="form-label small text-muted mb-1 fw-semibold">Código QR / Seguimiento</label>
+            <div class="input-group">
+                <span class="input-group-text bg-light text-muted border-end-0"><i class="bi bi-qr-code"></i></span>
+                <input type="text" name="codigo" value="@Model.CodigoSeguimiento" placeholder="Ej: PKG-2026-00001" class="form-control bg-light border-start-0 font-mono" />
             </div>
-        </form>
-    </div>
+        </div>
+        <div class="col-12 col-sm-12 col-md-3 d-flex gap-2">
+            <button type="submit" class="btn btn-primary rounded-pill w-100 shadow-sm fw-semibold">
+                <i class="bi bi-funnel me-1"></i> Filtrar
+            </button>
+            @if (hayFiltros)
+            {
+                <a asp-action="Index" class="btn btn-outline-secondary rounded-pill px-3 shadow-sm" title="Limpiar filtros">
+                    <i class="bi bi-x-lg"></i>
+                </a>
+            }
+        </div>
+    </form>
 </div>
 
 <!-- Tabla de Paquetes -->
-<div class="card border-0 shadow-sm">
-    <div class="card-body p-0">
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-                <thead class="table-light">
+<div class="card border-0 shadow-sm rounded-4 overflow-hidden bg-white mb-4">
+    <div class="card-header bg-white py-3 px-4 border-bottom d-flex justify-content-between align-items-center">
+        <span class="fw-semibold text-secondary">
+            <i class="bi bi-boxes me-1"></i> Cajas Asistenciales (@Model.Paquetes.Count())
+        </span>
+        <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-3 py-1">
+            <i class="bi bi-qr-code-scan me-1"></i> Rotulación FEFO
+        </span>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light text-secondary small text-uppercase">
+                <tr>
+                    <th class="ps-4">Código QR / Seguimiento</th>
+                    <th>Familia Destinataria</th>
+                    <th>Kit Nutricional</th>
+                    <th>Fecha Armado</th>
+                    <th>Estado</th>
+                    <th>Alimentos</th>
+                    <th class="text-end pe-4">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (!Model.Paquetes.Any())
+                {
                     <tr>
-                        <th class="ps-3">Código QR / Seguimiento</th>
-                        <th>Familia destinataria</th>
-                        <th>Kit nutricional</th>
-                        <th>Fecha armado</th>
-                        <th>Estado</th>
-                        <th>Alimentos</th>
-                        <th class="text-end pe-3">Acciones</th>
+                        <td colspan="7" class="text-center py-5 text-muted">
+                            <i class="bi bi-box fs-1 d-block mb-2 text-secondary opacity-50"></i>
+                            No se encontraron paquetes armados con los filtros aplicados.
+                        </td>
                     </tr>
-                </thead>
-                <tbody>
-                    @if (!Model.Paquetes.Any())
+                }
+                else
+                {
+                    @foreach (var pkg in Model.Paquetes)
                     {
                         <tr>
-                            <td colspan="7" class="text-center py-5 text-muted">
-                                <i class="bi bi-box fs-1 d-block mb-2 text-secondary opacity-50"></i>
-                                No se encontraron paquetes armados con los filtros aplicados.
+                            <td class="ps-4">
+                                <span class="code-tag font-mono fw-bold text-dark">
+                                    <i class="bi bi-qr-code me-1 text-primary"></i>@pkg.CodigoSeguimiento
+                                </span>
+                            </td>
+                            <td>
+                                <span class="fw-semibold text-dark d-block">@pkg.FamiliaTitular</span>
+                                <small class="text-muted font-mono">DNI: @pkg.DniTitular</small>
+                            </td>
+                            <td>
+                                <span class="badge bg-light text-dark border rounded-pill px-3 py-1">@pkg.TipoPaqueteNombre</span>
+                            </td>
+                            <td>
+                                <span class="d-block small fw-semibold text-dark">@pkg.FechaCreacion.ToString("dd/MM/yyyy")</span>
+                                <small class="text-muted">@pkg.FechaCreacion.ToString("HH:mm") hs</small>
+                            </td>
+                            <td>
+                                @switch (pkg.Estado)
+                                {
+                                    case EstadoPaquete.Pendiente:
+                                        <span class="badge bg-warning bg-opacity-10 text-warning-emphasis rounded-pill px-3 py-1">Pendiente</span>
+                                        break;
+                                    case EstadoPaquete.Preparado:
+                                        <span class="badge bg-info bg-opacity-10 text-info rounded-pill px-3 py-1">Listo en depósito</span>
+                                        break;
+                                    case EstadoPaquete.Entregado:
+                                        <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-3 py-1">Entregado</span>
+                                        break;
+                                    case EstadoPaquete.Cancelado:
+                                        <span class="badge bg-danger bg-opacity-10 text-danger rounded-pill px-3 py-1">Cancelado</span>
+                                        break;
+                                }
+                            </td>
+                            <td>
+                                <span class="small text-muted font-mono">@pkg.Items.Count variedades</span>
+                            </td>
+                            <td class="text-end pe-4">
+                                <a asp-action="Detalles" asp-route-id="@pkg.Id" class="btn btn-sm btn-outline-primary rounded-pill px-3 fw-semibold" title="Ver Ficha y Rótulo QR">
+                                    <i class="bi bi-eye me-1"></i> Ficha & Rótulo
+                                </a>
                             </td>
                         </tr>
                     }
-                    else
-                    {
-                        @foreach (var pkg in Model.Paquetes)
-                        {
-                            <tr>
-                                <td class="ps-3">
-                                    <span class="code-tag font-mono fw-bold text-dark">
-                                        <i class="bi bi-qr-code me-1 text-primary"></i>@pkg.CodigoSeguimiento
-                                    </span>
-                                </td>
-                                <td>
-                                    <span class="fw-semibold text-dark d-block">@pkg.FamiliaTitular</span>
-                                    <small class="text-muted font-mono">DNI: @pkg.DniTitular</small>
-                                </td>
-                                <td>
-                                    <span class="badge bg-light text-dark border">@pkg.TipoPaqueteNombre</span>
-                                </td>
-                                <td>
-                                    <span class="d-block small text-dark">@pkg.FechaCreacion.ToString("dd/MM/yyyy")</span>
-                                    <small class="text-muted">@pkg.FechaCreacion.ToString("HH:mm") hs</small>
-                                </td>
-                                <td>
-                                    @switch (pkg.Estado)
-                                    {
-                                        case EstadoPaquete.Pendiente:
-                                            <span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25 px-2 py-1">Pendiente</span>
-                                            break;
-                                        case EstadoPaquete.Preparado:
-                                            <span class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25 px-2 py-1">Preparado (Listo)</span>
-                                            break;
-                                        case EstadoPaquete.Entregado:
-                                            <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-2 py-1">Entregado</span>
-                                            break;
-                                        case EstadoPaquete.Cancelado:
-                                            <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 px-2 py-1">Cancelado</span>
-                                            break;
-                                    }
-                                </td>
-                                <td>
-                                    <span class="small text-muted">@pkg.Items.Count variedades</span>
-                                </td>
-                                <td class="text-end pe-3">
-                                    <a asp-action="Detalles" asp-route-id="@pkg.Id" class="btn btn-sm btn-outline-primary" title="Ver Ficha y Rótulo QR">
-                                        <i class="bi bi-eye me-1"></i> Ficha & rótulo
-                                    </a>
-                                </td>
-                            </tr>
-                        }
-                    }
-                </tbody>
-            </table>
-        </div>
+                }
+            </tbody>
+        </table>
     </div>
 </div>

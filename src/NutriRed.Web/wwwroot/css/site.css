@@ -9,6 +9,10 @@
   --nr-emerald-hover: #047857;
   --nr-emerald-light: #ecfdf5;
   --nr-emerald-border: #a7f3d0;
+
+  /* Sobrescribir success de Bootstrap para alineación perfecta con NutriRed */
+  --bs-success: #059669;
+  --bs-success-rgb: 5, 150, 105;
   
   --nr-canvas: #f8fafc;
   --nr-surface: #ffffff;
@@ -103,8 +107,8 @@ main {
   color: #ffffff;
   border: 1px solid var(--nr-emerald-primary);
   font-weight: 600;
-  border-radius: 8px;
-  padding: 0.5rem 1.15rem;
+  border-radius: 50rem;
+  padding: 0.5rem 1.25rem;
   transition: all 0.2s ease;
 }
 
@@ -121,7 +125,8 @@ main {
   border: 1px solid var(--nr-emerald-primary);
   background-color: transparent;
   font-weight: 600;
-  border-radius: 8px;
+  border-radius: 50rem;
+  padding: 0.5rem 1.25rem;
   transition: all 0.2s ease;
 }
 

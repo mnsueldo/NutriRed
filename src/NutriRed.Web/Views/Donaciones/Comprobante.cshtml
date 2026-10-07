@@ -37,22 +37,22 @@
 <!-- Barra Superior de Acciones (No se imprime) -->
 <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2 no-print">
     <div>
-        <a asp-action="Index" class="btn btn-outline-secondary me-2">
-            <i class="bi bi-arrow-left me-1"></i> Listado de donaciones
+        <a asp-action="Index" class="btn btn-outline-secondary rounded-pill px-3 shadow-sm me-2">
+            <i class="bi bi-arrow-left me-1"></i> Listado de Donaciones
         </a>
-        <a asp-action="Registrar" class="btn btn-emerald">
-            <i class="bi bi-plus-lg me-1"></i> Registrar otra donación
+        <a asp-action="Registrar" class="btn btn-success rounded-pill px-4 shadow-sm fw-semibold">
+            <i class="bi bi-plus-lg me-1"></i> Registrar Otra Donación
         </a>
     </div>
     <div class="d-flex gap-2">
-        <button onclick="window.print()" class="btn btn-primary px-3 shadow-sm">
-            <i class="bi bi-printer me-2"></i> Imprimir comprobante
+        <button onclick="window.print()" class="btn btn-primary rounded-pill px-4 shadow-sm fw-semibold">
+            <i class="bi bi-printer me-2"></i> Imprimir Comprobante
         </button>
     </div>
 </div>
 
 <!-- Hoja de Comprobante Oficial -->
-<div class="comprobante-hoja shadow-sm mb-5">
+<div class="comprobante-hoja rounded-4 shadow-sm mb-5">
     <!-- Encabezado Institucional -->
     <div class="row align-items-center pb-4 border-bottom mb-4">
         <div class="col-sm-7">
@@ -172,7 +172,7 @@
                             <small class="text-muted">(@dias d)</small>
                         </td>
                         <td class="text-end fw-bold text-success">
-                            @item.Cantidad.ToString("N1") @item.UnidadMedida
+                            @item.Cantidad.ToString("N0") @item.UnidadMedida
                         </td>
                     </tr>
                 }
@@ -181,7 +181,7 @@
                 <tr>
                     <td colspan="6" class="text-end">TOTAL RECIBIDOS:</td>
                     <td class="text-end text-success fs-5">
-                        @Model.TotalUnidadesRecibidas.ToString("N1")
+                        @Model.TotalUnidadesRecibidas.ToString("N0")
                     </td>
                 </tr>
             </tfoot>
