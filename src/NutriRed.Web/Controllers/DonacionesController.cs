@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using NutriRed.Domain.Entities;
 using NutriRed.Domain.Enums;
@@ -13,15 +14,18 @@ public class DonacionesController : Controller
 {
     private readonly IDonacionService _donacionService;
     private readonly IProductoService _productoService;
+    private readonly UserManager<ApplicationUser> _userManager;
     private readonly ILogger<DonacionesController> _logger;
 
     public DonacionesController(
         IDonacionService donacionService,
         IProductoService productoService,
+        UserManager<ApplicationUser> userManager,
         ILogger<DonacionesController> logger)
     {
         _donacionService = donacionService;
         _productoService = productoService;
+        _userManager = userManager;
         _logger = logger;
     }
 
@@ -68,7 +72,12 @@ public class DonacionesController : Controller
     public async Task<IActionResult> Registrar()
     {
         await CargarProductosEnViewBagAsync();
-        var model = new RegistrarDonacionViewModel();
+        var user = await _userManager.GetUserAsync(User);
+        var nombreOperador = user?.NombreCompleto ?? User.Identity?.Name ?? "Voluntario Operativo";
+        var model = new RegistrarDonacionViewModel
+        {
+            VoluntarioReceptorId = nombreOperador
+        };
         return View(model);
     }
 
@@ -77,6 +86,11 @@ public class DonacionesController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Registrar(RegistrarDonacionViewModel model)
     {
+        // Seguridad e inmutabilidad: resolver el operador autenticado en sesión
+        var user = await _userManager.GetUserAsync(User);
+        var nombreOperador = user?.NombreCompleto ?? User.Identity?.Name ?? "Voluntario Operativo";
+        model.VoluntarioReceptorId = nombreOperador;
+
         // 1. Validaciones de Negocio Específicas de Donación (RF1)
         if (model.Items == null || !model.Items.Any())
         {
@@ -127,7 +141,7 @@ public class DonacionesController : Controller
             NombreRazonSocial = model.TipoDonante == TipoDonante.Anonimo ? "Donante Anónimo" : model.NombreRazonSocial?.Trim(),
             Telefono = model.TipoDonante == TipoDonante.Anonimo ? null : model.Telefono?.Trim(),
             Email = model.TipoDonante == TipoDonante.Anonimo ? null : model.Email?.Trim(),
-            VoluntarioReceptorId = string.IsNullOrWhiteSpace(model.VoluntarioReceptorId) ? "voluntario_deposito" : model.VoluntarioReceptorId.Trim(),
+            VoluntarioReceptorId = nombreOperador,
             Observaciones = model.Observaciones?.Trim(),
             Items = model.Items!.Select(i => new DonacionItemRequest
             {

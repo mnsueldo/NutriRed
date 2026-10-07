@@ -98,7 +98,9 @@ public class DonacionesApiController : ControllerBase
             NombreRazonSocial = donorName?.Trim(),
             Telefono = (request.Phone ?? request.Donor?.Phone)?.Trim(),
             Email = (request.Email ?? request.Donor?.Email)?.Trim(),
-            VoluntarioReceptorId = string.IsNullOrWhiteSpace(request.VolunteerId) ? "voluntario_movil" : request.VolunteerId.Trim(),
+            VoluntarioReceptorId = !string.IsNullOrWhiteSpace(request.VolunteerName)
+                ? request.VolunteerName.Trim()
+                : (!string.IsNullOrWhiteSpace(request.VolunteerId) ? request.VolunteerId.Trim() : "Voluntario Móvil"),
             Observaciones = request.Observaciones,
             Items = itemsRequest
         };
@@ -118,7 +120,7 @@ public class DonacionesApiController : ControllerBase
             donationCode = data.CodigoComprobante,
             timestamp = data.FechaHora.ToString("dd/MM/yyyy HH:mm"),
             volunteer_id = data.VoluntarioReceptorId,
-            volunteer_name = "Voluntario Recepción",
+            volunteer_name = data.VoluntarioReceptorId,
             donor_name = data.DonanteNombre,
             total_items = data.TotalUnidadesRecibidas,
             items = data.Detalles.Select(d => new

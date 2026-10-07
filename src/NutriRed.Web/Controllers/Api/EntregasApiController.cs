@@ -94,7 +94,9 @@ public class EntregasApiController : ControllerBase
             NombreReceptor = request.ReceiverName.Trim(),
             VinculoConTitular = !request.IsTitular ? (request.VinculoConTitular ?? "Familiar / Autorizado") : null,
             FirmaDigital = firma,
-            VoluntarioDespachoId = string.IsNullOrWhiteSpace(request.VolunteerId) ? "voluntario_movil" : request.VolunteerId.Trim()
+            VoluntarioDespachoId = !string.IsNullOrWhiteSpace(request.VolunteerName)
+                ? request.VolunteerName.Trim()
+                : (!string.IsNullOrWhiteSpace(request.VolunteerId) ? request.VolunteerId.Trim() : "Voluntario Móvil")
         };
 
         var result = await _entregaService.ConfirmarEntregaAsync(serviceRequest);
@@ -113,6 +115,8 @@ public class EntregasApiController : ControllerBase
             delivered_at = comp.FechaHoraEntrega.ToString("dd/MM/yyyy HH:mm"),
             receiver_dni = comp.DniReceptor,
             receiver_name = comp.NombreReceptor,
+            volunteer_id = comp.VoluntarioDespachoId,
+            volunteer_name = comp.VoluntarioDespachoId,
             has_signature = true,
             status = "ENTREGADO"
         });
@@ -134,7 +138,9 @@ public class EntregasApiController : ControllerBase
         {
             CodigoSeguimiento = request.PackageCode.Trim(),
             MotivoNoEntrega = request.MotivoNoEntrega.Trim(),
-            VoluntarioDespachoId = string.IsNullOrWhiteSpace(request.VolunteerId) ? "voluntario_movil" : request.VolunteerId.Trim()
+            VoluntarioDespachoId = !string.IsNullOrWhiteSpace(request.VolunteerName)
+                ? request.VolunteerName.Trim()
+                : (!string.IsNullOrWhiteSpace(request.VolunteerId) ? request.VolunteerId.Trim() : "Voluntario Móvil")
         };
 
         var result = await _entregaService.RegistrarEntregaNoConcretadaAsync(serviceRequest);
@@ -205,4 +211,5 @@ public class EntregaFallidaApiRequest
     public string PackageCode { get; set; } = string.Empty;
     public string MotivoNoEntrega { get; set; } = string.Empty;
     public string? VolunteerId { get; set; } = "VOL-01";
+    public string? VolunteerName { get; set; } = "Voluntario";
 }

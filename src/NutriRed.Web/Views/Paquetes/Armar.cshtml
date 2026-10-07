@@ -230,9 +230,12 @@
                     <div class="col-md-4">
                         <label asp-for="UsuarioArmadorId" class="form-label fw-semibold"></label>
                         <div class="input-group">
-                            <span class="input-group-text bg-light text-muted"><i class="bi bi-person-gear"></i></span>
-                            <input asp-for="UsuarioArmadorId" class="form-control" />
+                            <span class="input-group-text bg-light text-success"><i class="bi bi-person-check-fill"></i></span>
+                            <input asp-for="UsuarioArmadorId" class="form-control bg-light text-dark fw-semibold" readonly />
                         </div>
+                        <small class="text-muted d-block mt-1" style="font-size: 0.75rem;">
+                            <i class="bi bi-shield-lock-fill text-secondary me-1"></i>Asignado al usuario en sesión
+                        </small>
                     </div>
                     <div class="col-md-8">
                         <label asp-for="Observaciones" class="form-label fw-semibold"></label>
