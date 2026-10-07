@@ -15,40 +15,40 @@
             </ol>
         </nav>
 
-        <div class="card card-nr shadow-sm">
-            <div class="card-header card-nr-header d-flex align-items-center gap-2">
-                <div class="p-2 rounded-2" style="background: #eff6ff; color: #2563eb;">
-                    <i class="bi bi-pencil-square fs-5"></i>
+        <div class="card border-0 shadow-sm rounded-4 bg-white overflow-hidden">
+            <div class="card-header bg-white border-bottom p-4 d-flex align-items-center gap-3">
+                <div class="rounded-circle bg-primary bg-opacity-10 text-primary p-3 d-flex align-items-center justify-content-center" style="width: 52px; height: 52px;">
+                    <i class="bi bi-pencil-square fs-4"></i>
                 </div>
                 <div>
-                    <h1 class="h5 fw-bold text-dark mb-0">Modificar categoría</h1>
-                    <small class="text-muted">Actualice la información de la categoría seleccionada.</small>
+                    <h1 class="h5 fw-bold text-dark mb-0">Modificar Categoría</h1>
+                    <small class="text-muted">Actualice la información y disponibilidad de la categoría seleccionada.</small>
                 </div>
             </div>
 
-            <div class="card-body p-4">
+            <div class="card-body p-4 p-md-5">
                 <form asp-action="Edit" asp-route-id="@Model.Id" method="post">
                     @Html.AntiForgeryToken()
                     <input type="hidden" asp-for="Id" />
 
-                    <div asp-validation-summary="ModelOnly" class="alert alert-danger mb-4" role="alert"></div>
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger mb-4 rounded-3" role="alert"></div>
 
                     <!-- Código identificador interno -->
-                    <div class="mb-3">
+                    <div class="mb-4">
                         <label class="form-label text-muted small fw-semibold">Identificador de sistema</label>
                         <div>
-                            <span class="code-tag">ID: #@Model.Id</span>
+                            <span class="code-tag rounded-3 font-mono px-3 py-1">ID: #@Model.Id</span>
                         </div>
                     </div>
 
                     <!-- Nombre de la Categoría -->
-                    <div class="mb-3">
+                    <div class="mb-4">
                         <label asp-for="Nombre" class="form-label fw-semibold text-dark">
                             Nombre de la categoría <span class="text-danger">*</span>
                         </label>
                         <input asp-for="Nombre" class="form-control" placeholder="Ej: Lácteos, Legumbres..." />
                         <span asp-validation-for="Nombre" class="text-danger small"></span>
-                        <div class="form-text">Si modifica el nombre, no debe coincidir con el de otra categoría existente.</div>
+                        <div class="form-text small text-muted">Si modifica el nombre, no debe coincidir con el de otra categoría existente.</div>
                     </div>
 
                     <!-- Descripción -->
@@ -62,20 +62,22 @@
                     </div>
 
                     <!-- Estado Activo -->
-                    <div class="form-check form-switch mb-4 p-3 bg-light rounded-3 border">
-                        <input asp-for="Activo" class="form-check-input ms-0 me-3" type="checkbox" role="switch" id="switchActivoEdit" />
-                        <label class="form-check-label fw-semibold text-dark" for="switchActivoEdit">
-                            Categoría activa
-                        </label>
-                        <div class="text-muted small">Desactivar una categoría impedirá asociarla a nuevos alimentos.</div>
+                    <div class="form-check form-switch mb-4 p-3 bg-light rounded-4 border d-flex align-items-center justify-content-between">
+                        <div>
+                            <label class="form-check-label fw-semibold text-dark d-block" for="switchActivoEdit">
+                                Categoría activa
+                            </label>
+                            <small class="text-muted d-block">Desactivar una categoría impedirá asociarla a nuevos alimentos en el catálogo.</small>
+                        </div>
+                        <input asp-for="Activo" class="form-check-input ms-0 fs-5" type="checkbox" role="switch" id="switchActivoEdit" />
                     </div>
 
                     <div class="d-flex justify-content-between align-items-center pt-3 border-top">
-                        <a asp-action="Index" class="btn btn-outline-secondary">
+                        <a asp-action="Index" class="btn btn-outline-secondary rounded-pill px-4 fw-semibold">
                             <i class="bi bi-arrow-left me-1"></i> Volver al listado
                         </a>
-                        <button type="submit" class="btn btn-emerald">
-                            <i class="bi bi-save me-1"></i> Guardar modificaciones
+                        <button type="submit" class="btn btn-success rounded-pill px-4 fw-semibold shadow-sm">
+                            <i class="bi bi-check2-circle me-1"></i> Guardar Modificaciones
                         </button>
                     </div>
                 </form>
