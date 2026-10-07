@@ -19,6 +19,18 @@ public class DashboardController : Controller
     }
 
     [HttpGet]
+    public IActionResult Trazabilidad()
+    {
+        return View();
+    }
+
+    [HttpGet]
+    public IActionResult Reportes()
+    {
+        return View();
+    }
+
+    [HttpGet]
     public async Task<IActionResult> Index()
     {
         // 1. Obtener familias en estado Activo
