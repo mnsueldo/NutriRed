@@ -9,145 +9,187 @@
     <ol class="breadcrumb mb-1 small">
         <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index" class="text-decoration-none text-muted">Inicio</a></li>
         <li class="breadcrumb-item"><a asp-action="Index" class="text-decoration-none text-muted">Alimentos</a></li>
-        <li class="breadcrumb-item active text-dark fw-semibold" aria-current="page">Detalle técnico</li>
+        <li class="breadcrumb-item active text-dark fw-semibold" aria-current="page">Ficha técnica</li>
     </ol>
 </nav>
 
+<!-- Encabezado Principal y Acciones -->
 <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
     <div>
-        <div class="d-flex align-items-center gap-2 mb-1">
-            <span class="code-tag fs-6">
-                <i class="bi bi-upc me-1 text-muted"></i>@Model.Producto.CodigoBarras
-            </span>
-            @if (Model.Producto.Activo)
-            {
-                <span class="badge bg-success-subtle text-success border border-success-subtle">Activo</span>
-            }
-            else
-            {
-                <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle">Inactivo</span>
-            }
-        </div>
-        <h1 class="h3 fw-bold text-dark mb-0">@Model.Producto.Nombre</h1>
-        <p class="text-secondary small mb-0">@(string.IsNullOrWhiteSpace(Model.Producto.Descripcion) ? "Sin descripción detallada" : Model.Producto.Descripcion)</p>
+        <h2 class="fw-bold mb-1 text-dark">
+            <i class="bi bi-box2-heart-fill text-success me-2"></i>Ficha Técnica del Alimento
+        </h2>
+        <p class="text-secondary mb-0">Especificaciones comerciales, umbrales de alerta y trazabilidad de lotes físicos.</p>
     </div>
     <div class="d-flex gap-2">
-        <a asp-action="Edit" asp-route-id="@Model.Producto.Id" class="btn btn-outline-secondary">
-            <i class="bi bi-pencil me-1"></i> Modificar alimento
-        </a>
-        <a asp-action="Index" class="btn btn-outline-secondary">
+        <a asp-action="Index" class="btn btn-outline-secondary rounded-pill px-3 shadow-sm fw-semibold">
             <i class="bi bi-arrow-left me-1"></i> Catálogo
+        </a>
+        <a asp-action="Edit" asp-route-id="@Model.Producto.Id" class="btn btn-primary rounded-pill px-3 shadow-sm fw-semibold">
+            <i class="bi bi-pencil me-1"></i> Modificar Alimento
         </a>
     </div>
 </div>
 
-<div class="row g-4 mb-4">
-    <!-- Tarjeta de Especificaciones Técnicas -->
-    <div class="col-lg-4">
-        <div class="card card-nr h-100 p-4">
-            <h2 class="h6 fw-bold text-dark mb-3 pb-2 border-bottom">
-                <i class="bi bi-info-circle text-primary me-2"></i> Datos de catálogo
-            </h2>
-            <dl class="row mb-0 small">
-                <dt class="col-sm-5 text-muted">Categoría:</dt>
-                <dd class="col-sm-7 fw-semibold text-dark">@(Model.Producto.Categoria?.Nombre ?? "General")</dd>
-
-                <dt class="col-sm-5 text-muted">Unidad medida:</dt>
-                <dd class="col-sm-7 fw-semibold text-dark">@Model.Producto.UnidadMedida</dd>
-
-                <dt class="col-sm-5 text-muted">Stock mínimo:</dt>
-                <dd class="col-sm-7 fw-semibold text-dark">@Model.Producto.StockMinimo.ToString("N0") @Model.Producto.UnidadMedida</dd>
-
-                <dt class="col-sm-5 text-muted">Stock físico:</dt>
-                <dd class="col-sm-7">
-                    <span class="fw-bold @(Model.RequiereReposicion ? "text-danger" : "text-success") fs-6">
-                        @Model.StockTotalDisponible.ToString("N0") @Model.Producto.UnidadMedida
-                    </span>
-                    @if (Model.RequiereReposicion)
-                    {
-                        <div class="text-danger small mt-1">
-                            <i class="bi bi-exclamation-triangle-fill me-1"></i> Requiere reposición inmediata
-                        </div>
-                    }
-                </dd>
-
-                <dt class="col-sm-5 text-muted">Lotes registrados:</dt>
-                <dd class="col-sm-7 fw-semibold text-dark">@Model.Lotes.Count lote(s)</dd>
-            </dl>
-        </div>
-    </div>
-
-    <!-- Tabla de Lotes Físicos Asociados (Motor FEFO) -->
-    <div class="col-lg-8">
-        <div class="card card-nr h-100 overflow-hidden">
-            <div class="card-header card-nr-header d-flex justify-content-between align-items-center">
-                <div class="fw-bold text-dark">
-                    <i class="bi bi-boxes text-success me-2"></i> Lotes físicos en depósito
+<!-- Hero Card del Alimento (Panel Bento Principal) -->
+<div class="card border-0 shadow-sm rounded-4 p-4 bg-white mb-4">
+    <div class="row g-4 align-items-center">
+        <!-- Columna Izquierda: Identidad Comercial -->
+        <div class="col-lg-6">
+            <div class="d-flex align-items-start gap-3">
+                <div class="rounded-4 bg-success bg-opacity-10 text-success p-3 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 68px; height: 68px;">
+                    <i class="bi bi-basket2-fill fs-2"></i>
                 </div>
-                <small class="text-muted">Prioridad de consumo por caducidad</small>
+                <div>
+                    <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+                        <span class="code-tag rounded-3 font-mono px-3 py-1 fs-6">
+                            <i class="bi bi-upc me-1 text-muted"></i>@Model.Producto.CodigoBarras
+                        </span>
+                        <span class="badge bg-light text-dark border rounded-pill px-3 py-1">
+                            <i class="bi bi-tag-fill me-1 text-primary"></i>@(Model.Producto.Categoria?.Nombre ?? "General")
+                        </span>
+                        @if (Model.Producto.Activo)
+                        {
+                            <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-1">
+                                <i class="bi bi-check-circle-fill me-1"></i> Activo
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill px-3 py-1">
+                                <i class="bi bi-slash-circle me-1"></i> Inactivo
+                            </span>
+                        }
+                    </div>
+                    <h1 class="h3 fw-bold text-dark mb-1">@Model.Producto.Nombre</h1>
+                    <p class="text-secondary mb-0">
+                        @(string.IsNullOrWhiteSpace(Model.Producto.Descripcion) ? "Sin presentación especificada en catálogo." : Model.Producto.Descripcion)
+                    </p>
+                </div>
             </div>
+        </div>
 
-            @if (!Model.Lotes.Any())
-            {
-                <div class="text-center py-5">
-                    <i class="bi bi-box text-muted" style="font-size: 2.5rem;"></i>
-                    <p class="text-muted small mt-2 mb-0">Este alimento aún no cuenta con lotes físicos recibidos.</p>
+        <!-- Columna Derecha: Métricas Clave de Existencias -->
+        <div class="col-lg-6">
+            <div class="row g-3">
+                <!-- Stock Físico Disponible -->
+                <div class="col-sm-6">
+                    <div class="p-3 rounded-4 bg-light border border-light-subtle h-100">
+                        <span class="text-muted small fw-semibold text-uppercase d-block mb-1">Stock Disponible</span>
+                        <div class="d-flex align-items-baseline gap-1">
+                            <span class="fs-3 fw-bold @(Model.RequiereReposicion ? "text-danger" : "text-success")">
+                                @Model.StockTotalDisponible.ToString("N0")
+                            </span>
+                            <span class="text-muted fw-semibold">@Model.Producto.UnidadMedida</span>
+                        </div>
+                        @if (Model.RequiereReposicion)
+                        {
+                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill px-2 py-1 mt-1 small">
+                                <i class="bi bi-exclamation-triangle-fill me-1"></i> Reposición requerida
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2 py-1 mt-1 small">
+                                <i class="bi bi-check2-circle me-1"></i> Nivel óptimo
+                            </span>
+                        }
+                    </div>
                 </div>
-            }
-            else
-            {
-                <div class="table-responsive">
-                    <table class="table table-nr align-middle mb-0 small">
-                        <thead>
-                            <tr>
-                                <th># Lote</th>
-                                <th>Caducidad (FEFO)</th>
-                                <th class="text-center">Disponible</th>
-                                <th class="text-center">Inicial</th>
-                                <th class="text-center">Estado lote</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var lote in Model.Lotes)
-                            {
-                                <tr>
-                                    <td>
-                                        <span class="code-tag font-mono">@lote.NumeroLote</span>
-                                    </td>
-                                    <td>
-                                        <div class="fw-semibold text-dark">@lote.FechaVencimiento.ToString("dd/MM/yyyy")</div>
-                                        <span class="badge @lote.ClaseFefo" style="font-size: 0.72rem;">@lote.TextoFefo</span>
-                                    </td>
-                                    <td class="text-center">
-                                        <span class="fw-bold text-dark">@lote.CantidadDisponible.ToString("N0")</span>
-                                    </td>
-                                    <td class="text-center text-muted">
-                                        @lote.CantidadInicial.ToString("N0")
-                                    </td>
-                                    <td class="text-center">
-                                        @if (lote.Estado == EstadoLote.Disponible)
-                                        {
-                                            <span class="badge bg-success-subtle text-success border border-success-subtle">Disponible</span>
-                                        }
-                                        else if (lote.Estado == EstadoLote.Agotado)
-                                        {
-                                            <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle">Agotado</span>
-                                        }
-                                        else if (lote.Estado == EstadoLote.Vencido)
-                                        {
-                                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle">Vencido</span>
-                                        }
-                                        else
-                                        {
-                                            <span class="badge bg-warning-subtle text-warning border border-warning-subtle">Bloqueado</span>
-                                        }
-                                    </td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
+
+                <!-- Stock Mínimo de Alerta -->
+                <div class="col-sm-6">
+                    <div class="p-3 rounded-4 bg-light border border-light-subtle h-100">
+                        <span class="text-muted small fw-semibold text-uppercase d-block mb-1">Stock Mínimo Alerta</span>
+                        <div class="d-flex align-items-baseline gap-1">
+                            <span class="fs-3 fw-bold text-dark">
+                                @Model.Producto.StockMinimo.ToString("N0")
+                            </span>
+                            <span class="text-muted fw-semibold">@Model.Producto.UnidadMedida</span>
+                        </div>
+                        <small class="text-muted d-block mt-1">Umbral para disparar avisos</small>
+                    </div>
                 </div>
-            }
+            </div>
         </div>
     </div>
+</div>
+
+<!-- Lotes Físicos Asociados (Motor FEFO) -->
+<div class="card border-0 shadow-sm rounded-4 overflow-hidden bg-white">
+    <div class="card-header bg-white border-bottom p-3 px-4 d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-2">
+        <div class="fw-bold text-dark fs-6">
+            <i class="bi bi-boxes text-success me-2"></i> Lotes Físicos en Depósito
+            <span class="badge bg-light text-muted border ms-2">@Model.Lotes.Count lote(s)</span>
+        </div>
+        <small class="text-muted"><i class="bi bi-info-circle me-1"></i> Ordenados por prioridad First Expired, First Out</small>
+    </div>
+
+    @if (!Model.Lotes.Any())
+    {
+        <div class="text-center py-5">
+            <div class="rounded-circle bg-light d-inline-flex p-4 mb-3 text-muted">
+                <i class="bi bi-box-seam" style="font-size: 2.5rem;"></i>
+            </div>
+            <h5 class="fw-bold text-dark">Sin lotes físicos registrados</h5>
+            <p class="text-muted small mb-0">Este alimento aún no cuenta con ingresos de stock o donaciones recibidas.</p>
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light text-secondary text-uppercase small fw-bold">
+                    <tr>
+                        <th class="ps-4"># Lote</th>
+                        <th>Caducidad (FEFO)</th>
+                        <th class="text-center">Disponible</th>
+                        <th class="text-center">Inicial</th>
+                        <th class="text-center pe-4">Estado Lote</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var lote in Model.Lotes)
+                    {
+                        <tr>
+                            <td class="ps-4">
+                                <span class="code-tag rounded-3 font-mono">
+                                    <i class="bi bi-upc-scan me-1 text-muted"></i>@lote.NumeroLote
+                                </span>
+                            </td>
+                            <td>
+                                <div class="fw-semibold text-dark">@lote.FechaVencimiento.ToString("dd/MM/yyyy")</div>
+                                <span class="badge @lote.ClaseFefo rounded-pill px-2 py-1" style="font-size: 0.72rem;">@lote.TextoFefo</span>
+                            </td>
+                            <td class="text-center">
+                                <span class="fw-bold text-dark fs-6">@lote.CantidadDisponible.ToString("N0")</span>
+                                <small class="text-muted">@Model.Producto.UnidadMedida</small>
+                            </td>
+                            <td class="text-center text-muted">
+                                @lote.CantidadInicial.ToString("N0") @Model.Producto.UnidadMedida
+                            </td>
+                            <td class="text-center pe-4">
+                                @if (lote.Estado == EstadoLote.Disponible)
+                                {
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-1">Disponible</span>
+                                }
+                                else if (lote.Estado == EstadoLote.Agotado)
+                                {
+                                    <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill px-3 py-1">Agotado</span>
+                                }
+                                else if (lote.Estado == EstadoLote.Vencido)
+                                {
+                                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill px-3 py-1">Vencido</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill px-3 py-1">Bloqueado</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
 </div>
