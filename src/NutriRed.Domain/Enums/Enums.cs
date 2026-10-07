@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace NutriRed.Domain.Enums;
 
 public enum TipoDonante
@@ -9,12 +11,14 @@ public enum TipoDonante
 
 public enum UnidadMedida
 {
-    Kilogramos = 1,
-    Gramos = 2,
-    Litros = 3,
-    Mililitros = 4,
-    Unidades = 5,
-    Cajas = 6
+    [Display(Name = "Unidades")]
+    Unidades = 1,
+
+    [Display(Name = "Kilos")]
+    Kilos = 2,
+
+    [Display(Name = "Litros")]
+    Litros = 3
 }
 
 public enum EstadoLote

@@ -115,7 +115,7 @@ public class ProductosController : Controller
         { 
             Activo = true, 
             StockMinimo = 10,
-            UnidadMedida = Domain.Enums.UnidadMedida.Kilogramos 
+            UnidadMedida = Domain.Enums.UnidadMedida.Kilos 
         });
     }
 

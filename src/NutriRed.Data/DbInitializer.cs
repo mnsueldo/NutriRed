@@ -14,9 +14,9 @@ public static class DbInitializer
         // 1. Asegurar que la base de datos existe
         await context.Database.EnsureCreatedAsync();
 
-        // Si ya existen las 5 familias oficiales y el catálogo completo (incluyendo Cacao con stock crítico), la base ya tiene el dataset exhaustivo
+        // Si ya existen las 5 familias oficiales y el catálogo completo (con unidades unificadas), la base ya tiene el dataset exhaustivo
         if (await context.FamiliasBeneficiarias.AnyAsync(f => f.DniTitular == "20987654") &&
-            await context.Productos.AnyAsync(p => p.CodigoBarras == "7790080022331"))
+            await context.Productos.AnyAsync(p => p.CodigoBarras == "7790080022331" && p.UnidadMedida == UnidadMedida.Unidades))
         {
             return;
         }
@@ -62,7 +62,7 @@ public static class DbInitializer
             Nombre = "Arroz Largo Fino 1kg",
             Descripcion = "Paquete arroz blanco 00000",
             CategoriaId = catGranos.Id,
-            UnidadMedida = UnidadMedida.Kilogramos,
+            UnidadMedida = UnidadMedida.Kilos,
             StockMinimo = 20,
             Activo = true
         };
@@ -73,7 +73,7 @@ public static class DbInitializer
             Nombre = "Fideos Guiseros Tirabuzón 500g",
             Descripcion = "Pasta seca de sémola de trigo candeal",
             CategoriaId = catPastas.Id,
-            UnidadMedida = UnidadMedida.Gramos,
+            UnidadMedida = UnidadMedida.Unidades,
             StockMinimo = 30,
             Activo = true
         };
@@ -84,7 +84,7 @@ public static class DbInitializer
             Nombre = "Fideos Spaghetti 500g",
             Descripcion = "Pasta seca larga tipo tallarín",
             CategoriaId = catPastas.Id,
-            UnidadMedida = UnidadMedida.Gramos,
+            UnidadMedida = UnidadMedida.Unidades,
             StockMinimo = 25,
             Activo = true
         };
@@ -117,7 +117,7 @@ public static class DbInitializer
             Nombre = "Leche en Polvo Entera 400g",
             Descripcion = "Bolsa aluminizada fortificada con vitaminas",
             CategoriaId = catLacteos.Id,
-            UnidadMedida = UnidadMedida.Gramos,
+            UnidadMedida = UnidadMedida.Unidades,
             StockMinimo = 15,
             Activo = true
         };
@@ -128,7 +128,7 @@ public static class DbInitializer
             Nombre = "Lentejas Secas Seleccionadas 400g",
             Descripcion = "Paquete legumbres secas calidad superior",
             CategoriaId = catGranos.Id,
-            UnidadMedida = UnidadMedida.Gramos,
+            UnidadMedida = UnidadMedida.Unidades,
             StockMinimo = 15,
             Activo = true
         };
@@ -139,7 +139,7 @@ public static class DbInitializer
             Nombre = "Garbanzos Secos Seleccionados 400g",
             Descripcion = "Paquete legumbres secas para guisados",
             CategoriaId = catGranos.Id,
-            UnidadMedida = UnidadMedida.Gramos,
+            UnidadMedida = UnidadMedida.Unidades,
             StockMinimo = 15,
             Activo = true
         };
@@ -150,7 +150,7 @@ public static class DbInitializer
             Nombre = "Puré de Tomate Tetra 520g",
             Descripcion = "Puré de tomate listo para usar sin TACC",
             CategoriaId = catConservas.Id,
-            UnidadMedida = UnidadMedida.Gramos,
+            UnidadMedida = UnidadMedida.Unidades,
             StockMinimo = 25,
             Activo = true
         };
@@ -161,7 +161,7 @@ public static class DbInitializer
             Nombre = "Arvejas en Lata 300g",
             Descripcion = "Lata con conserva de arvejas tiernas",
             CategoriaId = catConservas.Id,
-            UnidadMedida = UnidadMedida.Gramos,
+            UnidadMedida = UnidadMedida.Unidades,
             StockMinimo = 20,
             Activo = true
         };
@@ -172,7 +172,7 @@ public static class DbInitializer
             Nombre = "Atún al Natural en Lata 170g",
             Descripcion = "Lomo de atún desmenuzado en agua y sal",
             CategoriaId = catConservas.Id,
-            UnidadMedida = UnidadMedida.Gramos,
+            UnidadMedida = UnidadMedida.Unidades,
             StockMinimo = 15,
             Activo = true
         };
@@ -183,7 +183,7 @@ public static class DbInitializer
             Nombre = "Harina de Trigo 000 1kg",
             Descripcion = "Paquete papel 1kg para panificados y pastas",
             CategoriaId = catPastas.Id,
-            UnidadMedida = UnidadMedida.Kilogramos,
+            UnidadMedida = UnidadMedida.Kilos,
             StockMinimo = 20,
             Activo = true
         };
@@ -194,7 +194,7 @@ public static class DbInitializer
             Nombre = "Azúcar Blanco Común 1kg",
             Descripcion = "Bolsa 1kg azúcar tipo A primera calidad",
             CategoriaId = catInfusiones.Id,
-            UnidadMedida = UnidadMedida.Kilogramos,
+            UnidadMedida = UnidadMedida.Kilos,
             StockMinimo = 15,
             Activo = true
         };
@@ -205,7 +205,7 @@ public static class DbInitializer
             Nombre = "Yerba Mate Tradicional 500g",
             Descripcion = "Paquete 500g con palo estacionamiento natural",
             CategoriaId = catInfusiones.Id,
-            UnidadMedida = UnidadMedida.Gramos,
+            UnidadMedida = UnidadMedida.Unidades,
             StockMinimo = 20,
             Activo = true
         };
@@ -216,7 +216,7 @@ public static class DbInitializer
             Nombre = "Cacao en Polvo Chocolatado 360g",
             Descripcion = "Bolsa doypack cacao dulce instantáneo para desayuno",
             CategoriaId = catInfusiones.Id,
-            UnidadMedida = UnidadMedida.Gramos,
+            UnidadMedida = UnidadMedida.Unidades,
             StockMinimo = 10, // Stock mínimo 10; tendrá stock actual 4 (dispara alerta de stock crítico)
             Activo = true
         };
