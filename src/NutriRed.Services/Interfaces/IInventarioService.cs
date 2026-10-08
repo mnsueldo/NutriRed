@@ -13,4 +13,8 @@ public interface IInventarioService
     Task<OperationResult<MovimientoStock>> RegistrarAjusteOMermaAsync(AjusteMermaRequest request);
     Task<OperationResult<IEnumerable<Lote>>> ObtenerLotesProximosAVencerAsync(int diasUmbral = 30);
     Task<OperationResult<IEnumerable<MovimientoStock>>> ObtenerMovimientosPorProductoAsync(int productoId);
+    Task<OperationResult<decimal>> ObtenerTotalMermasKgAsync();
+    Task<OperationResult<decimal>> ObtenerTotalAlimentosDistribuidosAsync();
+    Task<OperationResult<List<DistribucionMensualDto>>> ObtenerDistribucionMensualAsync();
+
 }

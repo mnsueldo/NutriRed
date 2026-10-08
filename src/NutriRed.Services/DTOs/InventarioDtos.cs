@@ -28,11 +28,16 @@ public class StockProductoDto
     public string NombreProducto { get; set; } = string.Empty;
     public string Categoria { get; set; } = string.Empty;
     public UnidadMedida UnidadMedida { get; set; }
-    public decimal StockActual { get; set; }
+
+    public decimal StockActual { get; set; }  // Stock Apto para entrega
+    public decimal StockVencido { get; set; } // Stock Vencido pendiente de baja
     public decimal StockMinimo { get; set; }
-    public bool RequiereReposicion => StockActual <= StockMinimo;
+
     public int CantidadLotesActivos { get; set; }
     public DateTime? ProximoVencimiento { get; set; }
+
+    // Identificador para el filtro y la insignia FEFO ("Vencido", "Alerta", "Optimo", "SinStock")
+    public string EstadoFEFO { get; set; } = "Optimo";
 }
 
 public class AjusteMermaRequest
@@ -43,4 +48,12 @@ public class AjusteMermaRequest
     public MotivoMovimiento Motivo { get; set; } = MotivoMovimiento.Deteriorado;
     public string UsuarioId { get; set; } = string.Empty;
     public string? Observaciones { get; set; }
+}
+
+public class DistribucionMensualDto
+{
+    public int Mes { get; set; }
+    public int Anio { get; set; }
+    public string NombreMes { get; set; } = string.Empty; // Ej: "Ene", "Feb", "Mar"
+    public decimal TotalKg { get; set; }
 }
