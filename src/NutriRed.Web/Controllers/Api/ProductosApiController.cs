@@ -136,19 +136,65 @@ public class ProductosApiController : ControllerBase
             return BadRequest(new { success = false, message = "El código de barras y el nombre son obligatorios." });
         }
 
-        // Buscar o asignar categoría
-        int categoriaId = dto.CategoriaId.GetValueOrDefault(1);
-        if (categoriaId <= 0)
+        // Buscar o asignar categoría activa del sistema con normalización flexible
+        var categoriasRes = await _categoriaService.ObtenerTodasAsync();
+        var listaCategorias = categoriasRes.Data?.ToList() ?? new List<Categoria>();
+
+        // Función auxiliar para comparar nombres ignorando espacios, barras y mayúsculas
+        static string Normalizar(string? s) => string.IsNullOrWhiteSpace(s) ? "" : s.Replace(" ", "").Replace("/", "").ToLowerInvariant();
+
+        var nombreBuscado = !string.IsNullOrWhiteSpace(dto.CategoryName) ? dto.CategoryName : dto.Category;
+
+        // 1. Intentar por ID exacto enviado desde el cliente
+        Categoria? catValida = listaCategorias.FirstOrDefault(c => dto.CategoriaId.HasValue && c.Id == dto.CategoriaId.Value && c.Activo);
+
+        // 2. Si el ID no coincidió pero vino nombre de categoría, buscar por nombre exacto o normalizado
+        if (catValida == null && !string.IsNullOrWhiteSpace(nombreBuscado))
         {
-            var categorias = await _categoriaService.ObtenerTodasAsync();
-            categoriaId = categorias.Data?.FirstOrDefault()?.Id ?? 1;
+            var norm = Normalizar(nombreBuscado);
+            catValida = listaCategorias.FirstOrDefault(c => c.Activo && Normalizar(c.Nombre) == norm)
+                        ?? listaCategorias.FirstOrDefault(c => c.Activo && c.Nombre.Contains(nombreBuscado.Trim(), StringComparison.OrdinalIgnoreCase));
         }
 
-        // Parsear UnidadMedida
-        if (!Enum.TryParse<UnidadMedida>(dto.UnitOfMeasure, true, out var unidad))
+        // 3. Si sigue sin coincidir y el nombre o intención era el comodín 'Otros' / 'Varios'
+        if (catValida == null && (!string.IsNullOrWhiteSpace(nombreBuscado) && (nombreBuscado.Contains("otro", StringComparison.OrdinalIgnoreCase) || nombreBuscado.Contains("vario", StringComparison.OrdinalIgnoreCase))))
         {
-            unidad = UnidadMedida.Unidades;
+            catValida = listaCategorias.FirstOrDefault(c => c.Activo && (c.Nombre.Contains("otro", StringComparison.OrdinalIgnoreCase) || c.Nombre.Contains("vario", StringComparison.OrdinalIgnoreCase)));
         }
+
+        // 4. Si no se especificó categoría o no se encontró, buscar siempre la categoría comodín 'Otros' / 'Varios'
+        if (catValida == null)
+        {
+            catValida = listaCategorias.FirstOrDefault(c => c.Activo && (c.Nombre.Contains("otro", StringComparison.OrdinalIgnoreCase) || c.Nombre.Contains("vario", StringComparison.OrdinalIgnoreCase)));
+        }
+
+        // 5. Si la categoría comodín no existe en la base, crearla dinámicamente en Supabase
+        if (catValida == null)
+        {
+            var resCrearCat = await _categoriaService.CrearAsync(new Categoria
+            {
+                Nombre = "Otros Alimentos / Varios",
+                Descripcion = "Alimentos varios no clasificados en categorías específicas",
+                Activo = true
+            });
+            if (resCrearCat.Success && resCrearCat.Data != null)
+            {
+                catValida = resCrearCat.Data;
+                _logger.LogInformation("Categoría comodín auto-creada en Supabase durante alta de producto: {Id} - {Nombre}", catValida.Id, catValida.Nombre);
+            }
+        }
+
+        // 6. Último recurso absoluto
+        int categoriaId = catValida?.Id ?? listaCategorias.FirstOrDefault(c => c.Activo)?.Id ?? 1;
+
+        // Parsear UnidadMedida flexible (unidades, kilos/kg, litros)
+        var uStr = (dto.UnitOfMeasure ?? "unidades").Trim().ToLowerInvariant();
+        UnidadMedida unidad = uStr switch
+        {
+            "kilos" or "kg" or "kilo" => UnidadMedida.Kilos,
+            "litros" or "l" or "litro" => UnidadMedida.Litros,
+            _ => UnidadMedida.Unidades
+        };
 
         var nuevo = new Producto
         {
@@ -174,7 +220,7 @@ public class ProductosApiController : ControllerBase
             name = result.Data.Nombre,
             unitOfMeasure = result.Data.UnidadMedida.ToString().ToLower(),
             unit_of_measure = result.Data.UnidadMedida.ToString().ToLower(),
-            category = result.Data.Categoria?.Nombre ?? "General"
+            category = result.Data.Categoria?.Nombre ?? catValida?.Nombre ?? "General"
         });
     }
 }
@@ -185,5 +231,7 @@ public class CrearProductoDto
     public string Name { get; set; } = string.Empty;
     public string? UnitOfMeasure { get; set; } = "unidades";
     public int? CategoriaId { get; set; }
+    public string? CategoryName { get; set; }
+    public string? Category { get; set; }
     public decimal? StockMinimo { get; set; } = 10;
 }

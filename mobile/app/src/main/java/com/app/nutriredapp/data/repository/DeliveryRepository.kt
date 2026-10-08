@@ -69,20 +69,21 @@ class DeliveryRepository(
     suspend fun getPreparedPackages(): List<FoodPackage> = withContext(dispatcher) {
         // 1. Intentar consultar paquetes preparados desde la API central ASP.NET Core
         try {
-            val remote = NutriRedApiClient.getPreparedPackages()
-            if (remote.isNotEmpty()) {
-                remote.forEach { rPkg ->
-                    val idx = memoryPackages.indexOfFirst { it.id == rPkg.id || it.packageCode == rPkg.packageCode }
-                    if (idx == -1) memoryPackages.add(rPkg) else memoryPackages[idx] = rPkg
-                }
-                Log.d(TAG, "Paquetes preparados obtenidos de la API .NET: ${remote.size}")
+            val remoteResult = NutriRedApiClient.getPreparedPackagesResult()
+            if (remoteResult.isSuccess) {
+                val remote = remoteResult.getOrNull() ?: emptyList()
+                Log.d(TAG, "Paquetes preparados obtenidos de la API .NET (Supabase): ${remote.size}")
+                // Si la API contestó exitosamente, esa es la verdad del backend (incluso si está vacía porque ya se entregaron todos)
+                memoryPackages.clear()
+                memoryPackages.addAll(remote)
                 return@withContext remote
             }
         } catch (e: Exception) {
             Log.w(TAG, "Error obteniendo paquetes desde API: ${e.message}")
         }
 
-        // 2. Fallback a memoria local
+        // 2. Fallback a memoria local ÚNICAMENTE si la API fue inaccesible (modo offline)
+        Log.w(TAG, "API remota no disponible, usando paquetes de contingencia local")
         memoryPackages.filter { it.status == PackageStatus.PREPARADO }
     }
 
@@ -104,6 +105,7 @@ class DeliveryRepository(
         packageId: String,
         receiverDni: String,
         receiverName: String,
+        signatureBase64: String = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMgAAABkCAYAAADDhn8LAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAFTSURBVHhe7cExAQAAAMKg9U9tDQ8gAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgIsBFecAAafqH7MAAAAASUVORK5CYII=",
         volunteerId: String,
         volunteerName: String
     ): Result<FoodPackage> = withContext(dispatcher) {
@@ -126,7 +128,7 @@ class DeliveryRepository(
                 packageCode = current.packageCode,
                 receiverDni = receiverDni.trim(),
                 receiverName = receiverName.trim(),
-                signatureBase64 = "FIRMA_DIGITAL_TOUCHSCREEN_MOBILE_APP_OK",
+                signatureBase64 = signatureBase64,
                 volunteerId = volunteerId
             )
             Log.d(TAG, "Confirmación de entrega en API central .NET: $success")
@@ -147,5 +149,51 @@ class DeliveryRepository(
 
         memoryPackages[index] = updated
         return@withContext Result.success(updated)
+    }
+
+    suspend fun registerFailedDelivery(
+        packageId: String,
+        packageCode: String,
+        reason: String,
+        volunteerId: String = "VOL-101",
+        volunteerName: String = "Voluntario Móvil"
+    ): Result<FoodPackage> = withContext(dispatcher) {
+        val index = memoryPackages.indexOfFirst {
+            it.id == packageId || it.packageCode.equals(packageId, ignoreCase = true) || it.packageCode.equals(packageCode, ignoreCase = true)
+        }
+
+        // 1. Intentar registrar en la API central ASP.NET Core
+        try {
+            val codeToUse = if (index != -1) memoryPackages[index].packageCode else packageCode
+            val success = NutriRedApiClient.registerFailedDelivery(
+                packageCode = codeToUse,
+                reason = reason.trim(),
+                volunteerName = volunteerName.trim()
+            )
+            Log.d(TAG, "Registro de entrega fallida en API central .NET: $success")
+        } catch (e: Exception) {
+            Log.w(TAG, "No se pudo sincronizar entrega fallida con la API: ${e.message}")
+        }
+
+        // 2. Actualizar estado local en memoria
+        if (index != -1) {
+            val current = memoryPackages[index]
+            val updated = current.copy(
+                status = PackageStatus.CANCELADO
+            )
+            memoryPackages[index] = updated
+            return@withContext Result.success(updated)
+        }
+
+        val fallbackPkg = FoodPackage(
+            id = packageId,
+            packageCode = packageCode,
+            familyId = "",
+            familyTitularName = "",
+            familyTitularDni = "",
+            familyMembersCount = 0,
+            status = PackageStatus.CANCELADO
+        )
+        return@withContext Result.success(fallbackPkg)
     }
 }

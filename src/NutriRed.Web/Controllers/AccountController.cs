@@ -54,7 +54,11 @@ public class AccountController : Controller
             return View(model);
         }
 
-        var user = await _userManager.FindByEmailAsync(model.Email.Trim());
+        var input = model.Email.Trim();
+        var emailCandidate = input.Contains('@') ? input : $"{input}@nutrired.org";
+        var user = await _userManager.FindByEmailAsync(emailCandidate) ??
+                   await _userManager.FindByNameAsync(input);
+
         if (user == null || !user.Activo)
         {
             ModelState.AddModelError(string.Empty, "Usuario o contraseña inválidos.");
@@ -62,14 +66,14 @@ public class AccountController : Controller
         }
 
         var result = await _signInManager.PasswordSignInAsync(
-            user.UserName ?? model.Email.Trim(),
+            user.UserName ?? user.Email ?? model.Email.Trim(),
             model.Password.Trim(),
             model.Recordarme,
-            lockoutOnFailure: true);
+            lockoutOnFailure: false);
 
         if (result.Succeeded)
         {
-            _logger.LogInformation("Usuario {Email} inició sesión exitosamente.", model.Email);
+            _logger.LogInformation("Usuario {Email} inició sesión exitosamente.", user.Email);
             return RedirectToLocal(returnUrl);
         }
 

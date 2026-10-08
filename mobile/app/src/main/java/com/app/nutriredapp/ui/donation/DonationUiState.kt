@@ -1,5 +1,6 @@
 package com.app.nutriredapp.ui.donation
 
+import com.app.nutriredapp.data.model.Category
 import com.app.nutriredapp.data.model.Donation
 import com.app.nutriredapp.data.model.DonationItem
 import com.app.nutriredapp.data.model.Donor
@@ -28,7 +29,7 @@ data class DonationUiState(
     // Carga de producto / lote en curso
     val currentBarcode: String = "",
     val currentProductName: String = "",
-    val currentUnitOfMeasure: String = "unidades",
+    val currentUnitOfMeasure: String = "Unidades",
     val currentQuantity: String = "1",
     val currentExpirationMonth: String = "", // Formato MM (ej. 10)
     val currentExpirationYear: String = "",  // Formato AAAA (ej. 2026)
@@ -37,6 +38,11 @@ data class DonationUiState(
     val isCameraScanning: Boolean = false,
     val isProductFromCatalog: Boolean = false,
     val itemErrorMessage: String? = null,
+
+    // Categorías disponibles y selección actual para alimentos nuevos
+    val categories: List<Category> = emptyList(),
+    val selectedCategoryId: Int? = null,
+    val selectedCategoryName: String = "Otros Alimentos / Varios",
 
     // Lista de alimentos cargados en la donación actual
     val items: List<DonationItem> = emptyList(),

@@ -4,11 +4,31 @@ using NutriRed.Data;
 using NutriRed.Domain.Entities;
 using NutriRed.Services;
 
+// Compatibilidad de fechas para PostgreSQL (Npgsql) en Supabase
+AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+
 var builder = WebApplication.CreateBuilder(args);
 
-// 1. Configuración de Base de Datos con SQL Server
-builder.Services.AddDbContext<NutriRedDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+// 1. Configuración de Base de Datos Híbrida (SQL Server / Supabase PostgreSQL)
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? string.Empty;
+
+var isPostgreSql = connectionString.StartsWith("postgresql://", StringComparison.OrdinalIgnoreCase) ||
+                   connectionString.StartsWith("postgres://", StringComparison.OrdinalIgnoreCase) ||
+                   connectionString.Contains("Host=", StringComparison.OrdinalIgnoreCase) ||
+                   connectionString.Contains("Username=", StringComparison.OrdinalIgnoreCase) ||
+                   connectionString.Contains("User Id=", StringComparison.OrdinalIgnoreCase) ||
+                   connectionString.Contains("Port=", StringComparison.OrdinalIgnoreCase);
+
+if (isPostgreSql)
+{
+    builder.Services.AddDbContext<NutriRedDbContext>(options =>
+        options.UseNpgsql(connectionString));
+}
+else
+{
+    builder.Services.AddDbContext<NutriRedDbContext>(options =>
+        options.UseSqlServer(connectionString));
+}
 
 // 2. Registro de Servicios de Negocio (NutriRed.Services)
 builder.Services.AddNutriRedServices();
@@ -66,18 +86,30 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
+    var logger = services.GetRequiredService<ILogger<Program>>();
+
+    // 1. Usuarios y Roles de ASP.NET Core Identity (Indispensable para el inicio de sesión)
+    try
+    {
+        var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
+        var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
+        await DbInitializer.SeedIdentityAsync(userManager, roleManager);
+        logger.LogInformation("Usuarios de Identity verificados y sembrados exitosamente.");
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(ex, "Ocurrió un error al sembrar los usuarios de Identity.");
+    }
+
+    // 2. Catálogo de Dominio y Datos Operativos
     try
     {
         var context = services.GetRequiredService<NutriRedDbContext>();
         await DbInitializer.SeedAsync(context);
-
-        var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
-        var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
-        await DbInitializer.SeedIdentityAsync(userManager, roleManager);
+        logger.LogInformation("Datos del dominio y catálogo sembrados exitosamente.");
     }
     catch (Exception ex)
     {
-        var logger = services.GetRequiredService<ILogger<Program>>();
         logger.LogError(ex, "Ocurrió un error al sembrar los datos iniciales de NutriRed.");
     }
 }

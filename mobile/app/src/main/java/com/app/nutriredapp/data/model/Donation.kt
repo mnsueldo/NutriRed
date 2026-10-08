@@ -19,7 +19,11 @@ data class DonationItem(
     @SerialName("expiration_date")
     val expirationDate: String, // Formato MM/AAAA
     @SerialName("batch_number")
-    val batchNumber: String? = null
+    val batchNumber: String? = null,
+    @SerialName("category_id")
+    val categoryId: Int? = null,
+    @SerialName("category_name")
+    val categoryName: String? = null
 )
 
 @Serializable

@@ -1,6 +1,7 @@
 package com.app.nutriredapp.data.repository
 
 import android.util.Log
+import com.app.nutriredapp.data.model.Category
 import com.app.nutriredapp.data.model.Product
 import com.app.nutriredapp.data.network.NutriRedApiClient
 import kotlinx.coroutines.Dispatchers
@@ -9,6 +10,17 @@ import kotlinx.coroutines.withContext
 class ProductRepository {
 
     private val TAG = "ProductRepository"
+
+    // Categorías oficiales y comodín para contingencia local
+    private val memoryCategories = mutableListOf(
+        Category(id = 1, name = "Legumbres, Granos y Cereales", description = "Arroz, lentejas, porotos, etc."),
+        Category(id = 2, name = "Lácteos y Derivados", description = "Leche en polvo, fluida, etc."),
+        Category(id = 3, name = "Harinas y Pastas Secas", description = "Fideos secos, harina de trigo"),
+        Category(id = 4, name = "Aceites y Grasas", description = "Aceite de girasol, maíz, etc."),
+        Category(id = 5, name = "Enlatados y Conservas", description = "Puré de tomate, arvejas, atún"),
+        Category(id = 6, name = "Desayuno e Infusiones", description = "Té, mate cocido, azúcar"),
+        Category(id = 7, name = "Otros Alimentos / Varios", description = "Alimentos varios no clasificados")
+    )
 
     // Catálogo precargado de alimentos de primera necesidad para bancos de alimentos (contingencia local)
     private val memoryCatalog = mutableListOf(
@@ -161,5 +173,20 @@ class ProductRepository {
             Log.w(TAG, "Error obteniendo catálogo de API: ${e.message}")
         }
         memoryCatalog.toList()
+    }
+
+    suspend fun getAllCategories(): List<Category> = withContext(Dispatchers.IO) {
+        try {
+            val remote = NutriRedApiClient.getAllCategories()
+            if (remote.isNotEmpty()) {
+                memoryCategories.clear()
+                memoryCategories.addAll(remote)
+                Log.d(TAG, "Categorías sincronizadas desde Supabase: ${remote.size}")
+                return@withContext remote
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "Error obteniendo categorías de API: ${e.message}")
+        }
+        memoryCategories.toList()
     }
 }

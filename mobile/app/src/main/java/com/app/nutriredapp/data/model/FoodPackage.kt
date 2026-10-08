@@ -8,7 +8,9 @@ enum class PackageStatus {
     @SerialName("PREPARADO")
     PREPARADO,
     @SerialName("ENTREGADO")
-    ENTREGADO
+    ENTREGADO,
+    @SerialName("CANCELADO")
+    CANCELADO
 }
 
 @Serializable

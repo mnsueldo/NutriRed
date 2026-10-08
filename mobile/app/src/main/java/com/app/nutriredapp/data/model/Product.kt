@@ -10,5 +10,7 @@ data class Product(
     val name: String,
     @SerialName("unit_of_measure")
     val unitOfMeasure: String = "unidades",
-    val category: String = "General"
+    val category: String = "General",
+    @SerialName("category_id")
+    val categoryId: Int? = null
 )

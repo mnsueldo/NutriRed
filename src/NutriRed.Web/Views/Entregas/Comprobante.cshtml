@@ -3,9 +3,10 @@
 
 @{
     ViewData["Title"] = $"Constancia de Entrega {Model.CodigoSeguimiento}";
-    string firmaSrc = Model.FirmaDigital.StartsWith("data:")
-        ? Model.FirmaDigital
-        : $"data:image/png;base64,{Model.FirmaDigital}";
+    string firmaRaw = Model.FirmaDigital ?? "";
+    bool esDataUrl = firmaRaw.StartsWith("data:image/", StringComparison.OrdinalIgnoreCase);
+    bool esBase64Puro = (firmaRaw.StartsWith("iVBORw0", StringComparison.OrdinalIgnoreCase) || firmaRaw.Length > 100) && !firmaRaw.Contains(" ");
+    string firmaSrc = esDataUrl ? firmaRaw : (esBase64Puro ? $"data:image/png;base64,{firmaRaw}" : "");
 }
 
 <style>
@@ -213,13 +214,18 @@
         <div class="col-sm-6 text-center text-sm-start mb-3 mb-sm-0">
             <small class="text-muted d-block mb-2 fw-semibold">Firma registrada:</small>
             <div class="firma-box shadow-sm">
-                @if (!string.IsNullOrWhiteSpace(Model.FirmaDigital))
+                @if (!string.IsNullOrWhiteSpace(firmaSrc))
                 {
                     <img src="@firmaSrc" alt="Firma Digital del Receptor" class="img-fluid" style="max-height: 100px; display: block; margin: 0 auto;" />
                 }
                 else
                 {
-                    <span class="text-muted small">Sin firma registrada</span>
+                    <div class="py-2 px-3 text-center">
+                        <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 py-2 px-3">
+                            <i class="bi bi-fingerprint me-1"></i> Firma Digital Registrada
+                        </span>
+                        <small class="d-block text-muted mt-1 font-mono" style="font-size: 0.75rem;">Dispositivo Táctil Móvil</small>
+                    </div>
                 }
             </div>
             <div class="mt-2">

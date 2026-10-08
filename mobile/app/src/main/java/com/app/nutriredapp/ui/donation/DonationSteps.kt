@@ -226,8 +226,7 @@ fun ItemsStep(
     modifier: Modifier = Modifier
 ) {
     var showCatalogDialog by remember { mutableStateOf(false) }
-    var isCustomUnitSelected by remember { mutableStateOf(false) }
-    val unitOptions = listOf("kg", "gramos", "litros", "unidades", "paquetes", "latas", "otros")
+    val unitOptions = listOf("Unidades", "Kilos", "Litros")
 
     Column(
         modifier = modifier
@@ -320,6 +319,49 @@ fun ItemsStep(
                     leadingIcon = Icons.Rounded.Fastfood
                 )
 
+                if (!uiState.isProductFromCatalog) {
+                    val categoryOptions = if (uiState.categories.isNotEmpty()) {
+                        uiState.categories.map { it.name }
+                    } else {
+                        listOf("Otros Alimentos / Varios")
+                    }
+
+                    AccessibleDropdownField(
+                        label = "Categoría del Alimento *",
+                        selectedValue = uiState.selectedCategoryName,
+                        options = categoryOptions,
+                        onOptionSelected = { catName ->
+                            val catObj = uiState.categories.find { it.name.trim().equals(catName.trim(), ignoreCase = true) }
+                            viewModel.onCategorySelected(catObj?.id, catName)
+                        },
+                        leadingIcon = Icons.Rounded.Category
+                    )
+                } else {
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.Category,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Text(
+                                text = "Categoría en catálogo: ${uiState.selectedCategoryName}",
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onSecondaryContainer
+                            )
+                        }
+                    }
+                }
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -338,30 +380,14 @@ fun ItemsStep(
                     Box(modifier = Modifier.weight(1f)) {
                         AccessibleDropdownField(
                             label = "Unidad *",
-                            selectedValue = if (isCustomUnitSelected && uiState.currentUnitOfMeasure != "otros") "otros" else uiState.currentUnitOfMeasure,
+                            selectedValue = uiState.currentUnitOfMeasure,
                             options = unitOptions,
                             onOptionSelected = { option ->
-                                if (option == "otros") {
-                                    isCustomUnitSelected = true
-                                    viewModel.onUnitOfMeasureChanged("otros")
-                                } else {
-                                    isCustomUnitSelected = false
-                                    viewModel.onUnitOfMeasureChanged(option)
-                                }
+                                viewModel.onUnitOfMeasureChanged(option)
                             },
                             leadingIcon = Icons.Rounded.Scale
                         )
                     }
-                }
-
-                if (isCustomUnitSelected) {
-                    AccessibleTextField(
-                        value = if (uiState.currentUnitOfMeasure == "otros") "" else uiState.currentUnitOfMeasure,
-                        onValueChange = { viewModel.onUnitOfMeasureChanged(it.ifBlank { "otros" }) },
-                        label = "Especifique la unidad (no aplica)",
-                        placeholder = "Ej. botellas, sobres, frascos...",
-                        leadingIcon = Icons.Rounded.Edit
-                    )
                 }
 
                 // FEFO: Vencimiento simplificado en Mes y Año con desplegables

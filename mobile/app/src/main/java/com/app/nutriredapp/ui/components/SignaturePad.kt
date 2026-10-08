@@ -22,11 +22,39 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.graphics.asAndroidPath
 import androidx.compose.ui.unit.sp
+import java.io.ByteArrayOutputStream
+
+fun exportSignatureBitmapBase64(paths: List<Path>, width: Int = 480, height: Int = 180): String? {
+    if (paths.isEmpty()) return null
+    return try {
+        val bitmap = android.graphics.Bitmap.createBitmap(width, height, android.graphics.Bitmap.Config.ARGB_8888)
+        val canvas = android.graphics.Canvas(bitmap)
+        canvas.drawColor(android.graphics.Color.WHITE)
+        val paint = android.graphics.Paint().apply {
+            color = android.graphics.Color.BLACK
+            strokeWidth = 6f
+            style = android.graphics.Paint.Style.STROKE
+            strokeCap = android.graphics.Paint.Cap.ROUND
+            strokeJoin = android.graphics.Paint.Join.ROUND
+            isAntiAlias = true
+        }
+        paths.forEach { path ->
+            canvas.drawPath(path.asAndroidPath(), paint)
+        }
+        val stream = ByteArrayOutputStream()
+        bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, stream)
+        val base64 = android.util.Base64.encodeToString(stream.toByteArray(), android.util.Base64.NO_WRAP)
+        "data:image/png;base64,$base64"
+    } catch (_: Exception) {
+        null
+    }
+}
 
 @Composable
 fun SignaturePad(
-    onSignatureChanged: (hasSignature: Boolean) -> Unit,
+    onSignatureChanged: (hasSignature: Boolean, signatureBase64: String?) -> Unit,
     modifier: Modifier = Modifier,
     strokeColor: Color = Color.Black,
     strokeWidth: Float = 8f
@@ -54,7 +82,7 @@ fun SignaturePad(
                             currentPath = path
                             paths.add(path)
                             drawTrigger++
-                            onSignatureChanged(true)
+                            onSignatureChanged(true, exportSignatureBitmapBase64(paths))
                         },
                         onDrag = { change, _ ->
                             change.consume()
@@ -63,11 +91,13 @@ fun SignaturePad(
                         },
                         onDragEnd = {
                             currentPath = null
-                            onSignatureChanged(paths.isNotEmpty())
+                            val hasSig = paths.isNotEmpty()
+                            onSignatureChanged(hasSig, if (hasSig) exportSignatureBitmapBase64(paths) else null)
                         },
                         onDragCancel = {
                             currentPath = null
-                            onSignatureChanged(paths.isNotEmpty())
+                            val hasSig = paths.isNotEmpty()
+                            onSignatureChanged(hasSig, if (hasSig) exportSignatureBitmapBase64(paths) else null)
                         }
                     )
                 }
@@ -120,7 +150,7 @@ fun SignaturePad(
                     paths.clear()
                     currentPath = null
                     drawTrigger++
-                    onSignatureChanged(false)
+                    onSignatureChanged(false, null)
                 },
                 shape = RoundedCornerShape(8.dp),
                 contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp)

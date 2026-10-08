@@ -49,8 +49,9 @@ public static class DbInitializer
         var catAceites = new Categoria { Nombre = "Aceites y Grasas", Descripcion = "Aceite de girasol, maíz, oliva", Activo = true };
         var catConservas = new Categoria { Nombre = "Enlatados y Conservas", Descripcion = "Puré de tomate, arvejas, choclo, atún", Activo = true };
         var catInfusiones = new Categoria { Nombre = "Desayuno e Infusiones", Descripcion = "Té, mate cocido, yerba mate, azúcar, cacao", Activo = true };
+        var catOtros = new Categoria { Nombre = "Otros Alimentos / Varios", Descripcion = "Alimentos y productos de despensa sin clasificación específica", Activo = true };
 
-        context.Categorias.AddRange(catGranos, catLacteos, catPastas, catAceites, catConservas, catInfusiones);
+        context.Categorias.AddRange(catGranos, catLacteos, catPastas, catAceites, catConservas, catInfusiones, catOtros);
         await context.SaveChangesAsync();
 
         // ==========================================
@@ -967,9 +968,15 @@ public static class DbInitializer
                     await userManager.AddToRoleAsync(user, rol);
                 }
 
-                // Resetear contraseña al estándar del seed de desarrollo
+                // Resetear contraseña al estándar del seed oficial
                 var token = await userManager.GeneratePasswordResetTokenAsync(user);
-                await userManager.ResetPasswordAsync(user, token, password);
+                var resetResult = await userManager.ResetPasswordAsync(user, token, password);
+                if (!resetResult.Succeeded)
+                {
+                    user.PasswordHash = userManager.PasswordHasher.HashPassword(user, password);
+                    user.SecurityStamp = Guid.NewGuid().ToString();
+                    await userManager.UpdateAsync(user);
+                }
             }
         }
     }

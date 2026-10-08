@@ -1,6 +1,7 @@
 package com.app.nutriredapp.ui.delivery
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -14,9 +15,7 @@ import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.ArrowForward
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -111,6 +110,8 @@ fun DeliveryDispatchScreen(
                     PreparedPackagesListView(
                         packages = uiState.preparedPackages,
                         isLoading = uiState.isLoading,
+                        failedMessage = uiState.failedDeliveryMessage,
+                        onDismissFailedMessage = { viewModel.dismissFailedDeliveryMessage() },
                         onRefresh = { viewModel.loadPackages() },
                         onSelectPackage = { viewModel.selectPackage(it) }
                     )
@@ -127,6 +128,8 @@ fun DeliveryDispatchScreen(
 fun PreparedPackagesListView(
     packages: List<FoodPackage>,
     isLoading: Boolean,
+    failedMessage: String?,
+    onDismissFailedMessage: () -> Unit,
     onRefresh: () -> Unit,
     onSelectPackage: (FoodPackage) -> Unit,
     modifier: Modifier = Modifier
@@ -137,6 +140,44 @@ fun PreparedPackagesListView(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
+        if (!failedMessage.isNullOrBlank()) {
+            Surface(
+                shape = RoundedCornerShape(12.dp),
+                color = MaterialTheme.colorScheme.errorContainer,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.error)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 14.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.Cancel,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onErrorContainer,
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Text(
+                        text = failedMessage,
+                        fontSize = 15.sp,
+                        lineHeight = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onErrorContainer,
+                        modifier = Modifier.weight(1f)
+                    )
+                    IconButton(onClick = onDismissFailedMessage) {
+                        Icon(
+                            imageVector = Icons.Rounded.Close,
+                            contentDescription = "Cerrar aviso",
+                            tint = MaterialTheme.colorScheme.onErrorContainer
+                        )
+                    }
+                }
+            }
+        }
+
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -276,6 +317,107 @@ fun DeliveryConfirmationForm(
     viewModel: DeliveryViewModel,
     modifier: Modifier = Modifier
 ) {
+    var showFailedDialog by remember { mutableStateOf(false) }
+    var selectedReason by remember { mutableStateOf("Titular ausente en domicilio") }
+    var customReason by remember { mutableStateOf("") }
+
+    val reasonOptions = listOf(
+        "Titular ausente en domicilio",
+        "Discrepancia de identidad / Sin DNI",
+        "Rechazo del paquete por el beneficiario",
+        "Domicilio inaccesible / No localizado",
+        "Otro motivo..."
+    )
+
+    if (showFailedDialog) {
+        AlertDialog(
+            onDismissRequest = { showFailedDialog = false },
+            icon = {
+                Icon(
+                    imageVector = Icons.Rounded.Warning,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.size(36.dp)
+                )
+            },
+            title = {
+                Text(
+                    text = "Entrega No Concretada",
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center
+                )
+            },
+            text = {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Text(
+                        text = "¿Por qué no se pudo entregar el paquete ${pkg.packageCode} a ${pkg.familyTitularName}?",
+                        fontSize = 15.sp,
+                        lineHeight = 20.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    reasonOptions.forEach { reason ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { selectedReason = reason }
+                                .padding(vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            RadioButton(
+                                selected = (selectedReason == reason),
+                                onClick = { selectedReason = reason }
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = reason,
+                                fontSize = 15.sp,
+                                fontWeight = if (selectedReason == reason) FontWeight.Bold else FontWeight.Normal
+                            )
+                        }
+                    }
+
+                    if (selectedReason == "Otro motivo...") {
+                        OutlinedTextField(
+                            value = customReason,
+                            onValueChange = { customReason = it },
+                            label = { Text("Especifique el motivo") },
+                            placeholder = { Text("Detalle de la imposibilidad de entrega") },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = false,
+                            maxLines = 3
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val finalReason = if (selectedReason == "Otro motivo...") {
+                            customReason.ifBlank { "Entrega no concretada sin detalle" }
+                        } else {
+                            selectedReason
+                        }
+                        showFailedDialog = false
+                        viewModel.registerFailedDelivery(finalReason)
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                ) {
+                    Text("REGISTRAR FALLO", fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showFailedDialog = false }) {
+                    Text("CANCELAR", fontWeight = FontWeight.Bold)
+                }
+            }
+        )
+    }
+
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -349,7 +491,7 @@ fun DeliveryConfirmationForm(
                 fontWeight = FontWeight.SemiBold
             )
             SignaturePad(
-                onSignatureChanged = { viewModel.onSignatureChanged(it) }
+                onSignatureChanged = { hasSig, b64 -> viewModel.onSignatureChanged(hasSig, b64) }
             )
         }
 
@@ -383,7 +525,17 @@ fun DeliveryConfirmationForm(
         )
 
         AccessibleButton(
-            text = "CANCELAR / VOLVER",
+            text = "REGISTRAR ENTREGA NO CONCRETADA",
+            icon = Icons.Rounded.Cancel,
+            onClick = { showFailedDialog = true },
+            containerColor = MaterialTheme.colorScheme.error,
+            contentColor = MaterialTheme.colorScheme.onError,
+            enabled = !uiState.isSubmitting,
+            minHeight = 58.dp
+        )
+
+        AccessibleButton(
+            text = "VOLVER / CANCELAR",
             icon = Icons.Rounded.Close,
             onClick = { viewModel.clearSelection() },
             containerColor = Color.LightGray,

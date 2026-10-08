@@ -33,12 +33,37 @@ class DonationViewModel(
 
     init {
         loadCatalog()
+        loadCategories()
     }
 
     private fun loadCatalog() {
         viewModelScope.launch {
             val products = productRepository.getAllProducts()
             _uiState.update { it.copy(catalogProducts = products) }
+        }
+    }
+
+    private fun loadCategories() {
+        viewModelScope.launch {
+            val cats = productRepository.getAllCategories()
+            val defaultCat = cats.find { it.name.contains("otro", ignoreCase = true) || it.name.contains("vario", ignoreCase = true) } ?: cats.firstOrNull()
+            _uiState.update {
+                it.copy(
+                    categories = cats,
+                    selectedCategoryId = defaultCat?.id,
+                    selectedCategoryName = defaultCat?.name ?: "Otros Alimentos / Varios"
+                )
+            }
+        }
+    }
+
+    fun onCategorySelected(id: Int?, name: String) {
+        val resolvedId = id ?: _uiState.value.categories.find { it.name.trim().equals(name.trim(), ignoreCase = true) }?.id
+        _uiState.update {
+            it.copy(
+                selectedCategoryId = resolvedId,
+                selectedCategoryName = name
+            )
         }
     }
 
@@ -141,14 +166,19 @@ class DonationViewModel(
                     it.copy(
                         currentProductName = product.name,
                         currentUnitOfMeasure = product.unitOfMeasure,
+                        selectedCategoryId = product.categoryId,
+                        selectedCategoryName = product.category,
                         isProductFromCatalog = true,
                         itemErrorMessage = null
                     )
                 }
             } else {
                 _uiState.update {
+                    val defCat = it.categories.find { c -> c.name.contains("otro", ignoreCase = true) || c.name.contains("vario", ignoreCase = true) } ?: it.categories.firstOrNull()
                     it.copy(
-                        isProductFromCatalog = false
+                        isProductFromCatalog = false,
+                        selectedCategoryId = defCat?.id ?: it.selectedCategoryId,
+                        selectedCategoryName = defCat?.name ?: it.selectedCategoryName
                     )
                 }
             }
@@ -161,6 +191,8 @@ class DonationViewModel(
                 currentBarcode = product.barcode,
                 currentProductName = product.name,
                 currentUnitOfMeasure = product.unitOfMeasure,
+                selectedCategoryId = product.categoryId,
+                selectedCategoryName = product.category,
                 isProductFromCatalog = true,
                 itemErrorMessage = null
             )
@@ -327,7 +359,9 @@ class DonationViewModel(
                     Product(
                         barcode = barcode,
                         name = state.currentProductName.trim(),
-                        unitOfMeasure = state.currentUnitOfMeasure
+                        unitOfMeasure = state.currentUnitOfMeasure,
+                        category = state.selectedCategoryName,
+                        categoryId = state.selectedCategoryId
                     )
                 )
                 loadCatalog()
@@ -348,8 +382,12 @@ class DonationViewModel(
             quantity = qty,
             unitOfMeasure = state.currentUnitOfMeasure,
             expirationDate = expDateStr,
-            batchNumber = batch
+            batchNumber = batch,
+            categoryId = state.selectedCategoryId,
+            categoryName = state.selectedCategoryName
         )
+
+        val defaultCat = state.categories.find { c -> c.name.contains("otro", ignoreCase = true) || c.name.contains("vario", ignoreCase = true) } ?: state.categories.firstOrNull()
 
         _uiState.update {
             it.copy(
@@ -363,6 +401,8 @@ class DonationViewModel(
                 currentExpirationDate = "",
                 currentBatchNumber = "",
                 isProductFromCatalog = false,
+                selectedCategoryId = defaultCat?.id,
+                selectedCategoryName = defaultCat?.name ?: "Otros Alimentos / Varios",
                 itemErrorMessage = null
             )
         }
