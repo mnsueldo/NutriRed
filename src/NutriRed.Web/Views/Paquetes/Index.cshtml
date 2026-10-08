@@ -90,6 +90,23 @@
 
 <!-- Filtros de Búsqueda -->
 <div class="card border-0 shadow-sm rounded-4 p-3 bg-white mb-4">
+    <!-- Píldoras de Filtro Rápido por Estado -->
+    <div class="d-flex flex-wrap align-items-center gap-2 mb-3 pb-2 border-bottom">
+        <span class="text-muted small fw-semibold me-1"><i class="bi bi-funnel me-1"></i> Estado rápido:</span>
+        <a asp-action="Index" asp-route-codigo="@Model.CodigoSeguimiento" class="btn btn-sm rounded-pill px-3 py-1 fw-semibold @(!Model.EstadoFiltro.HasValue ? "btn-success text-white shadow-sm" : "btn-light border text-secondary")">
+            Todos
+        </a>
+        <a asp-action="Index" asp-route-estado="@EstadoPaquete.Pendiente" asp-route-codigo="@Model.CodigoSeguimiento" class="btn btn-sm rounded-pill px-3 py-1 fw-semibold @(Model.EstadoFiltro == EstadoPaquete.Pendiente ? "btn-warning text-dark shadow-sm" : "btn-light border text-secondary")">
+            <i class="bi bi-hourglass-split me-1"></i> Pendientes
+        </a>
+        <a asp-action="Index" asp-route-estado="@EstadoPaquete.Preparado" asp-route-codigo="@Model.CodigoSeguimiento" class="btn btn-sm rounded-pill px-3 py-1 fw-semibold @(Model.EstadoFiltro == EstadoPaquete.Preparado ? "btn-info text-white shadow-sm" : "btn-light border text-secondary")">
+            <i class="bi bi-box-seam me-1"></i> Listos en Depósito
+        </a>
+        <a asp-action="Index" asp-route-estado="@EstadoPaquete.Entregado" asp-route-codigo="@Model.CodigoSeguimiento" class="btn btn-sm rounded-pill px-3 py-1 fw-semibold @(Model.EstadoFiltro == EstadoPaquete.Entregado ? "btn-success text-white shadow-sm" : "btn-light border text-secondary")">
+            <i class="bi bi-check2-circle me-1"></i> Entregados
+        </a>
+    </div>
+
     <form method="get" asp-action="Index" class="row g-2 align-items-end">
         <div class="col-12 col-sm-6 col-md-4">
             <label class="form-label small text-muted mb-1 fw-semibold">Filtrar por estado</label>
@@ -151,9 +168,27 @@
                 @if (!Model.Paquetes.Any())
                 {
                     <tr>
-                        <td colspan="7" class="text-center py-5 text-muted">
-                            <i class="bi bi-box fs-1 d-block mb-2 text-secondary opacity-50"></i>
-                            No se encontraron paquetes armados con los filtros aplicados.
+                        <td colspan="7" class="text-center py-5">
+                            <div class="py-4">
+                                <div class="rounded-circle bg-light p-3 text-secondary d-inline-flex align-items-center justify-content-center mb-3" style="width: 70px; height: 70px;">
+                                    <i class="bi bi-box2-heart fs-1 text-muted"></i>
+                                </div>
+                                <h5 class="fw-bold text-dark mb-1">No se encontraron paquetes nutricionales</h5>
+                                <p class="text-muted small mb-3 mx-auto" style="max-width: 440px;">
+                                    No hay cajas asistenciales que coincidan con el estado o código QR de seguimiento especificado.
+                                </p>
+                                <div class="d-flex justify-content-center gap-2">
+                                    <a asp-action="Armar" class="btn btn-success rounded-pill px-4 shadow-sm fw-semibold">
+                                        <i class="bi bi-magic me-1"></i> Armar Nuevo Kit
+                                    </a>
+                                    @if (hayFiltros)
+                                    {
+                                        <a asp-action="Index" class="btn btn-outline-secondary rounded-pill px-3 shadow-sm fw-semibold">
+                                            <i class="bi bi-arrow-counterclockwise me-1"></i> Ver Todos
+                                        </a>
+                                    }
+                                </div>
+                            </div>
                         </td>
                     </tr>
                 }

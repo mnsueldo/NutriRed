@@ -5,6 +5,7 @@
     ViewData["Title"] = "Familias Beneficiarias";
     bool mostrarTodos = ViewBag.MostrarTodos ?? false;
     string? busqueda = ViewBag.Busqueda as string;
+    EstadoFamilia? estadoFiltro = ViewBag.Estado as EstadoFamilia?;
 
     var totalFamilias = Model.Count();
     var familiasActivas = Model.Count(f => f.Estado == EstadoFamilia.Activo);
@@ -12,9 +13,16 @@
     var totalBeneficiarios = Model.Sum(f => f.CantidadIntegrantes);
 }
 
-<!-- Encabezado Principal -->
+<!-- Encabezado Principal & Breadcrumbs -->
 <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
     <div>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-1 small">
+                <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index" class="text-decoration-none text-muted">Inicio</a></li>
+                <li class="breadcrumb-item text-muted">Beneficiarios</li>
+                <li class="breadcrumb-item active text-dark fw-semibold" aria-current="page">Familias</li>
+            </ol>
+        </nav>
         <h2 class="fw-bold mb-1 text-dark">
             <i class="bi bi-people-fill text-success me-2"></i>Familias Beneficiarias
         </h2>
@@ -113,16 +121,21 @@
         <div class="col-12 col-md-6 col-lg-7 d-flex justify-content-md-end gap-2 flex-wrap">
             <div class="btn-group p-1 bg-light rounded-pill border" role="group" aria-label="Filtro de Estado">
                 <a asp-action="Index"
-                   asp-route-mostrarTodos="false"
                    asp-route-busqueda="@busqueda"
-                   class="btn btn-sm rounded-pill px-3 py-1 fw-semibold @(!mostrarTodos ? "btn-success text-white shadow-sm" : "text-secondary")">
+                   class="btn btn-sm rounded-pill px-3 py-1 fw-semibold @(!estadoFiltro.HasValue && !mostrarTodos ? "btn-success text-white shadow-sm" : "text-secondary")">
                     <i class="bi bi-check-circle me-1"></i> Solo Activas
+                </a>
+                <a asp-action="Index"
+                   asp-route-estado="@EstadoFamilia.Suspendido"
+                   asp-route-busqueda="@busqueda"
+                   class="btn btn-sm rounded-pill px-3 py-1 fw-semibold @(estadoFiltro == EstadoFamilia.Suspendido ? "btn-warning text-dark shadow-sm" : "text-secondary")">
+                    <i class="bi bi-pause-circle me-1"></i> Suspendidas
                 </a>
                 <a asp-action="Index"
                    asp-route-mostrarTodos="true"
                    asp-route-busqueda="@busqueda"
-                   class="btn btn-sm rounded-pill px-3 py-1 fw-semibold @(mostrarTodos ? "btn-secondary text-white shadow-sm" : "text-secondary")">
-                    <i class="bi bi-inbox-fill me-1"></i> Todas (@totalFamilias)
+                   class="btn btn-sm rounded-pill px-3 py-1 fw-semibold @(mostrarTodos && !estadoFiltro.HasValue ? "btn-secondary text-white shadow-sm" : "text-secondary")">
+                    <i class="bi bi-people me-1"></i> Todas (@totalFamilias)
                 </a>
             </div>
         </div>
@@ -164,14 +177,26 @@
                 @if (!Model.Any())
                 {
                     <tr>
-                        <td colspan="6" class="text-center py-5 text-muted">
+                        <td colspan="6" class="text-center py-5">
                             <div class="py-4">
-                                <i class="bi bi-people display-4 text-muted opacity-50 d-block mb-3"></i>
-                                <h6 class="fw-bold text-secondary">No se encontraron legajos familiares</h6>
-                                <p class="text-muted small mb-3">No hay registros que coincidan con los criterios de búsqueda.</p>
-                                <a asp-action="Create" class="btn btn-sm btn-outline-success rounded-pill px-3">
-                                    <i class="bi bi-person-plus me-1"></i> Registrar Primera Familia
-                                </a>
+                                <div class="rounded-circle bg-light p-3 text-secondary d-inline-flex align-items-center justify-content-center mb-3" style="width: 70px; height: 70px;">
+                                    <i class="bi bi-people fs-1 text-muted"></i>
+                                </div>
+                                <h5 class="fw-bold text-dark mb-1">No se encontraron legajos familiares</h5>
+                                <p class="text-muted small mb-3 mx-auto" style="max-width: 440px;">
+                                    No hay hogares que coincidan con los criterios de búsqueda o el filtro de estado seleccionado.
+                                </p>
+                                <div class="d-flex justify-content-center gap-2">
+                                    <a asp-action="Create" class="btn btn-success rounded-pill px-4 shadow-sm fw-semibold">
+                                        <i class="bi bi-person-plus-fill me-1"></i> Registrar Nueva Familia
+                                    </a>
+                                    @if (!string.IsNullOrWhiteSpace(busqueda) || estadoFiltro.HasValue || mostrarTodos)
+                                    {
+                                        <a asp-action="Index" class="btn btn-outline-secondary rounded-pill px-3 shadow-sm fw-semibold">
+                                            <i class="bi bi-arrow-counterclockwise me-1"></i> Ver Activas
+                                        </a>
+                                    }
+                                </div>
                             </div>
                         </td>
                     </tr>

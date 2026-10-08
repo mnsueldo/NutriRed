@@ -76,6 +76,23 @@
 
 <!-- Filtros de Búsqueda -->
 <div class="card border-0 shadow-sm rounded-4 p-3 bg-white mb-4">
+    <!-- Píldoras de Rango Rápido -->
+    <div class="d-flex flex-wrap align-items-center gap-2 mb-3 pb-2 border-bottom">
+        <span class="text-muted small fw-semibold me-1"><i class="bi bi-clock-history me-1"></i> Rango rápido:</span>
+        <a asp-action="Index" class="btn btn-sm rounded-pill px-3 py-1 fw-semibold @(string.IsNullOrEmpty(Model.Rango) && !Model.FechaDesde.HasValue ? "btn-success text-white shadow-sm" : "btn-light border text-secondary")">
+            Todas
+        </a>
+        <a asp-action="Index" asp-route-rango="hoy" class="btn btn-sm rounded-pill px-3 py-1 fw-semibold @(Model.Rango == "hoy" ? "btn-success text-white shadow-sm" : "btn-light border text-secondary")">
+            <i class="bi bi-calendar-check me-1"></i> Hoy
+        </a>
+        <a asp-action="Index" asp-route-rango="semana" class="btn btn-sm rounded-pill px-3 py-1 fw-semibold @(Model.Rango == "semana" ? "btn-success text-white shadow-sm" : "btn-light border text-secondary")">
+            <i class="bi bi-calendar-week me-1"></i> Esta semana
+        </a>
+        <a asp-action="Index" asp-route-rango="mes" class="btn btn-sm rounded-pill px-3 py-1 fw-semibold @(Model.Rango == "mes" ? "btn-success text-white shadow-sm" : "btn-light border text-secondary")">
+            <i class="bi bi-calendar-month me-1"></i> Este mes
+        </a>
+    </div>
+
     <form method="get" asp-action="Index" class="row g-2 align-items-end">
         <div class="col-12 col-sm-6 col-md-3">
             <label class="form-label small text-muted mb-1 fw-semibold">Fecha desde</label>
@@ -96,7 +113,7 @@
             <button type="submit" class="btn btn-primary rounded-pill w-100 shadow-sm fw-semibold">
                 <i class="bi bi-funnel me-1"></i> Filtrar
             </button>
-            @if (hayFiltros)
+            @if (hayFiltros || !string.IsNullOrEmpty(Model.Rango))
             {
                 <a asp-action="Index" class="btn btn-outline-secondary rounded-pill px-3 shadow-sm" title="Limpiar filtros">
                     <i class="bi bi-x-lg"></i>
@@ -134,9 +151,27 @@
                 @if (!Model.Donaciones.Any())
                 {
                     <tr>
-                        <td colspan="8" class="text-center py-5 text-muted">
-                            <i class="bi bi-inbox fs-1 d-block mb-2 text-secondary opacity-50"></i>
-                            No se encontraron donaciones registradas con los filtros aplicados.
+                        <td colspan="8" class="text-center py-5">
+                            <div class="py-4">
+                                <div class="rounded-circle bg-light p-3 text-secondary d-inline-flex align-items-center justify-content-center mb-3" style="width: 70px; height: 70px;">
+                                    <i class="bi bi-inbox fs-1 text-muted"></i>
+                                </div>
+                                <h5 class="fw-bold text-dark mb-1">No se encontraron donaciones registradas</h5>
+                                <p class="text-muted small mb-3 mx-auto" style="max-width: 440px;">
+                                    No hay registros de ingreso que coincidan con el rango de fechas o comprobante especificado.
+                                </p>
+                                <div class="d-flex justify-content-center gap-2">
+                                    <a asp-action="Registrar" class="btn btn-success rounded-pill px-4 shadow-sm fw-semibold">
+                                        <i class="bi bi-plus-circle-fill me-1"></i> Registrar Nueva Donación
+                                    </a>
+                                    @if (hayFiltros || !string.IsNullOrEmpty(Model.Rango))
+                                    {
+                                        <a asp-action="Index" class="btn btn-outline-secondary rounded-pill px-3 shadow-sm fw-semibold">
+                                            <i class="bi bi-arrow-counterclockwise me-1"></i> Ver Todas
+                                        </a>
+                                    }
+                                </div>
+                            </div>
                         </td>
                     </tr>
                 }

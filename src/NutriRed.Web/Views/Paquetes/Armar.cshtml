@@ -31,6 +31,62 @@
     </div>
 </div>
 
+<!-- WIZARD VISUAL DE PROGRESO DE ARMADO (3 ETAPAS) -->
+<div class="card border-0 shadow-sm rounded-4 p-3 bg-white mb-4">
+    <div class="row g-2 align-items-center text-center">
+        <!-- Etapa 1 -->
+        <div class="col-4">
+            <div class="p-2 rounded-3" id="wizardPaso1">
+                <div class="d-flex flex-column flex-md-row align-items-center justify-content-center gap-2">
+                    <span class="rounded-circle d-flex align-items-center justify-content-center fw-bold shadow-sm"
+                          id="wizardIcono1"
+                          style="width: 38px; height: 38px; background: @(tienePropuestaInicial ? "#059669" : "#059669"); color: #ffffff;">
+                        <i class="bi @(tienePropuestaInicial ? "bi-check-lg" : "bi-person-check") fs-5"></i>
+                    </span>
+                    <div class="text-start d-none d-md-block">
+                        <small class="d-block text-muted text-uppercase fw-semibold" style="font-size: 0.68rem;">Etapa 1</small>
+                        <strong class="d-block text-dark small" id="wizardTexto1">Destinatario</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Etapa 2 -->
+        <div class="col-4">
+            <div class="p-2 rounded-3 @(tienePropuestaInicial ? "" : "opacity-50")" id="wizardPaso2">
+                <div class="d-flex flex-column flex-md-row align-items-center justify-content-center gap-2">
+                    <span class="rounded-circle d-flex align-items-center justify-content-center fw-bold shadow-sm"
+                          id="wizardIcono2"
+                          style="width: 38px; height: 38px; background: @(tienePropuestaInicial ? "#059669" : "#e2e8f0"); color: @(tienePropuestaInicial ? "#ffffff" : "#475569");">
+                        <i class="bi bi-boxes fs-5"></i>
+                    </span>
+                    <div class="text-start d-none d-md-block">
+                        <small class="d-block text-muted text-uppercase fw-semibold" style="font-size: 0.68rem;">Etapa 2</small>
+                        <strong class="d-block @(tienePropuestaInicial ? "text-dark" : "text-secondary") small" id="wizardTexto2">Receta & FEFO</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Etapa 3 -->
+        <div class="col-4">
+            <div class="p-2 rounded-3 opacity-50" id="wizardPaso3">
+                <div class="d-flex flex-column flex-md-row align-items-center justify-content-center gap-2">
+                    <span class="rounded-circle d-flex align-items-center justify-content-center fw-bold shadow-sm"
+                          id="wizardIcono3"
+                          style="width: 38px; height: 38px; background: #e2e8f0; color: #475569;">
+                        <i class="bi bi-qr-code fs-5"></i>
+                    </span>
+                    <div class="text-start d-none d-md-block">
+                        <small class="d-block text-muted text-uppercase fw-semibold" style="font-size: 0.68rem;">Etapa 3</small>
+                        <strong class="d-block text-secondary small" id="wizardTexto3">Rótulo QR</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Formulario Unificado de Armado -->
 <form asp-action="ConfirmarArmado" method="post" id="formArmadoPaquete">
     @Html.AntiForgeryToken()
@@ -343,6 +399,34 @@
 
             vincularSustitutos();
 
+            function actualizarWizard(paso) {
+                const icon1 = document.getElementById("wizardIcono1");
+                const paso2 = document.getElementById("wizardPaso2");
+                const icon2 = document.getElementById("wizardIcono2");
+                const txt2 = document.getElementById("wizardTexto2");
+                const paso3 = document.getElementById("wizardPaso3");
+                const icon3 = document.getElementById("wizardIcono3");
+                const txt3 = document.getElementById("wizardTexto3");
+
+                if (paso === 1) {
+                    if (icon1) icon1.innerHTML = '<i class="bi bi-person-check fs-5"></i>';
+                    if (paso2) paso2.classList.add("opacity-50");
+                    if (icon2) { icon2.style.background = "#e2e8f0"; icon2.style.color = "#475569"; }
+                    if (txt2) { txt2.classList.remove("text-dark"); txt2.classList.add("text-secondary"); }
+                    if (paso3) paso3.classList.add("opacity-50");
+                    if (icon3) { icon3.style.background = "#e2e8f0"; icon3.style.color = "#475569"; }
+                    if (txt3) { txt3.classList.remove("text-primary"); txt3.classList.add("text-secondary"); }
+                } else if (paso >= 2) {
+                    if (icon1) icon1.innerHTML = '<i class="bi bi-check-lg fs-5"></i>';
+                    if (paso2) paso2.classList.remove("opacity-50");
+                    if (icon2) { icon2.style.background = "#059669"; icon2.style.color = "#ffffff"; }
+                    if (txt2) { txt2.classList.remove("text-secondary"); txt2.classList.add("text-dark"); }
+                    if (paso3) paso3.classList.remove("opacity-50");
+                    if (icon3) { icon3.style.background = "#eff6ff"; icon3.style.color = "#2563eb"; }
+                    if (txt3) { txt3.classList.remove("text-secondary"); txt3.classList.add("text-primary"); }
+                }
+            }
+
             // Carga Reactiva Instantánea al seleccionar Familia o Kit
             async function cargarPropuestaReactiva() {
                 const famId = comboFamilia.value;
@@ -355,6 +439,7 @@
                     contenedorPropuesta.classList.add("d-none");
                     placeholderSinFamilia.classList.remove("d-none");
                     cuerpoTablaPropuesta.innerHTML = "";
+                    actualizarWizard(1);
                     return;
                 }
 
@@ -377,10 +462,12 @@
                         contenedorPropuesta.classList.add("d-none");
                         cardResumenFamilia.classList.add("d-none");
                         placeholderSinFamilia.classList.remove("d-none");
+                        actualizarWizard(1);
                         return;
                     }
 
                     const prop = data.data;
+                    actualizarWizard(2);
 
                     // 1. Sincronizar Ficha Resumen
                     txtResumenTitular.textContent = prop.familiaTitular;

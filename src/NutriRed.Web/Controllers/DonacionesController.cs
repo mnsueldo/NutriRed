@@ -30,13 +30,43 @@ public class DonacionesController : Controller
     }
 
     // GET: Donaciones
-    public async Task<IActionResult> Index(DateTime? desde = null, DateTime? hasta = null, string? codigo = null)
+    public async Task<IActionResult> Index(DateTime? desde = null, DateTime? hasta = null, string? codigo = null, string? rango = null)
     {
+        var hoy = DateTime.Today;
+        if (!string.IsNullOrWhiteSpace(rango))
+        {
+            switch (rango.ToLowerInvariant())
+            {
+                case "hoy":
+                    desde = hoy;
+                    hasta = hoy;
+                    break;
+                case "semana":
+                    desde = hoy.AddDays(-7);
+                    hasta = hoy;
+                    break;
+                case "mes":
+                    desde = new DateTime(hoy.Year, hoy.Month, 1);
+                    hasta = hoy;
+                    break;
+            }
+        }
+        else if (desde.HasValue && hasta.HasValue)
+        {
+            if (desde.Value.Date == hoy && hasta.Value.Date == hoy)
+                rango = "hoy";
+            else if (desde.Value.Date == hoy.AddDays(-7) && hasta.Value.Date == hoy)
+                rango = "semana";
+            else if (desde.Value.Date == new DateTime(hoy.Year, hoy.Month, 1) && hasta.Value.Date == hoy)
+                rango = "mes";
+        }
+
         var viewModel = new DonacionIndexViewModel
         {
             FechaDesde = desde,
             FechaHasta = hasta,
-            CodigoComprobante = codigo?.Trim()
+            CodigoComprobante = codigo?.Trim(),
+            Rango = rango
         };
 
         if (!string.IsNullOrWhiteSpace(viewModel.CodigoComprobante))

@@ -103,6 +103,8 @@ public class DonacionIndexViewModel
     [Display(Name = "Código")]
     public string? CodigoComprobante { get; set; }
 
+    public string? Rango { get; set; }
+
     public int TotalRegistros => Donaciones.Count();
     public decimal TotalUnidadesKilos => Donaciones.Sum(d => d.TotalUnidadesRecibidas);
     public int DonacionesInstitucionales => Donaciones.Count(d => d.TipoDonante == TipoDonante.Institucion);

@@ -17,14 +17,15 @@ namespace NutriRed.Web.Controllers
         }
 
         // GET: Familias
-        public async Task<IActionResult> Index(bool mostrarTodos = false, string? busqueda = null)
+        public async Task<IActionResult> Index(bool mostrarTodos = false, string? busqueda = null, EstadoFamilia? estado = null)
         {
-            // 1. Obtener la lista pasando el filtro de inactivos y la búsqueda al servicio
-            var result = await _familiaService.ObtenerTodasAsync(incluirInactivos: mostrarTodos, busqueda: busqueda);
+            // Si se especificó un estado o se pidió ver todos, incluimos inactivos para filtrar correctamente
+            bool incluirInactivos = mostrarTodos || estado.HasValue;
+            var result = await _familiaService.ObtenerTodasAsync(incluirInactivos: incluirInactivos, busqueda: busqueda);
 
-            // 2. Guardar el estado de los filtros para mantenerlos activos en la vista
             ViewBag.MostrarTodos = mostrarTodos;
             ViewBag.Busqueda = busqueda;
+            ViewBag.Estado = estado;
 
             if (!result.Success || result.Data == null)
             {
@@ -32,7 +33,13 @@ namespace NutriRed.Web.Controllers
                 return View(Enumerable.Empty<FamiliaBeneficiaria>());
             }
 
-            return View(result.Data);
+            var data = result.Data;
+            if (estado.HasValue)
+            {
+                data = data.Where(f => f.Estado == estado.Value);
+            }
+
+            return View(data);
         }
 
         // GET: Familias/Detalles/5
