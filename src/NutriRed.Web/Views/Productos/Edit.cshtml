@@ -15,53 +15,53 @@
             </ol>
         </nav>
 
-        <div class="card card-nr shadow-sm">
-            <div class="card-header card-nr-header d-flex align-items-center gap-2">
-                <div class="p-2 rounded-2" style="background: #eff6ff; color: #2563eb;">
-                    <i class="bi bi-pencil-square fs-5"></i>
+        <div class="card border-0 shadow-sm rounded-4 bg-white overflow-hidden">
+            <div class="card-header bg-white border-bottom p-4 d-flex align-items-center gap-3">
+                <div class="rounded-circle bg-primary bg-opacity-10 text-primary p-3 d-flex align-items-center justify-content-center" style="width: 52px; height: 52px;">
+                    <i class="bi bi-pencil-square fs-4"></i>
                 </div>
                 <div>
                     <h1 class="h5 fw-bold text-dark mb-0">Modificar Ficha de Alimento</h1>
-                    <small class="text-muted">Actualice las especificaciones técnicas del producto en catálogo.</small>
+                    <small class="text-muted">Actualice las especificaciones técnicas del producto en el catálogo.</small>
                 </div>
             </div>
 
-            <div class="card-body p-4">
+            <div class="card-body p-4 p-md-5">
                 <form asp-action="Edit" asp-route-id="@Model.Id" method="post">
                     @Html.AntiForgeryToken()
                     <input type="hidden" asp-for="Id" />
 
-                    <div asp-validation-summary="ModelOnly" class="alert alert-danger mb-4" role="alert"></div>
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger mb-4 rounded-3" role="alert"></div>
 
                     <!-- Código de Barras Comercial (EAN-13) -->
-                    <div class="mb-3">
+                    <div class="mb-4">
                         <label asp-for="CodigoBarras" class="form-label fw-semibold text-dark">
-                            Código de Barras Comercial (EAN) <span class="text-danger">*</span>
+                            Código de barras comercial (EAN-13) <span class="text-danger">*</span>
                         </label>
                         <div class="input-group">
-                            <span class="input-group-text bg-light text-muted">
+                            <span class="input-group-text bg-light text-muted border-end-0">
                                 <i class="bi bi-upc-scan"></i>
                             </span>
-                            <input asp-for="CodigoBarras" class="form-control font-mono" />
+                            <input asp-for="CodigoBarras" class="form-control font-mono border-start-0" />
                         </div>
                         <span asp-validation-for="CodigoBarras" class="text-danger small"></span>
-                        <div class="form-text">Si modifica el código EAN, el sistema comprobará que no colisione con otro producto registrado.</div>
+                        <div class="form-text small text-muted">Si modifica el código EAN, el sistema comprobará que no coincida con otro producto registrado.</div>
                     </div>
 
                     <!-- Nombre del Alimento -->
-                    <div class="mb-3">
+                    <div class="mb-4">
                         <label asp-for="Nombre" class="form-label fw-semibold text-dark">
-                            Nombre del Alimento <span class="text-danger">*</span>
+                            Nombre del alimento <span class="text-danger">*</span>
                         </label>
                         <input asp-for="Nombre" class="form-control" />
                         <span asp-validation-for="Nombre" class="text-danger small"></span>
                     </div>
 
-                    <div class="row g-3 mb-3">
+                    <div class="row g-3 mb-4">
                         <!-- Categoría -->
                         <div class="col-md-6">
                             <label asp-for="CategoriaId" class="form-label fw-semibold text-dark">
-                                Categoría <span class="text-danger">*</span>
+                                Categoría nutricional <span class="text-danger">*</span>
                             </label>
                             <select asp-for="CategoriaId" asp-items="ViewBag.Categorias" class="form-select">
                             </select>
@@ -71,7 +71,7 @@
                         <!-- Unidad de Medida -->
                         <div class="col-md-6">
                             <label asp-for="UnidadMedida" class="form-label fw-semibold text-dark">
-                                Unidad de Medida <span class="text-danger">*</span>
+                                Unidad de medida oficial <span class="text-danger">*</span>
                             </label>
                             <select asp-for="UnidadMedida" asp-items="Html.GetEnumSelectList<UnidadMedida>()" class="form-select">
                             </select>
@@ -80,9 +80,9 @@
                     </div>
 
                     <!-- Descripción / Presentación -->
-                    <div class="mb-3">
+                    <div class="mb-4">
                         <label asp-for="Descripcion" class="form-label fw-semibold text-dark">
-                            Descripción / Presentación del Envase
+                            Descripción / Presentación del envase
                         </label>
                         <input asp-for="Descripcion" class="form-control" />
                         <span asp-validation-for="Descripcion" class="text-danger small"></span>
@@ -91,30 +91,33 @@
                     <!-- Stock Mínimo de Alerta -->
                     <div class="mb-4">
                         <label asp-for="StockMinimo" class="form-label fw-semibold text-dark">
-                            Stock Mínimo de Alerta <span class="text-danger">*</span>
+                            Stock mínimo de alerta <span class="text-danger">*</span>
                         </label>
                         <div class="input-group">
                             <input asp-for="StockMinimo" class="form-control" type="number" step="1" min="0" />
-                            <span class="input-group-text bg-light text-muted">unidades</span>
+                            <span class="input-group-text bg-light text-muted">Cant. Mínima</span>
                         </div>
                         <span asp-validation-for="StockMinimo" class="text-danger small"></span>
+                        <div class="form-text small text-muted">Umbral para disparar alertas preventivas de reposición.</div>
                     </div>
 
                     <!-- Estado Activo -->
-                    <div class="form-check form-switch mb-4 p-3 bg-light rounded-3 border">
-                        <input asp-for="Activo" class="form-check-input ms-0 me-3" type="checkbox" role="switch" id="switchProdActivoEdit" />
-                        <label class="form-check-label fw-semibold text-dark" for="switchProdActivoEdit">
-                            Alimento Activo en Catálogo
-                        </label>
-                        <div class="text-muted small">Desactivar este alimento aplicará baja lógica (Soft Delete), protegiendo la trazabilidad de lotes previos.</div>
+                    <div class="form-check form-switch mb-4 p-3 bg-light rounded-4 border d-flex align-items-center justify-content-between">
+                        <div>
+                            <label class="form-check-label fw-semibold text-dark d-block" for="switchProdActivoEdit">
+                                Alimento activo en catálogo
+                            </label>
+                            <small class="text-muted d-block">Desactivar este alimento aplicará baja lógica temporal.</small>
+                        </div>
+                        <input asp-for="Activo" class="form-check-input ms-0 fs-5" type="checkbox" role="switch" id="switchProdActivoEdit" />
                     </div>
 
                     <div class="d-flex justify-content-between align-items-center pt-3 border-top">
-                        <a asp-action="Index" class="btn btn-outline-secondary">
-                            <i class="bi bi-arrow-left me-1"></i> Volver al Catálogo
+                        <a asp-action="Index" class="btn btn-outline-secondary rounded-pill px-4 fw-semibold">
+                            <i class="bi bi-arrow-left me-1"></i> Volver al catálogo
                         </a>
-                        <button type="submit" class="btn btn-emerald">
-                            <i class="bi bi-save me-1"></i> Guardar Modificaciones
+                        <button type="submit" class="btn btn-success rounded-pill px-4 fw-semibold shadow-sm">
+                            <i class="bi bi-check2-circle me-1"></i> Guardar Modificaciones
                         </button>
                     </div>
                 </form>

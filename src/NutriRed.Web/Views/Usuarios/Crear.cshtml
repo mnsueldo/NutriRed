@@ -1,0 +1,147 @@
+@model NutriRed.Web.Models.CrearUsuarioViewModel
+@{
+    ViewData["Title"] = "Alta de Usuario";
+    Layout = "_Layout";
+}
+
+<div class="row justify-content-center py-4">
+    <div class="col-12 col-md-10 col-lg-7">
+        <div class="card border-0 shadow-sm rounded-4 overflow-hidden bg-white">
+            <div class="card-header bg-danger bg-gradient text-white p-4 border-0">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="rounded-circle bg-white bg-opacity-25 p-3 d-flex align-items-center justify-content-center">
+                        <i class="bi bi-person-plus-fill fs-2 text-white"></i>
+                    </div>
+                    <div>
+                        <h3 class="fw-bold mb-0">Alta de nuevo usuario</h3>
+                        <p class="mb-0 text-white-50 small">Registrar un nuevo voluntario o administrador en el sistema</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-body p-4 p-md-5">
+                <form asp-action="Crear" method="post" id="formCrearUsuario">
+                    @Html.AntiForgeryToken()
+
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger rounded-3 small py-2 px-3 mb-4" role="alert"></div>
+
+                    <!-- Datos Personales -->
+                    <h5 class="fw-bold text-dark border-bottom pb-2 mb-3">
+                        <i class="bi bi-person-vcard text-danger me-2"></i> Datos del usuario
+                    </h5>
+
+                    <div class="mb-3">
+                        <label asp-for="NombreCompleto" class="form-label fw-semibold text-secondary"></label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light text-muted"><i class="bi bi-person"></i></span>
+                            <input asp-for="NombreCompleto" class="form-control" placeholder="Ej: Juan Manuel Gómez" autofocus />
+                        </div>
+                        <span asp-validation-for="NombreCompleto" class="text-danger small"></span>
+                    </div>
+
+                    <div class="mb-4">
+                        <label asp-for="Email" class="form-label fw-semibold text-secondary"></label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light text-muted"><i class="bi bi-envelope"></i></span>
+                            <input asp-for="Email" class="form-control" placeholder="usuario@nutrired.org" />
+                        </div>
+                        <span asp-validation-for="Email" class="text-danger small"></span>
+                        <div class="form-text small">Este correo será su nombre de usuario para iniciar sesión en la Web y en la App Móvil.</div>
+                    </div>
+
+                    <!-- Asignación de Rol -->
+                    <h5 class="fw-bold text-dark border-bottom pb-2 mb-3">
+                        <i class="bi bi-shield-lock text-danger me-2"></i> Perfil y permisos
+                    </h5>
+
+                    <div class="mb-4">
+                        <label asp-for="RolSeleccionado" class="form-label fw-semibold text-secondary"></label>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div class="form-check p-3 border rounded-3 h-100 bg-light">
+                                    <input class="form-check-input" type="radio" asp-for="RolSeleccionado" value="Voluntario" id="rolVoluntario" checked />
+                                    <label class="form-check-label fw-bold text-success d-block" for="rolVoluntario">
+                                        <i class="bi bi-heart-fill me-1"></i> Voluntario de operaciones
+                                    </label>
+                                    <small class="text-muted d-block mt-1">
+                                        Recepción de alimentos, control de vencimientos, armado de cajas asistenciales y despachos con firma digital.
+                                    </small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check p-3 border rounded-3 h-100 bg-light">
+                                    <input class="form-check-input" type="radio" asp-for="RolSeleccionado" value="Administrador" id="rolAdmin" />
+                                    <label class="form-check-label fw-bold text-danger d-block" for="rolAdmin">
+                                        <i class="bi bi-shield-check me-1"></i> Administrador
+                                    </label>
+                                    <small class="text-muted d-block mt-1">
+                                        Acceso total al sistema, catálogo maestro, configuración, bajas de mermas y gestión de usuarios.
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                        <span asp-validation-for="RolSeleccionado" class="text-danger small"></span>
+                    </div>
+
+                    <!-- Credenciales de Acceso -->
+                    <h5 class="fw-bold text-dark border-bottom pb-2 mb-3">
+                        <i class="bi bi-key text-danger me-2"></i> Credenciales de acceso
+                    </h5>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label asp-for="Password" class="form-label fw-semibold text-secondary"></label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light text-muted"><i class="bi bi-lock"></i></span>
+                                <input asp-for="Password" class="form-control" placeholder="Mínimo 6 caracteres" id="pwdInput" />
+                                <button class="btn btn-light border" type="button" onclick="togglePasswordVisibility('pwdInput', 'togglePwdIcon')" title="Ver/Ocultar">
+                                    <i class="bi bi-eye" id="togglePwdIcon"></i>
+                                </button>
+                            </div>
+                            <span asp-validation-for="Password" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label asp-for="ConfirmPassword" class="form-label fw-semibold text-secondary"></label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light text-muted"><i class="bi bi-lock-fill"></i></span>
+                                <input asp-for="ConfirmPassword" class="form-control" placeholder="Repetir contraseña" id="confirmPwdInput" />
+                                <button class="btn btn-light border" type="button" onclick="togglePasswordVisibility('confirmPwdInput', 'toggleConfirmIcon')" title="Ver/Ocultar">
+                                    <i class="bi bi-eye" id="toggleConfirmIcon"></i>
+                                </button>
+                            </div>
+                            <span asp-validation-for="ConfirmPassword" class="text-danger small"></span>
+                        </div>
+                    </div>
+
+                    <!-- Botones de Acción -->
+                    <div class="d-flex gap-3 justify-content-end pt-3 border-top">
+                        <a asp-action="Index" class="btn btn-outline-secondary rounded-pill px-4">
+                            <i class="bi bi-x-circle me-1"></i> Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-danger rounded-pill px-4 fw-semibold shadow-sm">
+                            <i class="bi bi-check-circle-fill me-1"></i> Guardar usuario
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        function togglePasswordVisibility(inputId, iconId) {
+            const input = document.getElementById(inputId);
+            const icon = document.getElementById(iconId);
+            if (input.type === "password") {
+                input.type = "text";
+                icon.classList.replace("bi-eye", "bi-eye-slash");
+            } else {
+                input.type = "password";
+                icon.classList.replace("bi-eye-slash", "bi-eye");
+            }
+        }
+    </script>
+}

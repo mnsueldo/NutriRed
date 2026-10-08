@@ -14,9 +14,9 @@ public class RegistrarMermaViewModel
     public int LoteId { get; set; }
 
     [Required(ErrorMessage = "Debe ingresar la cantidad a dar de baja.")]
-    [Range(0.01, 100000, ErrorMessage = "La cantidad a dar de baja debe ser mayor a cero.")]
+    [Range(1, 100000, ErrorMessage = "La cantidad a dar de baja debe ser un número entero mayor a cero.")]
     [Display(Name = "Cantidad a Dar de Baja")]
-    public decimal Cantidad { get; set; }
+    public int Cantidad { get; set; }
 
     [Required(ErrorMessage = "Debe seleccionar el motivo de la baja.")]
     [Display(Name = "Motivo de la Merma")]

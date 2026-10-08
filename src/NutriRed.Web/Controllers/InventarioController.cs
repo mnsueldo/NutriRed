@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using NutriRed.Domain.Entities;
@@ -8,6 +9,7 @@ using NutriRed.Web.Models;
 
 namespace NutriRed.Web.Controllers;
 
+[Authorize]
 public class InventarioController : Controller
 {
     private readonly IInventarioService _inventarioService;
@@ -83,8 +85,8 @@ public class InventarioController : Controller
                 model.LoteId = lote.Id;
                 model.CodigoLote = lote.NumeroLote;
                 model.NombreProducto = lote.Producto?.Nombre;
-                model.Cantidad = lote.CantidadDisponible; // Cantidad total del lote vencido a dar de baja
-                model.ExistenciaActual = lote.CantidadDisponible;
+                model.Cantidad = (int)lote.CantidadDisponible; // Cantidad total del lote vencido a dar de baja
+                model.ExistenciaActual = (int)lote.CantidadDisponible;
             }
         }
         else if (productoId.HasValue)
@@ -102,8 +104,8 @@ public class InventarioController : Controller
             {
                 model.LoteId = loteVencido.Id;
                 model.CodigoLote = loteVencido.NumeroLote;
-                model.Cantidad = loteVencido.CantidadDisponible;
-                model.ExistenciaActual = loteVencido.CantidadDisponible;
+                model.Cantidad = (int)loteVencido.CantidadDisponible;
+                model.ExistenciaActual = (int)loteVencido.CantidadDisponible;
             }
         }
 
@@ -149,16 +151,21 @@ public class InventarioController : Controller
     [HttpGet]
     public async Task<IActionResult> ObtenerLotesPorProducto(int productoId)
     {
+        var resultadoProducto = await _productoService.ObtenerPorIdAsync(productoId);
+        var unidad = resultadoProducto.Data?.UnidadMedida.ToString() ?? "Unidades";
+
         var resultadoLotes = await _inventarioService.ObtenerLotesPorProductoAsync(productoId, soloDisponibles: true);
         var lotes = (resultadoLotes.Data ?? Enumerable.Empty<Lote>())
             .Select(l => new
             {
                 id = l.Id,
-                texto = $"[{l.NumeroLote}] — Disponible: {l.CantidadDisponible:N1} (Vence: {l.FechaVencimiento:dd/MM/yyyy})"
+                texto = $"[{l.NumeroLote}] — Disponible: {l.CantidadDisponible:N0} {unidad} (Vence: {l.FechaVencimiento:dd/MM/yyyy})",
+                disponible = (int)l.CantidadDisponible,
+                unidadMedida = unidad
             })
             .ToList();
 
-        return Json(lotes);
+        return Json(new { unidad, lotes });
     }
 
     /// <summary>
@@ -180,12 +187,15 @@ public class InventarioController : Controller
 
         if (productoIdSeleccionado.HasValue)
         {
+            var resultadoProducto = await _productoService.ObtenerPorIdAsync(productoIdSeleccionado.Value);
+            var unidad = resultadoProducto.Data?.UnidadMedida.ToString() ?? "Unidades";
+
             var resultadoLotes = await _inventarioService.ObtenerLotesPorProductoAsync(productoIdSeleccionado.Value, soloDisponibles: true);
             var lotes = (resultadoLotes.Data ?? Enumerable.Empty<Lote>())
                 .Select(l => new
                 {
                     Id = l.Id,
-                    Texto = $"[{l.NumeroLote}] — Disponible: {l.CantidadDisponible:N1} (Vence: {l.FechaVencimiento:dd/MM/yyyy})"
+                    Texto = $"[{l.NumeroLote}] — Disponible: {l.CantidadDisponible:N0} {unidad} (Vence: {l.FechaVencimiento:dd/MM/yyyy})"
                 })
                 .ToList();
 

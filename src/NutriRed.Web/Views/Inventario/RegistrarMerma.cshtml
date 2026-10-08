@@ -1,90 +1,146 @@
 @model NutriRed.Web.Models.RegistrarMermaViewModel
 @{
-    ViewData["Title"] = "Registro de Mermas & Bajas";
+    ViewData["Title"] = "Registro de Mermas & Bajas Físicas";
 }
 
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
 
 <div class="row justify-content-center">
-    <div class="col-md-8">
-        <div class="card border-0 shadow-sm">
-            <div class="card-header bg-white py-3">
-                <div class="d-flex align-items-center">
-                    <div class="rounded-circle bg-danger bg-opacity-10 p-3 me-3">
-                        <i class="bi bi-trash3-fill fs-3 text-danger"></i>
+    <div class="col-lg-8 col-xl-7">
+        
+        <!-- Tarjeta Principal del Formulario -->
+        <div class="card border-0 shadow-sm rounded-4 overflow-hidden bg-white mb-4">
+            
+            <!-- Encabezado con Gradiente Destacado -->
+            <div class="card-header border-0 p-4" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="rounded-circle bg-white text-danger d-flex align-items-center justify-content-center shadow-sm flex-shrink-0"
+                         style="width: 52px; height: 52px;">
+                        <i class="bi bi-trash3-fill fs-3"></i>
                     </div>
-                    <div>
-                        <h4 class="card-title fw-bold text-dark mb-0">Registro de Mermas & Bajas</h4>
-                        <small class="text-muted">Descarte de alimentos por vencimiento, deterioro o rotura de envase.</small>
+                    <div class="text-white">
+                        <h3 class="h5 fw-bold mb-1">Registro de Mermas & Bajas</h3>
+                        <p class="mb-0 text-white-50 small">Descarte de alimentos justificado por caducidad, deterioro o rotura de envase.</p>
                     </div>
                 </div>
             </div>
-            <div class="card-body p-4">
-                <form asp-action="RegistrarMerma" method="post">
-                    <partial name="_Alertas" />
-                    <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
 
-                    <!-- Paso 1: Selección / Búsqueda del Producto por Nombre o Código de Barras -->
-                    <div class="mb-3">
-                        <label asp-for="ProductoId" class="form-label fw-semibold">1. Buscar Alimento / Producto</label>
+            <!-- Cuerpo del Formulario -->
+            <div class="card-body p-4 p-md-5">
+                
+                <!-- Alerta Informativa de Impacto en el Historial -->
+                <div class="alert alert-warning border-0 bg-warning bg-opacity-10 rounded-3 d-flex align-items-center gap-3 mb-4 py-3">
+                    <i class="bi bi-exclamation-triangle-fill text-warning fs-4 flex-shrink-0"></i>
+                    <div class="small text-dark">
+                        <strong>Impacto Operativo:</strong> Esta acción descontará inmediatamente las existencias del lote seleccionado y generará un asiento auditable irreversible en el historial de movimientos.
+                    </div>
+                </div>
+
+                <form asp-action="RegistrarMerma" method="post" id="formMerma">
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger rounded-3 mb-4" role="alert"></div>
+
+                    <!-- Paso 1: Selección / Búsqueda del Producto por EAN o Nombre -->
+                    <div class="mb-4">
+                        <label asp-for="ProductoId" class="form-label fw-semibold text-dark">
+                            <i class="bi bi-box-seam text-secondary me-1"></i>1. Alimento / Producto
+                        </label>
                         <select asp-for="ProductoId" asp-items="ViewBag.ProductosSelectList" class="form-select select2-search" id="cboProducto">
-                            <option value="">-- Escriba el nombre o código de barras (EAN) --</option>
+                            <option value="">Escriba el nombre o código de barras (EAN)...</option>
                         </select>
-                        <span asp-validation-for="ProductoId" class="text-danger small"></span>
+                        <span asp-validation-for="ProductoId" class="text-danger small mt-1 d-block"></span>
                     </div>
 
-                    <!-- Paso 2: Selección de Lote Específico del Producto Elegido -->
-                    <div class="mb-3">
-                        <label asp-for="LoteId" class="form-label fw-semibold">2. Seleccionar Lote Afectado</label>
-                        <select asp-for="LoteId" asp-items="ViewBag.LotesSelectList" class="form-select" id="cboLote" disabled="@(Model?.ProductoId == null)">
-                            <option value="">-- Primero seleccione un producto --</option>
+                    <!-- Paso 2: Selección de Lote Físico Específico -->
+                    <div class="mb-4">
+                        <label asp-for="LoteId" class="form-label fw-semibold text-dark">
+                            <i class="bi bi-layers text-secondary me-1"></i>2. Lote Físico Afectado
+                        </label>
+                        <select asp-for="LoteId" asp-items="ViewBag.LotesSelectList" class="form-select rounded-3 py-2" id="cboLote" disabled="@(Model?.ProductoId == null)">
+                            <option value="">Primero seleccione un alimento arriba</option>
                         </select>
-                        <span asp-validation-for="LoteId" class="text-danger small"></span>
+                        <span asp-validation-for="LoteId" class="text-danger small mt-1 d-block"></span>
+
+                        <!-- Panel Interactivo de Proyección de Stock (Propuesta 4) -->
+                        <div id="panelCalculoStock" class="p-3 bg-light rounded-4 border mt-3 d-none">
+                            <div class="row g-2 align-items-center text-center small">
+                                <div class="col-4 border-end">
+                                    <span class="text-muted d-block" style="font-size: 0.75rem;">Existencia actual</span>
+                                    <strong class="text-dark fs-6" id="txtStockDisponible">0</strong> <span class="lblUnidadMedida fw-semibold">u</span>
+                                </div>
+                                <div class="col-4 border-end">
+                                    <span class="text-muted d-block" style="font-size: 0.75rem;">Baja a descontar</span>
+                                    <strong class="text-danger fs-6" id="txtCantidadBaja">0</strong> <span class="lblUnidadMedida fw-semibold">u</span>
+                                </div>
+                                <div class="col-4">
+                                    <span class="text-muted d-block" style="font-size: 0.75rem;">Saldo proyectado</span>
+                                    <strong class="fs-6 text-success" id="txtSaldoResultante">0</strong> <span class="lblUnidadMedida fw-semibold">u</span>
+                                </div>
+                            </div>
+                            <div id="alertaStockExcedido" class="alert alert-danger py-2 px-3 mt-2 mb-0 small rounded-3 d-none">
+                                <i class="bi bi-exclamation-triangle-fill me-1"></i> La cantidad supera las existencias disponibles en el lote.
+                            </div>
+                        </div>
                     </div>
 
-                    <div class="row g-3 mb-3">
-                        <!-- Cantidad -->
-                        <div class="col-md-6 mb-3">
-                            <label asp-for="Cantidad" class="form-label fw-semibold text-dark">Cantidad a Dar de Baja</label>
-                            <input asp-for="Cantidad"
-                                   type="number"
-                                   class="form-control"
-                                   min="0.01"
-                                   step="0.01"
-                                   placeholder="Ej: 5 o 1.5" />
-                            <span asp-validation-for="Cantidad" class="text-danger small"></span>
+                    <!-- Cantidad y Motivo -->
+                    <div class="row g-3 mb-4">
+                        <!-- Cantidad Entera con Badge de Unidad en Vivo -->
+                        <div class="col-md-6">
+                            <label asp-for="Cantidad" class="form-label fw-semibold text-dark d-flex align-items-center justify-content-between">
+                                <span><i class="bi bi-dash-circle text-secondary me-1"></i>Cantidad a Dar de Baja</span>
+                                <span id="badgeUnidadMerma" class="badge bg-secondary-subtle text-secondary border rounded-pill px-2 py-1">Unidades</span>
+                            </label>
+                            <div class="input-group">
+                                <input asp-for="Cantidad"
+                                       type="number"
+                                       class="form-control rounded-3 py-2 font-monospace"
+                                       min="1"
+                                       step="1"
+                                       id="txtCantidadInput"
+                                       placeholder="Ej: 1, 5, 10" />
+                            </div>
+                            <span asp-validation-for="Cantidad" class="text-danger small mt-1 d-block"></span>
+                            <small class="text-muted d-block mt-1" style="font-size: 0.72rem;">* Cantidades en números enteros (sin decimales).</small>
                         </div>
 
                         <!-- Motivo de la Merma -->
                         <div class="col-md-6">
-                            <label asp-for="Motivo" class="form-label fw-semibold"></label>
-                            <select asp-for="Motivo" asp-items="ViewBag.MotivosSelectList" class="form-select">
-                                <option value="">-- Seleccione motivo --</option>
+                            <label asp-for="Motivo" class="form-label fw-semibold text-dark">
+                                <i class="bi bi-tag text-secondary me-1"></i>Causa o Motivo
+                            </label>
+                            <select asp-for="Motivo" asp-items="ViewBag.MotivosSelectList" class="form-select rounded-3 py-2">
+                                <option value="">Seleccione motivo...</option>
                             </select>
-                            <span asp-validation-for="Motivo" class="text-danger small"></span>
+                            <span asp-validation-for="Motivo" class="text-danger small mt-1 d-block"></span>
                         </div>
                     </div>
 
-                    <!-- Observaciones -->
+                    <!-- Observaciones y Justificación -->
                     <div class="mb-4">
-                        <label asp-for="Observaciones" class="form-label fw-semibold"></label>
-                        <textarea asp-for="Observaciones" class="form-control" rows="3" placeholder="Indique detalles adicionales de la baja (ej: envase dañado en traslado, abolladura grave, fecha expirada en estantería)"></textarea>
-                        <span asp-validation-for="Observaciones" class="text-danger small"></span>
+                        <label asp-for="Observaciones" class="form-label fw-semibold text-dark">
+                            <i class="bi bi-card-text text-secondary me-1"></i>Justificación / Observaciones
+                        </label>
+                        <textarea asp-for="Observaciones"
+                                  class="form-control rounded-3"
+                                  rows="3"
+                                  placeholder="Detalle la causa de la baja (ej: rotura durante descarga, fecha de caducidad alcanzada, deterioro visual)..."></textarea>
+                        <span asp-validation-for="Observaciones" class="text-danger small mt-1 d-block"></span>
                     </div>
 
-                    <!-- Acciones del Formulario -->
-                    <div class="d-flex justify-content-between pt-2">
-                        <a asp-action="Index" class="btn btn-outline-secondary">
-                            <i class="bi bi-arrow-left"></i> Volver a Inventario
+                    <!-- Botones de Acción -->
+                    <div class="d-flex flex-column flex-sm-row justify-content-between align-items-center gap-3 pt-3 border-top">
+                        <a asp-action="Index" class="btn btn-outline-secondary rounded-pill px-4 fw-semibold w-100 w-sm-auto">
+                            <i class="bi bi-arrow-left me-1"></i> Volver a Stock
                         </a>
-                        <button type="submit" class="btn btn-danger">
-                            <i class="bi bi-check-circle"></i> Confirmar Baja de Stock
+                        <button type="submit" id="btnConfirmarBaja" class="btn btn-danger rounded-pill px-4 py-2 fw-semibold shadow-sm w-100 w-sm-auto">
+                            <i class="bi bi-trash3-fill me-1"></i> Confirmar Baja de Stock
                         </button>
                     </div>
                 </form>
             </div>
         </div>
+
     </div>
 </div>
 
@@ -93,41 +149,92 @@
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script>
         $(document).ready(function () {
-            // Inicializar Select2 para búsqueda rápida en el combo de Producto
+            let lotesMap = {};
+            let unidadActual = 'Unidades';
+
+            // Inicializar Select2 con el tema Bootstrap 5
             $('#cboProducto').select2({
                 theme: 'bootstrap-5',
-                placeholder: '-- Escriba el nombre o código de barras (EAN) --',
+                placeholder: 'Escriba el nombre o código de barras (EAN)...',
                 allowClear: true,
                 width: '100%'
             });
 
-            // Evento al cambiar de Producto
+            // Evitar ingreso de caracteres decimales (. y ,)
+            $('#txtCantidadInput').on('keydown', function(e) {
+                if (e.key === '.' || e.key === ',' || e.key === 'e' || e.key === 'E' || e.key === '+' || e.key === '-') {
+                    e.preventDefault();
+                }
+            });
+
+            function actualizarCalculoStock() {
+                const loteId = $('#cboLote').val();
+                const panel = $('#panelCalculoStock');
+                const alerta = $('#alertaStockExcedido');
+                const btn = $('#btnConfirmarBaja');
+
+                if (!loteId || lotesMap[loteId] === undefined) {
+                    panel.addClass('d-none');
+                    return;
+                }
+
+                panel.removeClass('d-none');
+                const disponible = lotesMap[loteId];
+                const rawCant = $('#txtCantidadInput').val();
+                const cant = parseInt(rawCant, 10) || 0;
+                const saldo = disponible - cant;
+
+                $('#txtStockDisponible').text(disponible.toLocaleString('es-AR'));
+                $('#txtCantidadBaja').text(cant.toLocaleString('es-AR'));
+                $('#txtSaldoResultante').text(saldo.toLocaleString('es-AR'));
+
+                if (saldo < 0) {
+                    $('#txtSaldoResultante').removeClass('text-success').addClass('text-danger');
+                    alerta.removeClass('d-none');
+                    btn.prop('disabled', true);
+                } else {
+                    $('#txtSaldoResultante').removeClass('text-danger').addClass('text-success');
+                    alerta.addClass('d-none');
+                    btn.prop('disabled', false);
+                }
+            }
+
+            // Evento dinámico al seleccionar un Producto
             $('#cboProducto').on('change', function () {
                 var productoId = $(this).val();
                 var $cboLote = $('#cboLote');
 
                 $cboLote.empty();
+                lotesMap = {};
+                $('#panelCalculoStock').addClass('d-none');
 
                 if (!productoId) {
-                    $cboLote.append('<option value="">-- Primero seleccione un producto --</option>');
+                    $cboLote.append('<option value="">Primero seleccione un alimento arriba</option>');
                     $cboLote.prop('disabled', true);
+                    $('#badgeUnidadMerma').text('Unidades');
+                    $('.lblUnidadMedida').text('u');
                     return;
                 }
 
                 $cboLote.append('<option value="">Cargando lotes disponibles...</option>');
                 $cboLote.prop('disabled', true);
 
-                // Fetch AJAX para traer los lotes filtrados por ProductoId
+                // Consulta asíncrona para obtener lotes con existencia
                 fetch('/Inventario/ObtenerLotesPorProducto?productoId=' + productoId)
                     .then(response => response.json())
                     .then(data => {
                         $cboLote.empty();
-                        if (data.length === 0) {
-                            $cboLote.append('<option value="">-- No hay lotes con stock para este producto --</option>');
+                        unidadActual = data.unidad || 'Unidades';
+                        $('#badgeUnidadMerma').text(unidadActual);
+                        $('.lblUnidadMedida').text(unidadActual);
+
+                        if (!data.lotes || data.lotes.length === 0) {
+                            $cboLote.append('<option value="">No hay lotes con stock para este producto</option>');
                             $cboLote.prop('disabled', true);
                         } else {
-                            $cboLote.append('<option value="">-- Seleccione el lote afectado --</option>');
-                            data.forEach(function (lote) {
+                            $cboLote.append('<option value="">Seleccione el lote físico afectado...</option>');
+                            data.lotes.forEach(function (lote) {
+                                lotesMap[lote.id] = lote.disponible;
                                 $cboLote.append(new Option(lote.texto, lote.id));
                             });
                             $cboLote.prop('disabled', false);
@@ -136,9 +243,12 @@
                     .catch(error => {
                         console.error('Error al cargar lotes:', error);
                         $cboLote.empty();
-                        $cboLote.append('<option value="">Error al cargar los lotes</option>');
+                        $cboLote.append('<option value="">Error al consultar lotes</option>');
                     });
             });
+
+            $('#cboLote').on('change', actualizarCalculoStock);
+            $('#txtCantidadInput').on('input', actualizarCalculoStock);
         });
     </script>
 }

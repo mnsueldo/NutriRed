@@ -55,9 +55,10 @@ public class DonacionItemViewModel
     [Display(Name = "Unidad")]
     public string? UnidadMedida { get; set; }
 
-    [Range(0.01, 100000, ErrorMessage = "La cantidad debe ser mayor a cero.")]
+    [Required(ErrorMessage = "La cantidad es obligatoria.")]
+    [Range(1, 100000, ErrorMessage = "La cantidad debe ser un número entero mayor a cero.")]
     [Display(Name = "Cantidad")]
-    public decimal Cantidad { get; set; }
+    public int Cantidad { get; set; }
 
     [Required(ErrorMessage = "La fecha de vencimiento es obligatoria.")]
     [DataType(DataType.Date)]
@@ -101,6 +102,8 @@ public class DonacionIndexViewModel
 
     [Display(Name = "Código")]
     public string? CodigoComprobante { get; set; }
+
+    public string? Rango { get; set; }
 
     public int TotalRegistros => Donaciones.Count();
     public decimal TotalUnidadesKilos => Donaciones.Sum(d => d.TotalUnidadesRecibidas);

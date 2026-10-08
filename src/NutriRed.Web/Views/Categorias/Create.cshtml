@@ -11,35 +11,35 @@
             <ol class="breadcrumb mb-1 small">
                 <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index" class="text-decoration-none text-muted">Inicio</a></li>
                 <li class="breadcrumb-item"><a asp-action="Index" class="text-decoration-none text-muted">Categorías</a></li>
-                <li class="breadcrumb-item active text-dark fw-semibold" aria-current="page">Alta de Categoría</li>
+                <li class="breadcrumb-item active text-dark fw-semibold" aria-current="page">Alta de categoría</li>
             </ol>
         </nav>
 
-        <div class="card card-nr shadow-sm">
-            <div class="card-header card-nr-header d-flex align-items-center gap-2">
-                <div class="p-2 rounded-2" style="background: var(--nr-emerald-light); color: var(--nr-emerald-primary);">
-                    <i class="bi bi-tag-fill fs-5"></i>
+        <div class="card border-0 shadow-sm rounded-4 bg-white overflow-hidden">
+            <div class="card-header bg-white border-bottom p-4 d-flex align-items-center gap-3">
+                <div class="rounded-circle bg-success bg-opacity-10 text-success p-3 d-flex align-items-center justify-content-center" style="width: 52px; height: 52px;">
+                    <i class="bi bi-tag-fill fs-4"></i>
                 </div>
                 <div>
                     <h1 class="h5 fw-bold text-dark mb-0">Registrar Nueva Categoría</h1>
-                    <small class="text-muted">Complete los datos para incorporar una nueva familia taxonómica de alimentos.</small>
+                    <small class="text-muted">Complete los datos para agregar una clasificación al catálogo de alimentos.</small>
                 </div>
             </div>
 
-            <div class="card-body p-4">
+            <div class="card-body p-4 p-md-5">
                 <form asp-action="Create" method="post">
                     @Html.AntiForgeryToken()
 
-                    <div asp-validation-summary="ModelOnly" class="alert alert-danger mb-4" role="alert"></div>
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger mb-4 rounded-3" role="alert"></div>
 
                     <!-- Nombre de la Categoría -->
-                    <div class="mb-3">
+                    <div class="mb-4">
                         <label asp-for="Nombre" class="form-label fw-semibold text-dark">
-                            Nombre de la Categoría <span class="text-danger">*</span>
+                            Nombre de la categoría <span class="text-danger">*</span>
                         </label>
-                        <input asp-for="Nombre" class="form-control" placeholder="Ej: Lácteos, Legumbres, Pastas Secas..." autofocus />
+                        <input asp-for="Nombre" class="form-control" placeholder="Ej: Lácteos, Legumbres, Pastas Secas, Bebidas" autofocus />
                         <span asp-validation-for="Nombre" class="text-danger small"></span>
-                        <div class="form-text">Debe ser un nombre descriptivo y no puede estar duplicado en el catálogo.</div>
+                        <div class="form-text small text-muted">Debe ser un nombre descriptivo y no puede estar duplicado en el catálogo.</div>
                     </div>
 
                     <!-- Descripción -->
@@ -48,24 +48,26 @@
                             Descripción / Observaciones
                         </label>
                         <textarea asp-for="Descripcion" class="form-control" rows="3" 
-                                  placeholder="Detalle los tipos de productos que abarca esta categoría (opcional)..."></textarea>
+                                  placeholder="Detalle los tipos de productos que abarca esta categoría (opcional)"></textarea>
                         <span asp-validation-for="Descripcion" class="text-danger small"></span>
                     </div>
 
                     <!-- Estado Activo -->
-                    <div class="form-check form-switch mb-4 p-3 bg-light rounded-3 border">
-                        <input asp-for="Activo" class="form-check-input ms-0 me-3" type="checkbox" role="switch" id="switchActivo" checked />
-                        <label class="form-check-label fw-semibold text-dark" for="switchActivo">
-                            Habilitar categoría de forma inmediata
-                        </label>
-                        <div class="text-muted small">Solo las categorías activas estarán disponibles para asociar a nuevos alimentos en el catálogo.</div>
+                    <div class="form-check form-switch mb-4 p-3 bg-light rounded-4 border d-flex align-items-center justify-content-between">
+                        <div>
+                            <label class="form-check-label fw-semibold text-dark d-block" for="switchActivo">
+                                Habilitar categoría de forma inmediata
+                            </label>
+                            <small class="text-muted d-block">Solo las categorías activas estarán disponibles para asociar a nuevos alimentos.</small>
+                        </div>
+                        <input asp-for="Activo" class="form-check-input ms-0 fs-5" type="checkbox" role="switch" id="switchActivo" checked />
                     </div>
 
                     <div class="d-flex justify-content-between align-items-center pt-3 border-top">
-                        <a asp-action="Index" class="btn btn-outline-secondary">
-                            <i class="bi bi-arrow-left me-1"></i> Volver al Listado
+                        <a asp-action="Index" class="btn btn-outline-secondary rounded-pill px-4 fw-semibold">
+                            <i class="bi bi-arrow-left me-1"></i> Volver al listado
                         </a>
-                        <button type="submit" class="btn btn-emerald">
+                        <button type="submit" class="btn btn-success rounded-pill px-4 fw-semibold shadow-sm">
                             <i class="bi bi-check2-circle me-1"></i> Guardar Categoría
                         </button>
                     </div>

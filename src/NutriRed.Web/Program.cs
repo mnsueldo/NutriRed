@@ -1,5 +1,7 @@
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using NutriRed.Data;
+using NutriRed.Domain.Entities;
 using NutriRed.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -11,12 +13,52 @@ builder.Services.AddDbContext<NutriRedDbContext>(options =>
 // 2. Registro de Servicios de Negocio (NutriRed.Services)
 builder.Services.AddNutriRedServices();
 
+// 2.1 Configuración de ASP.NET Core Identity con Roles
+builder.Services.AddIdentity<NutriRed.Domain.Entities.ApplicationUser, Microsoft.AspNetCore.Identity.IdentityRole>(options =>
+{
+    // Opciones de contraseña flexibles para facilitar desarrollo y pruebas móviles
+    options.Password.RequireDigit = false;
+    options.Password.RequiredLength = 6;
+    options.Password.RequireNonAlphanumeric = false;
+    options.Password.RequireUppercase = false;
+    options.Password.RequireLowercase = false;
+
+    options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
+    options.Lockout.MaxFailedAccessAttempts = 5;
+    options.User.RequireUniqueEmail = true;
+})
+.AddEntityFrameworkStores<NutriRedDbContext>()
+.AddDefaultTokenProviders();
+
+// Rutas y configuración de Cookies de autenticación para la Web MVC
+builder.Services.ConfigureApplicationCookie(options =>
+{
+    options.LoginPath = "/Account/Login";
+    options.LogoutPath = "/Account/Logout";
+    options.AccessDeniedPath = "/Account/AccessDenied";
+    options.ExpireTimeSpan = TimeSpan.FromHours(8);
+    options.SlidingExpiration = true;
+    options.Cookie.HttpOnly = true;
+    options.Cookie.Name = "NutriRed.Auth";
+});
+
 // 3. Soporte para Vistas MVC y Controladores de API
 builder.Services.AddControllersWithViews();
 
 // 4. Documentación Swagger para la API de Android
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+// 5. Configuración de CORS para clientes móviles y desarrollo
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyMethod()
+              .AllowAnyHeader();
+    });
+});
 
 var app = builder.Build();
 
@@ -28,6 +70,10 @@ using (var scope = app.Services.CreateScope())
     {
         var context = services.GetRequiredService<NutriRedDbContext>();
         await DbInitializer.SeedAsync(context);
+
+        var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
+        var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
+        await DbInitializer.SeedIdentityAsync(userManager, roleManager);
     }
     catch (Exception ex)
     {
@@ -48,9 +94,12 @@ else
     app.UseHsts();
 }
 
-app.UseHttpsRedirection();
 app.UseRouting();
 
+// CORS debe ejecutarse después de UseRouting y antes de UseAuthorization
+app.UseCors("AllowAll");
+
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapStaticAssets();

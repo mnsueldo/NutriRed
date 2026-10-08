@@ -1,4 +1,7 @@
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using NutriRed.Domain.Entities;
 using NutriRed.Domain.Enums;
 using NutriRed.Services.DTOs;
 using NutriRed.Services.Interfaces;
@@ -6,16 +9,20 @@ using NutriRed.Web.Models;
 
 namespace NutriRed.Web.Controllers;
 
+[Authorize]
 public class EntregasController : Controller
 {
     private readonly IEntregaService _entregaService;
+    private readonly UserManager<ApplicationUser> _userManager;
     private readonly ILogger<EntregasController> _logger;
 
     public EntregasController(
         IEntregaService entregaService,
+        UserManager<ApplicationUser> userManager,
         ILogger<EntregasController> logger)
     {
         _entregaService = entregaService;
+        _userManager = userManager;
         _logger = logger;
     }
 
@@ -76,13 +83,17 @@ public class EntregasController : Controller
             return RedirectToAction(nameof(Index));
         }
 
+        var user = await _userManager.GetUserAsync(User);
+        var nombreOperador = user?.NombreCompleto ?? User.Identity?.Name ?? "Operador Despacho";
+
         var model = new DespacharPaqueteViewModel
         {
             CodigoSeguimiento = resultado.Data.CodigoSeguimiento,
             Paquete = resultado.Data,
             TipoReceptor = TipoReceptor.Titular,
             DniReceptor = resultado.Data.DniTitular,
-            NombreReceptor = resultado.Data.FamiliaTitular
+            NombreReceptor = resultado.Data.FamiliaTitular,
+            VoluntarioDespachoId = nombreOperador
         };
 
         return View(model);
@@ -93,6 +104,11 @@ public class EntregasController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Despachar(DespacharPaqueteViewModel model)
     {
+        // Seguridad e inmutabilidad: resolver el operador autenticado en sesión
+        var user = await _userManager.GetUserAsync(User);
+        var nombreOperador = user?.NombreCompleto ?? User.Identity?.Name ?? "Operador Despacho";
+        model.VoluntarioDespachoId = nombreOperador;
+
         // Reglas de Negocio RF3:
         if (model.TipoReceptor == TipoReceptor.TerceroAutorizado && string.IsNullOrWhiteSpace(model.VinculoConTitular))
         {
@@ -119,7 +135,7 @@ public class EntregasController : Controller
             NombreReceptor = model.NombreReceptor.Trim(),
             VinculoConTitular = model.TipoReceptor == TipoReceptor.TerceroAutorizado ? model.VinculoConTitular?.Trim() : null,
             FirmaDigital = model.FirmaDigital,
-            VoluntarioDespachoId = string.IsNullOrWhiteSpace(model.VoluntarioDespachoId) ? "operador_despacho" : model.VoluntarioDespachoId.Trim()
+            VoluntarioDespachoId = nombreOperador
         };
 
         var resultado = await _entregaService.ConfirmarEntregaAsync(request);
@@ -165,11 +181,15 @@ public class EntregasController : Controller
             return RedirectToAction(nameof(Despachar), new { codigo = model.CodigoSeguimiento });
         }
 
+        var user = await _userManager.GetUserAsync(User);
+        var nombreOperador = user?.NombreCompleto ?? User.Identity?.Name ?? "Operador Despacho";
+        model.VoluntarioDespachoId = nombreOperador;
+
         var request = new RegistrarEntregaFallidaRequest
         {
             CodigoSeguimiento = model.CodigoSeguimiento.Trim(),
             MotivoNoEntrega = model.MotivoNoEntrega.Trim(),
-            VoluntarioDespachoId = string.IsNullOrWhiteSpace(model.VoluntarioDespachoId) ? "operador_despacho" : model.VoluntarioDespachoId.Trim()
+            VoluntarioDespachoId = nombreOperador
         };
 
         var resultado = await _entregaService.RegistrarEntregaNoConcretadaAsync(request);

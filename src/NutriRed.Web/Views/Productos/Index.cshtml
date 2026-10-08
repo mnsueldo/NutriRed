@@ -5,8 +5,15 @@
     string? busqueda = ViewBag.Busqueda as string;
     int? categoriaId = ViewBag.CategoriaId as int?;
     bool verTodos = ViewBag.VerTodos == true;
+
+    // Métricas de resumen calculadas automáticamente
+    var totalAlimentos = Model.Count();
+    var alimentosActivos = Model.Count(p => p.Activo);
+    var categoriasCubiertas = Model.Select(p => p.CategoriaId).Distinct().Count();
+    var alimentosInactivos = Model.Count(p => !p.Activo);
 }
 
+<!-- Encabezado Principal -->
 <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
     <div>
         <nav aria-label="breadcrumb">
@@ -16,54 +23,129 @@
                 <li class="breadcrumb-item active text-dark fw-semibold" aria-current="page">Alimentos</li>
             </ol>
         </nav>
-        <h1 class="h3 fw-bold text-dark mb-0">Catálogo de Alimentos</h1>
-        <p class="text-secondary small mb-0">Padrón de alimentos con código EAN-13 comercial, categorías e inventario de control.</p>
+        <h2 class="fw-bold mb-1 text-dark">
+            <i class="bi bi-egg-fried text-success me-2"></i>Catálogo de Alimentos
+        </h2>
+        <p class="text-secondary mb-0">Padrón maestro de alimentos con código comercial, categorización y control de umbrales.</p>
     </div>
-    <div class="d-flex align-items-center gap-2">
-        <a asp-action="Create" class="btn btn-emerald">
-            <i class="bi bi-plus-lg me-1"></i> Registrar Alimento
+    <div>
+        <a asp-action="Create" class="btn btn-success rounded-pill shadow-sm px-4 py-2 fw-semibold">
+            <i class="bi bi-plus-circle-fill me-2"></i>Registrar Alimento
         </a>
     </div>
 </div>
 
+<!-- Panel de Métricas / KPIs Rápidos -->
+<div class="row g-3 mb-4">
+    <!-- 1. Total Alimentos -->
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="card border-0 shadow-sm rounded-4 p-3 bg-white h-100">
+            <div class="d-flex align-items-center gap-3">
+                <div class="rounded-circle bg-success bg-opacity-10 p-3 text-success d-flex align-items-center justify-content-center" style="width: 52px; height: 52px;">
+                    <i class="bi bi-box-seam-fill fs-4"></i>
+                </div>
+                <div>
+                    <span class="text-muted small fw-semibold text-uppercase d-block">Total Alimentos</span>
+                    <span class="fs-4 fw-bold text-dark">@totalAlimentos</span>
+                    <small class="text-muted d-block" style="font-size: 0.72rem;">Artículos en padrón</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. Alimentos Activos -->
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="card border-0 shadow-sm rounded-4 p-3 bg-white h-100">
+            <div class="d-flex align-items-center gap-3">
+                <div class="rounded-circle bg-emerald bg-opacity-10 p-3 text-emerald d-flex align-items-center justify-content-center" style="width: 52px; height: 52px; background-color: rgba(5, 150, 105, 0.1); color: #059669;">
+                    <i class="bi bi-check-circle-fill fs-4"></i>
+                </div>
+                <div>
+                    <span class="text-muted small fw-semibold text-uppercase d-block">Alimentos Activos</span>
+                    <span class="fs-4 fw-bold text-success">@alimentosActivos</span>
+                    <small class="text-muted d-block" style="font-size: 0.72rem;">Habilitados para donación</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. Categorías Cubiertas -->
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="card border-0 shadow-sm rounded-4 p-3 bg-white h-100">
+            <div class="d-flex align-items-center gap-3">
+                <div class="rounded-circle bg-primary bg-opacity-10 p-3 text-primary d-flex align-items-center justify-content-center" style="width: 52px; height: 52px;">
+                    <i class="bi bi-tags-fill fs-4"></i>
+                </div>
+                <div>
+                    <span class="text-muted small fw-semibold text-uppercase d-block">Categorías</span>
+                    <span class="fs-4 fw-bold text-primary">@categoriasCubiertas</span>
+                    <small class="text-muted d-block" style="font-size: 0.72rem;">Grupos nutricionales</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. Inactivos / De Baja -->
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="card border-0 shadow-sm rounded-4 p-3 bg-white h-100">
+            <div class="d-flex align-items-center gap-3">
+                <div class="rounded-circle bg-secondary bg-opacity-10 p-3 text-secondary d-flex align-items-center justify-content-center" style="width: 52px; height: 52px;">
+                    <i class="bi bi-slash-circle-fill fs-4"></i>
+                </div>
+                <div>
+                    <span class="text-muted small fw-semibold text-uppercase d-block">Inactivos</span>
+                    <span class="fs-4 fw-bold text-secondary">@alimentosInactivos</span>
+                    <small class="text-muted d-block" style="font-size: 0.72rem;">Fuera de operaciones</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Filtros de Búsqueda y Categoría -->
-<div class="card card-nr mb-4">
-    <div class="card-body p-3">
-        <form asp-action="Index" method="get" class="row g-2 align-items-center">
+<div class="card border-0 shadow-sm rounded-4 mb-4 bg-white">
+    <div class="card-body p-3 p-md-4">
+        <form asp-action="Index" method="get" class="row g-3 align-items-center">
             <!-- Buscador por Texto / EAN -->
             <div class="col-md-5 col-lg-4">
-                <div class="input-group input-group-sm">
-                    <span class="input-group-text bg-white border-end-0">
-                        <i class="bi bi-upc-scan text-muted"></i>
+                <label class="form-label small fw-semibold text-secondary mb-1">
+                    <i class="bi bi-upc-scan me-1"></i>Buscar alimento o código
+                </label>
+                <div class="input-group">
+                    <span class="input-group-text bg-light border-end-0 text-muted">
+                        <i class="bi bi-search"></i>
                     </span>
                     <input type="text" name="busqueda" value="@busqueda" class="form-control border-start-0" 
-                           placeholder="Buscar por nombre o EAN..." />
+                           placeholder="Ej: Leche, Arroz, 779007..." />
                 </div>
             </div>
 
             <!-- Filtro por Categoría -->
             <div class="col-md-4 col-lg-3">
-                <select name="categoriaId" asp-items="ViewBag.CategoriasFiltro" class="form-select form-select-sm">
-                    <option value="">-- Todas las Categorías --</option>
+                <label class="form-label small fw-semibold text-secondary mb-1">
+                    <i class="bi bi-tag me-1"></i>Categoría
+                </label>
+                <select name="categoriaId" asp-items="ViewBag.CategoriasFiltro" class="form-select">
+                    <option value="">Todas las categorías</option>
                 </select>
             </div>
 
             <!-- Checkbox de Inactivos -->
-            <div class="col-auto">
+            <div class="col-auto pt-md-4">
                 <div class="form-check form-check-inline small mb-0">
                     <input class="form-check-input" type="checkbox" name="verTodos" id="checkVerTodos" value="true" @(verTodos ? "checked" : "") />
-                    <label class="form-check-label text-secondary" for="checkVerTodos">Incluir inactivos</label>
+                    <label class="form-check-label text-secondary fw-semibold" for="checkVerTodos">Incluir inactivos</label>
                 </div>
             </div>
 
             <!-- Botones de Acción -->
-            <div class="col-auto ms-auto d-flex gap-2">
-                <button type="submit" class="btn btn-emerald btn-sm px-3">
-                    <i class="bi bi-funnel me-1"></i> Filtrar
+            <div class="col-auto ms-auto pt-md-4 d-flex gap-2">
+                <button type="submit" class="btn btn-success rounded-pill px-4 fw-semibold shadow-sm">
+                    <i class="bi bi-funnel-fill me-1"></i> Filtrar
                 </button>
                 @if (!string.IsNullOrWhiteSpace(busqueda) || categoriaId.HasValue || verTodos)
                 {
-                    <a asp-action="Index" class="btn btn-outline-secondary btn-sm" title="Limpiar filtros">
+                    <a asp-action="Index" class="btn btn-outline-secondary rounded-pill px-3" title="Limpiar filtros">
                         <i class="bi bi-x-circle me-1"></i> Limpiar
                     </a>
                 }
@@ -73,84 +155,94 @@
 </div>
 
 <!-- Tabla de Alimentos -->
-<div class="card card-nr overflow-hidden">
+<div class="card border-0 shadow-sm rounded-4 overflow-hidden bg-white">
     @if (!Model.Any())
     {
         <div class="text-center py-5">
-            <i class="bi bi-egg-fried text-muted" style="font-size: 3.5rem;"></i>
-            <h4 class="h5 fw-bold text-dark mt-3">No se encontraron alimentos</h4>
-            <p class="text-secondary small mb-3">No hay productos que coincidan con los criterios de búsqueda.</p>
-            <a asp-action="Create" class="btn btn-emerald btn-sm">
-                <i class="bi bi-plus-lg me-1"></i> Incorporar nuevo alimento
+            <div class="rounded-circle bg-light d-inline-flex p-4 mb-3 text-muted">
+                <i class="bi bi-egg-fried" style="font-size: 3rem;"></i>
+            </div>
+            <h4 class="h5 fw-bold text-dark">No se encontraron alimentos</h4>
+            <p class="text-secondary small mb-3">No hay productos que coincidan con los criterios de búsqueda aplicados.</p>
+            <a asp-action="Create" class="btn btn-success rounded-pill px-4 fw-semibold shadow-sm">
+                <i class="bi bi-plus-circle-fill me-2"></i> Registrar nuevo alimento
             </a>
         </div>
     }
     else
     {
         <div class="table-responsive">
-            <table class="table table-nr align-middle mb-0">
-                <thead>
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light text-secondary text-uppercase small fw-bold">
                     <tr>
-                        <th style="width: 140px;">Código EAN</th>
+                        <th style="width: 150px;" class="ps-4">Código EAN</th>
                         <th>Alimento</th>
                         <th>Categoría</th>
-                        <th style="width: 120px;">U. Medida</th>
-                        <th style="width: 110px;" class="text-center">Stock Mín.</th>
-                        <th style="width: 110px;" class="text-center">Estado</th>
-                        <th style="width: 220px;" class="text-end">Acciones</th>
+                        <th style="width: 120px;" class="text-center">U. Medida</th>
+                        <th style="width: 120px;" class="text-center">Stock Mín.</th>
+                        <th style="width: 120px;" class="text-center">Estado</th>
+                        <th style="width: 190px;" class="text-end pe-4">Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach (var prod in Model)
                     {
                         <tr>
-                            <td>
-                                <span class="code-tag">
+                            <td class="ps-4">
+                                <span class="code-tag rounded-3 font-mono">
                                     <i class="bi bi-upc me-1 text-muted"></i>@prod.CodigoBarras
                                 </span>
                             </td>
                             <td>
-                                <div class="fw-semibold text-dark">@prod.Nombre</div>
-                                <small class="text-muted text-truncate d-inline-block" style="max-width: 280px;">
-                                    @(string.IsNullOrWhiteSpace(prod.Descripcion) ? "Sin presentación especificada" : prod.Descripcion)
-                                </small>
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="rounded-3 bg-success bg-opacity-10 text-success p-2 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                        <i class="bi bi-basket2-fill fs-5"></i>
+                                    </div>
+                                    <div>
+                                        <div class="fw-bold text-dark">@prod.Nombre</div>
+                                        <small class="text-muted text-truncate d-inline-block" style="max-width: 280px;">
+                                            @(string.IsNullOrWhiteSpace(prod.Descripcion) ? "Sin presentación especificada" : prod.Descripcion)
+                                        </small>
+                                    </div>
+                                </div>
                             </td>
                             <td>
-                                <span class="badge bg-light text-dark border">
-                                    <i class="bi bi-tag me-1 text-primary"></i>@(prod.Categoria?.Nombre ?? "General")
+                                <span class="badge bg-light text-dark border rounded-pill px-3 py-2 fw-medium">
+                                    <i class="bi bi-tag-fill me-1 text-primary"></i>@(prod.Categoria?.Nombre ?? "General")
                                 </span>
                             </td>
-                            <td>
-                                <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle">
+                            <td class="text-center">
+                                <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill px-3 py-1 fw-semibold">
                                     @prod.UnidadMedida
                                 </span>
                             </td>
                             <td class="text-center">
-                                <span class="fw-semibold text-dark">@prod.StockMinimo.ToString("N0")</span>
+                                <span class="fw-bold text-dark">@prod.StockMinimo.ToString("N0")</span>
+                                <small class="text-muted d-block" style="font-size: 0.72rem;">@prod.UnidadMedida</small>
                             </td>
                             <td class="text-center">
                                 @if (prod.Activo)
                                 {
-                                    <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1">
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-1">
                                         <i class="bi bi-check-circle-fill me-1"></i> Activo
                                     </span>
                                 }
                                 else
                                 {
-                                    <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-2 py-1">
+                                    <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill px-3 py-1">
                                         <i class="bi bi-slash-circle me-1"></i> Inactivo
                                     </span>
                                 }
                             </td>
-                            <td class="text-end">
+                            <td class="text-end pe-4">
                                 <div class="d-inline-flex gap-1">
                                     <!-- Ver Detalles y Lotes -->
-                                    <a asp-action="Detalles" asp-route-id="@prod.Id" class="btn btn-sm btn-outline-primary" title="Ver detalle y lotes físicos">
+                                    <a asp-action="Detalles" asp-route-id="@prod.Id" class="btn btn-sm btn-outline-primary rounded-3" title="Ver detalle y lotes físicos">
                                         <i class="bi bi-eye"></i>
                                     </a>
 
                                     <!-- Editar -->
-                                    <a asp-action="Edit" asp-route-id="@prod.Id" class="btn btn-sm btn-outline-secondary" title="Editar alimento">
+                                    <a asp-action="Edit" asp-route-id="@prod.Id" class="btn btn-sm btn-outline-secondary rounded-3" title="Editar alimento">
                                         <i class="bi bi-pencil"></i>
                                     </a>
 
@@ -160,7 +252,7 @@
                                         @Html.AntiForgeryToken()
                                         <input type="hidden" name="id" value="@prod.Id" />
                                         <input type="hidden" name="nuevoEstado" value="@(!prod.Activo ? "true" : "false")" />
-                                        <button type="submit" class="btn btn-sm @(prod.Activo ? "btn-outline-danger" : "btn-outline-success")"
+                                        <button type="submit" class="btn btn-sm @(prod.Activo ? "btn-outline-danger" : "btn-outline-success") rounded-3"
                                                 title="@(prod.Activo ? "Desactivar alimento" : "Activar alimento")">
                                             <i class="bi @(prod.Activo ? "bi-toggle-on" : "bi-toggle-off")"></i>
                                         </button>
@@ -172,9 +264,9 @@
                 </tbody>
             </table>
         </div>
-        <div class="card-footer bg-white border-top p-3 d-flex justify-content-between align-items-center">
+        <div class="card-footer bg-white border-top p-3 px-4 d-flex flex-column flex-sm-row justify-content-between align-items-center gap-2">
             <small class="text-muted">Total de alimentos listados: <strong>@Model.Count()</strong></small>
-            <small class="text-muted"><i class="bi bi-info-circle me-1"></i> Los códigos EAN son escaneables desde la App Android.</small>
+            <small class="text-muted"><i class="bi bi-qr-code-scan me-1 text-primary"></i> Los códigos EAN son escaneables desde la App Android.</small>
         </div>
     }
 </div>

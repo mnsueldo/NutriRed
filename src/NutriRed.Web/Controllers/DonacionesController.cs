@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using NutriRed.Domain.Entities;
 using NutriRed.Domain.Enums;
@@ -7,30 +9,64 @@ using NutriRed.Web.Models;
 
 namespace NutriRed.Web.Controllers;
 
+[Authorize]
 public class DonacionesController : Controller
 {
     private readonly IDonacionService _donacionService;
     private readonly IProductoService _productoService;
+    private readonly UserManager<ApplicationUser> _userManager;
     private readonly ILogger<DonacionesController> _logger;
 
     public DonacionesController(
         IDonacionService donacionService,
         IProductoService productoService,
+        UserManager<ApplicationUser> userManager,
         ILogger<DonacionesController> logger)
     {
         _donacionService = donacionService;
         _productoService = productoService;
+        _userManager = userManager;
         _logger = logger;
     }
 
     // GET: Donaciones
-    public async Task<IActionResult> Index(DateTime? desde = null, DateTime? hasta = null, string? codigo = null)
+    public async Task<IActionResult> Index(DateTime? desde = null, DateTime? hasta = null, string? codigo = null, string? rango = null)
     {
+        var hoy = DateTime.Today;
+        if (!string.IsNullOrWhiteSpace(rango))
+        {
+            switch (rango.ToLowerInvariant())
+            {
+                case "hoy":
+                    desde = hoy;
+                    hasta = hoy;
+                    break;
+                case "semana":
+                    desde = hoy.AddDays(-7);
+                    hasta = hoy;
+                    break;
+                case "mes":
+                    desde = new DateTime(hoy.Year, hoy.Month, 1);
+                    hasta = hoy;
+                    break;
+            }
+        }
+        else if (desde.HasValue && hasta.HasValue)
+        {
+            if (desde.Value.Date == hoy && hasta.Value.Date == hoy)
+                rango = "hoy";
+            else if (desde.Value.Date == hoy.AddDays(-7) && hasta.Value.Date == hoy)
+                rango = "semana";
+            else if (desde.Value.Date == new DateTime(hoy.Year, hoy.Month, 1) && hasta.Value.Date == hoy)
+                rango = "mes";
+        }
+
         var viewModel = new DonacionIndexViewModel
         {
             FechaDesde = desde,
             FechaHasta = hasta,
-            CodigoComprobante = codigo?.Trim()
+            CodigoComprobante = codigo?.Trim(),
+            Rango = rango
         };
 
         if (!string.IsNullOrWhiteSpace(viewModel.CodigoComprobante))
@@ -66,7 +102,12 @@ public class DonacionesController : Controller
     public async Task<IActionResult> Registrar()
     {
         await CargarProductosEnViewBagAsync();
-        var model = new RegistrarDonacionViewModel();
+        var user = await _userManager.GetUserAsync(User);
+        var nombreOperador = user?.NombreCompleto ?? User.Identity?.Name ?? "Voluntario Operativo";
+        var model = new RegistrarDonacionViewModel
+        {
+            VoluntarioReceptorId = nombreOperador
+        };
         return View(model);
     }
 
@@ -75,6 +116,11 @@ public class DonacionesController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Registrar(RegistrarDonacionViewModel model)
     {
+        // Seguridad e inmutabilidad: resolver el operador autenticado en sesión
+        var user = await _userManager.GetUserAsync(User);
+        var nombreOperador = user?.NombreCompleto ?? User.Identity?.Name ?? "Voluntario Operativo";
+        model.VoluntarioReceptorId = nombreOperador;
+
         // 1. Validaciones de Negocio Específicas de Donación (RF1)
         if (model.Items == null || !model.Items.Any())
         {
@@ -125,7 +171,7 @@ public class DonacionesController : Controller
             NombreRazonSocial = model.TipoDonante == TipoDonante.Anonimo ? "Donante Anónimo" : model.NombreRazonSocial?.Trim(),
             Telefono = model.TipoDonante == TipoDonante.Anonimo ? null : model.Telefono?.Trim(),
             Email = model.TipoDonante == TipoDonante.Anonimo ? null : model.Email?.Trim(),
-            VoluntarioReceptorId = string.IsNullOrWhiteSpace(model.VoluntarioReceptorId) ? "voluntario_deposito" : model.VoluntarioReceptorId.Trim(),
+            VoluntarioReceptorId = nombreOperador,
             Observaciones = model.Observaciones?.Trim(),
             Items = model.Items!.Select(i => new DonacionItemRequest
             {

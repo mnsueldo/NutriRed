@@ -1,9 +1,10 @@
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using NutriRed.Domain.Entities;
 
 namespace NutriRed.Data;
 
-public class NutriRedDbContext : DbContext
+public class NutriRedDbContext : IdentityDbContext<ApplicationUser>
 {
     public NutriRedDbContext(DbContextOptions<NutriRedDbContext> options) : base(options)
     {

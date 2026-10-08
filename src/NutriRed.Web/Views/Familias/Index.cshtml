@@ -1,168 +1,317 @@
-﻿@model IEnumerable<NutriRed.Domain.Entities.FamiliaBeneficiaria>
+@model IEnumerable<NutriRed.Domain.Entities.FamiliaBeneficiaria>
 @using NutriRed.Domain.Enums
 
 @{
     ViewData["Title"] = "Familias Beneficiarias";
     bool mostrarTodos = ViewBag.MostrarTodos ?? false;
     string? busqueda = ViewBag.Busqueda as string;
+    EstadoFamilia? estadoFiltro = ViewBag.Estado as EstadoFamilia?;
+
+    var totalFamilias = Model.Count();
+    var familiasActivas = Model.Count(f => f.Estado == EstadoFamilia.Activo);
+    var familiasSuspendidas = Model.Count(f => f.Estado == EstadoFamilia.Suspendido);
+    var totalBeneficiarios = Model.Sum(f => f.CantidadIntegrantes);
 }
 
-<div class="d-flex justify-content-between align-items-center mb-4">
+<!-- Encabezado Principal & Breadcrumbs -->
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
     <div>
-        <h2 class="fw-bold mb-1"><i class="bi bi-people me-2"></i>Familias Beneficiarias</h2>
-        <p class="text-muted mb-0">Gestión de legajos familiares y asignación de asistencia</p>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-1 small">
+                <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index" class="text-decoration-none text-muted">Inicio</a></li>
+                <li class="breadcrumb-item text-muted">Beneficiarios</li>
+                <li class="breadcrumb-item active text-dark fw-semibold" aria-current="page">Familias</li>
+            </ol>
+        </nav>
+        <h2 class="fw-bold mb-1 text-dark">
+            <i class="bi bi-people-fill text-success me-2"></i>Familias Beneficiarias
+        </h2>
+        <p class="text-secondary mb-0">Padrón social de hogares, legajos familiares y asignación de asistencia alimentaria.</p>
     </div>
-    <a asp-action="Create" class="btn btn-emerald">
-        <i class="bi bi-plus-lg me-1"></i> Nueva Familia
-    </a>
+    <div>
+        <a asp-action="Create" class="btn btn-success rounded-pill shadow-sm px-4 py-2 fw-semibold">
+            <i class="bi bi-person-plus-fill me-2"></i>Nueva Familia
+        </a>
+    </div>
 </div>
 
-<partial name="_Alertas" />
+<!-- Panel de Métricas / KPIs Rápidos -->
+<div class="row g-3 mb-4">
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="card border-0 shadow-sm rounded-4 p-3 bg-white h-100">
+            <div class="d-flex align-items-center gap-3">
+                <div class="rounded-circle bg-success bg-opacity-10 p-3 text-success d-flex align-items-center justify-content-center" style="width: 52px; height: 52px;">
+                    <i class="bi bi-houses-fill fs-4"></i>
+                </div>
+                <div>
+                    <span class="text-muted small fw-semibold text-uppercase d-block">Hogares Registrados</span>
+                    <span class="fs-4 fw-bold text-dark">@totalFamilias</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="card border-0 shadow-sm rounded-4 p-3 bg-white h-100">
+            <div class="d-flex align-items-center gap-3">
+                <div class="rounded-circle bg-emerald bg-opacity-10 p-3 text-emerald d-flex align-items-center justify-content-center" style="width: 52px; height: 52px; background-color: rgba(5, 150, 105, 0.1); color: #059669;">
+                    <i class="bi bi-check-circle-fill fs-4"></i>
+                </div>
+                <div>
+                    <span class="text-muted small fw-semibold text-uppercase d-block">Familias Activas</span>
+                    <span class="fs-4 fw-bold text-success">@familiasActivas</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="card border-0 shadow-sm rounded-4 p-3 bg-white h-100">
+            <div class="d-flex align-items-center gap-3">
+                <div class="rounded-circle bg-warning bg-opacity-10 p-3 text-warning-emphasis d-flex align-items-center justify-content-center" style="width: 52px; height: 52px;">
+                    <i class="bi bi-pause-circle-fill fs-4 text-warning"></i>
+                </div>
+                <div>
+                    <span class="text-muted small fw-semibold text-uppercase d-block">En Revisión / Suspendidas</span>
+                    <span class="fs-4 fw-bold text-warning-emphasis">@familiasSuspendidas</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="card border-0 shadow-sm rounded-4 p-3 bg-white h-100">
+            <div class="d-flex align-items-center gap-3">
+                <div class="rounded-circle bg-primary bg-opacity-10 p-3 text-primary d-flex align-items-center justify-content-center" style="width: 52px; height: 52px;">
+                    <i class="bi bi-people-fill fs-4"></i>
+                </div>
+                <div>
+                    <span class="text-muted small fw-semibold text-uppercase d-block">Personas Cubiertas</span>
+                    <span class="fs-4 fw-bold text-primary">@totalBeneficiarios</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
 <!-- Barra de Filtros y Búsqueda -->
-<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-    <form method="get" asp-action="Index" class="d-flex gap-2 align-items-center flex-wrap">
-        <!-- Preservar el filtro de estado al buscar -->
+<div class="card border-0 shadow-sm rounded-4 p-3 bg-white mb-4">
+    <form method="get" asp-action="Index" class="row g-2 align-items-center">
         <input type="hidden" name="mostrarTodos" value="@(mostrarTodos.ToString().ToLower())" />
 
         <!-- Campo de Búsqueda -->
-        <div class="input-group input-group-sm" style="max-width: 340px;">
-            <span class="input-group-text bg-light text-muted border-end-0">
-                <i class="bi bi-search"></i>
-            </span>
-            <input type="text"
-                   name="busqueda"
-                   class="form-control border-start-0 ps-0"
-                   placeholder="Buscar por nombre, apellido o DNI..."
-                   value="@busqueda" />
-
-            @if (!string.IsNullOrWhiteSpace(busqueda))
-            {
-                <a asp-action="Index" asp-route-mostrarTodos="@mostrarTodos" class="btn btn-outline-secondary" title="Limpiar búsqueda">
-                    <i class="bi bi-x-lg"></i>
-                </a>
-            }
-            <button class="btn btn-outline-secondary" type="submit">Buscar</button>
+        <div class="col-12 col-md-6 col-lg-5">
+            <div class="input-group">
+                <span class="input-group-text bg-light border-end-0 text-muted">
+                    <i class="bi bi-search"></i>
+                </span>
+                <input type="text"
+                       name="busqueda"
+                       class="form-control bg-light border-start-0 ps-0"
+                       placeholder="Buscar por nombre, apellido o DNI del titular..."
+                       value="@busqueda" />
+                @if (!string.IsNullOrWhiteSpace(busqueda))
+                {
+                    <a asp-action="Index" asp-route-mostrarTodos="@mostrarTodos" class="btn btn-light border-start-0 text-muted" title="Limpiar filtro">
+                        <i class="bi bi-x-circle-fill"></i>
+                    </a>
+                }
+                <button class="btn btn-outline-secondary px-3" type="submit">Buscar</button>
+            </div>
         </div>
 
-        <!-- Botones de Filtro por Estado (mantienen la búsqueda actual) -->
-        <div class="btn-group" role="group" aria-label="Filtro por Estado">
-            <a asp-action="Index"
-               asp-route-mostrarTodos="false"
-               asp-route-busqueda="@busqueda"
-               class="btn btn-sm @(!mostrarTodos ? "btn-outline-success active fw-semibold" : "btn-outline-secondary")">
-                <i class="bi bi-check2-circle me-1"></i> Solo Activas
-            </a>
-            <a asp-action="Index"
-               asp-route-mostrarTodos="true"
-               asp-route-busqueda="@busqueda"
-               class="btn btn-sm @(mostrarTodos ? "btn-success text-white fw-semibold" : "btn-outline-secondary")">
-                <i class="bi bi-inbox me-1"></i> Ver Todas (incluye inactivas)
-            </a>
+        <!-- Filtro por Estado (Pills) -->
+        <div class="col-12 col-md-6 col-lg-7 d-flex justify-content-md-end gap-2 flex-wrap">
+            <div class="btn-group p-1 bg-light rounded-pill border" role="group" aria-label="Filtro de Estado">
+                <a asp-action="Index"
+                   asp-route-busqueda="@busqueda"
+                   class="btn btn-sm rounded-pill px-3 py-1 fw-semibold @(!estadoFiltro.HasValue && !mostrarTodos ? "btn-success text-white shadow-sm" : "text-secondary")">
+                    <i class="bi bi-check-circle me-1"></i> Solo Activas
+                </a>
+                <a asp-action="Index"
+                   asp-route-estado="@EstadoFamilia.Suspendido"
+                   asp-route-busqueda="@busqueda"
+                   class="btn btn-sm rounded-pill px-3 py-1 fw-semibold @(estadoFiltro == EstadoFamilia.Suspendido ? "btn-warning text-dark shadow-sm" : "text-secondary")">
+                    <i class="bi bi-pause-circle me-1"></i> Suspendidas
+                </a>
+                <a asp-action="Index"
+                   asp-route-mostrarTodos="true"
+                   asp-route-busqueda="@busqueda"
+                   class="btn btn-sm rounded-pill px-3 py-1 fw-semibold @(mostrarTodos && !estadoFiltro.HasValue ? "btn-secondary text-white shadow-sm" : "text-secondary")">
+                    <i class="bi bi-people me-1"></i> Todas (@totalFamilias)
+                </a>
+            </div>
         </div>
     </form>
-
-    <span class="text-secondary small">
-        Total de registros: <strong>@Model.Count()</strong>
-    </span>
 </div>
 
-<div class="card border-0 shadow-sm">
-    <div class="card-body p-0">
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-                <thead class="table-light">
+<!-- Tabla Principal de Familias -->
+<div class="card border-0 shadow-sm rounded-4 overflow-hidden bg-white mb-4">
+    <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <span class="fw-semibold text-secondary">
+            <i class="bi bi-person-lines-fill me-2 text-success"></i>Padrón de Legajos Familiares (@totalFamilias)
+        </span>
+        <div class="d-flex gap-2">
+            <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-3 py-2">
+                <i class="bi bi-check-circle-fill me-1"></i> @familiasActivas Activas
+            </span>
+            @if (familiasSuspendidas > 0)
+            {
+                <span class="badge bg-warning bg-opacity-10 text-warning-emphasis rounded-pill px-3 py-2">
+                    <i class="bi bi-pause-circle-fill me-1 text-warning"></i> @familiasSuspendidas Suspendidas
+                </span>
+            }
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light text-secondary small text-uppercase">
+                <tr>
+                    <th class="ps-4">Titular / Hogar</th>
+                    <th>Documento</th>
+                    <th class="text-center">Grupo Familiar</th>
+                    <th>Contacto</th>
+                    <th>Estado</th>
+                    <th class="text-end pe-4">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (!Model.Any())
+                {
                     <tr>
-                        <th>Titular</th>
-                        <th>DNI Titular</th>
-                        <th class="text-center">Integrantes</th>
-                        <th>Teléfono</th>
-                        <th>Estado</th>
-                        <th class="text-end">Acciones</th>
+                        <td colspan="6" class="text-center py-5">
+                            <div class="py-4">
+                                <div class="rounded-circle bg-light p-3 text-secondary d-inline-flex align-items-center justify-content-center mb-3" style="width: 70px; height: 70px;">
+                                    <i class="bi bi-people fs-1 text-muted"></i>
+                                </div>
+                                <h5 class="fw-bold text-dark mb-1">No se encontraron legajos familiares</h5>
+                                <p class="text-muted small mb-3 mx-auto" style="max-width: 440px;">
+                                    No hay hogares que coincidan con los criterios de búsqueda o el filtro de estado seleccionado.
+                                </p>
+                                <div class="d-flex justify-content-center gap-2">
+                                    <a asp-action="Create" class="btn btn-success rounded-pill px-4 shadow-sm fw-semibold">
+                                        <i class="bi bi-person-plus-fill me-1"></i> Registrar Nueva Familia
+                                    </a>
+                                    @if (!string.IsNullOrWhiteSpace(busqueda) || estadoFiltro.HasValue || mostrarTodos)
+                                    {
+                                        <a asp-action="Index" class="btn btn-outline-secondary rounded-pill px-3 shadow-sm fw-semibold">
+                                            <i class="bi bi-arrow-counterclockwise me-1"></i> Ver Activas
+                                        </a>
+                                    }
+                                </div>
+                            </div>
+                        </td>
                     </tr>
-                </thead>
-                <tbody>
-                    @if (!Model.Any())
+                }
+                else
+                {
+                    @foreach (var item in Model)
                     {
+                        var iniciales = $"{(string.IsNullOrWhiteSpace(item.NombreTitular) ? "F" : item.NombreTitular[0].ToString())}{(string.IsNullOrWhiteSpace(item.ApellidoTitular) ? "" : item.ApellidoTitular[0].ToString())}".ToUpper();
+                        var kitSugerido = item.CantidadIntegrantes <= 3 ? "Kit Básico" : "Kit Familiar";
+
                         <tr>
-                            <td colspan="6" class="text-center py-4 text-muted">
-                                No se encontraron legajos familiares con los criterios ingresados.
+                            <!-- Titular con Avatar -->
+                            <td class="ps-4 py-3">
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="rounded-circle bg-success bg-opacity-10 text-success d-flex align-items-center justify-content-center fw-bold shadow-sm flex-shrink-0"
+                                         style="width: 44px; height: 44px; font-size: 0.95rem;">
+                                        @iniciales
+                                    </div>
+                                    <div>
+                                        <div class="fw-bold text-dark">@item.ApellidoTitular, @item.NombreTitular</div>
+                                        <small class="text-muted d-block text-truncate" style="max-width: 260px;" title="@item.Direccion">
+                                            <i class="bi bi-geo-alt me-1 text-secondary"></i>@item.Direccion
+                                        </small>
+                                    </div>
+                                </div>
                             </td>
-                        </tr>
-                    }
-                    else
-                    {
-                        @foreach (var item in Model)
-                        {
-                            <tr>
-                                <td>
-                                    <div class="fw-bold text-dark">@item.ApellidoTitular, @item.NombreTitular</div>
-                                </td>
-                                <!-- Columna DNI Titular -->
-                                <td class="text-danger fw-medium">
-                                    @item.DniTitular.FormatearDni()
-                                </td>
-                                <td class="text-center">
-                                    <span class="badge bg-light text-dark border">
-                                        <i class="bi bi-person-fill text-muted me-1"></i>@item.CantidadIntegrantes
+
+                            <!-- Documento DNI -->
+                            <td>
+                                <span class="badge bg-light text-dark border font-monospace px-2 py-1" style="font-size: 0.85rem;">
+                                    <i class="bi bi-card-text me-1 text-muted"></i>@item.DniTitular.FormatearDni()
+                                </span>
+                            </td>
+
+                            <!-- Grupo Familiar y Kit Asignado -->
+                            <td class="text-center">
+                                <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-3 py-1 d-inline-flex align-items-center gap-1">
+                                    <i class="bi bi-people-fill"></i>
+                                    <span>@item.CantidadIntegrantes @(item.CantidadIntegrantes == 1 ? "persona" : "personas")</span>
+                                </span>
+                                <small class="text-muted d-block mt-1" style="font-size: 0.72rem;">
+                                    <i class="bi bi-box-seam me-1"></i>Sugerido: @kitSugerido
+                                </small>
+                            </td>
+
+                            <!-- Contacto / Teléfono -->
+                            <td>
+                                @if (!string.IsNullOrWhiteSpace(item.Telefono))
+                                {
+                                    <span class="text-secondary small">
+                                        <i class="bi bi-telephone text-muted me-1"></i>@item.Telefono.FormatearTelefono()
                                     </span>
-                                </td>
-                                <!-- Columna Teléfono -->
-                                <td>
-                                    @item.Telefono.FormatearTelefono()
-                                </td>
-                                <td>
-                                    @if (item.Estado == EstadoFamilia.Activo)
-                                    {
-                                        <span class="badge bg-success-subtle text-success border border-success-subtle">
-                                            <i class="bi bi-check-circle-fill me-1"></i>Activo
-                                        </span>
-                                    }
-                                    else
-                                    {
-                                        <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle">
-                                            <i class="bi bi-pause-circle-fill me-1"></i>Suspendido
-                                        </span>
-                                    }
-                                </td>
-                                <td class="text-end text-nowrap pe-3">
-                                    <div class="btn-group btn-group-sm" role="group" aria-label="Acciones de Legajo">
-                                        <!-- 1. Detalle -->
-                                        <a asp-action="Detalles" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary" title="Ver Detalle">
-                                            <i class="bi bi-eye"></i>
-                                        </a>
+                                }
+                                else
+                                {
+                                    <span class="text-muted small fst-italic">Sin teléfono</span>
+                                }
+                            </td>
 
-                                        <!-- 2. Editar -->
-                                        <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-secondary" title="Editar Legajo">
-                                            <i class="bi bi-pencil"></i>
-                                        </a>
+                            <!-- Estado con Badge Suave -->
+                            <td>
+                                @if (item.Estado == EstadoFamilia.Activo)
+                                {
+                                    <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-3 py-2">
+                                        <i class="bi bi-check-circle-fill me-1"></i>Activo
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-warning bg-opacity-10 text-warning-emphasis rounded-pill px-3 py-2">
+                                        <i class="bi bi-pause-circle-fill me-1 text-warning"></i>Suspendido
+                                    </span>
+                                }
+                            </td>
 
-                                        <!-- 3. Cambiar Estado / Toggle -->
+                            <!-- Botones de Acción -->
+                            <td class="text-end pe-4 text-nowrap">
+                                <div class="btn-group btn-group-sm" role="group" aria-label="Acciones de Legajo">
+                                    <!-- Ver Detalle -->
+                                    <a asp-action="Detalles" asp-route-id="@item.Id" class="btn btn-outline-primary border-0 rounded-circle p-2 mx-1 shadow-none" title="Ver Detalle y Asistencia">
+                                        <i class="bi bi-eye-fill fs-6"></i>
+                                    </a>
+
+                                    <!-- Editar -->
+                                    <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-outline-secondary border-0 rounded-circle p-2 mx-1 shadow-none" title="Editar Legajo">
+                                        <i class="bi bi-pencil-fill fs-6"></i>
+                                    </a>
+
+                                    <!-- Alternar Estado -->
+                                    <form asp-action="ToggleEstado" asp-route-id="@item.Id" method="post" class="d-inline m-0">
+                                        @Html.AntiForgeryToken()
                                         @if (item.Estado == EstadoFamilia.Activo)
                                         {
-                                            <form asp-action="ToggleEstado" asp-route-id="@item.Id" method="post" class="d-inline">
-                                                @Html.AntiForgeryToken()
-                                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Suspender Familia" onclick="return confirm('¿Está seguro de suspender a la familia @item.ApellidoTitular?');">
-                                                    <i class="bi bi-toggle-on"></i>
-                                                </button>
-                                            </form>
+                                            <button type="submit" class="btn btn-outline-warning border-0 rounded-circle p-2 mx-1 shadow-none"
+                                                    title="Suspender Familia (bloquea retiro de kits)"
+                                                    onclick="return confirm('¿Está seguro de suspender temporalmente el legajo de @item.ApellidoTitular? No podrá recibir paquetes asistenciales mientras esté suspendido.');">
+                                                <i class="bi bi-pause-circle text-warning fs-6"></i>
+                                            </button>
                                         }
                                         else
                                         {
-                                            <form asp-action="ToggleEstado" asp-route-id="@item.Id" method="post" class="d-inline">
-                                                @Html.AntiForgeryToken()
-                                                <button type="submit" class="btn btn-sm btn-outline-success" title="Reactivar Familia" onclick="return confirm('¿Está seguro de activar a la familia @item.ApellidoTitular?');">
-                                                    <i class="bi bi-toggle-off"></i>
-                                                </button>
-                                            </form>
+                                            <button type="submit" class="btn btn-outline-success border-0 rounded-circle p-2 mx-1 shadow-none"
+                                                    title="Reactivar Legajo"
+                                                    onclick="return confirm('¿Reactivar el legajo familiar de @item.ApellidoTitular para habilitar la recepción de kits?');">
+                                                <i class="bi bi-play-circle text-success fs-6"></i>
+                                            </button>
                                         }
-                                    </div>
-                                </td>
-                            </tr>
-                        }
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
                     }
-                </tbody>
-            </table>
-        </div>
+                }
+            </tbody>
+        </table>
     </div>
 </div>

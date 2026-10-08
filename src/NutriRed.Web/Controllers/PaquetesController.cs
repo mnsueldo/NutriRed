@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using NutriRed.Domain.Entities;
 using NutriRed.Domain.Enums;
@@ -8,22 +10,26 @@ using NutriRed.Web.Models;
 
 namespace NutriRed.Web.Controllers;
 
+[Authorize]
 public class PaquetesController : Controller
 {
     private readonly IPaqueteService _paqueteService;
     private readonly IFamiliaService _familiaService;
     private readonly IProductoService _productoService;
+    private readonly UserManager<ApplicationUser> _userManager;
     private readonly ILogger<PaquetesController> _logger;
 
     public PaquetesController(
         IPaqueteService paqueteService,
         IFamiliaService familiaService,
         IProductoService productoService,
+        UserManager<ApplicationUser> userManager,
         ILogger<PaquetesController> logger)
     {
         _paqueteService = paqueteService;
         _familiaService = familiaService;
         _productoService = productoService;
+        _userManager = userManager;
         _logger = logger;
     }
 
@@ -70,10 +76,14 @@ public class PaquetesController : Controller
     {
         await CargarListasEnViewBagAsync();
 
+        var user = await _userManager.GetUserAsync(User);
+        var nombreOperador = user?.NombreCompleto ?? User.Identity?.Name ?? "Operador Armado";
+
         var model = new ArmarPaqueteViewModel
         {
             FamiliaId = familiaId,
-            TipoPaqueteId = tipoPaqueteId
+            TipoPaqueteId = tipoPaqueteId,
+            UsuarioArmadorId = nombreOperador
         };
 
         if (familiaId.HasValue && familiaId.Value > 0)
@@ -205,11 +215,16 @@ public class PaquetesController : Controller
             return View(nameof(Armar), model);
         }
 
+        // Seguridad e inmutabilidad: resolver el operador autenticado en sesión
+        var user = await _userManager.GetUserAsync(User);
+        var nombreOperador = user?.NombreCompleto ?? User.Identity?.Name ?? "Operador Armado";
+        model.UsuarioArmadorId = nombreOperador;
+
         var request = new ConfirmarArmadoPaqueteRequest
         {
             FamiliaId = model.FamiliaId!.Value,
             TipoPaqueteId = model.TipoPaqueteId!.Value,
-            UsuarioArmadorId = string.IsNullOrWhiteSpace(model.UsuarioArmadorId) ? "operador_armado" : model.UsuarioArmadorId.Trim(),
+            UsuarioArmadorId = nombreOperador,
             Items = model.Items!.Select(i => new ItemArmadoRequest
             {
                 ProductoId = i.ProductoId,

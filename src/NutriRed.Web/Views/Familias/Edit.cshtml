@@ -1,159 +1,189 @@
-﻿@model NutriRed.Domain.Entities.FamiliaBeneficiaria
+@model NutriRed.Domain.Entities.FamiliaBeneficiaria
 
 @{
-    ViewData["Title"] = "Editar Familia Beneficiaria";
+    ViewData["Title"] = "Editar Legajo Familiar";
+    Layout = "_Layout";
 }
 
-<div class="container-fluid px-4 py-3">
-    <!-- Encabezado de la Sección -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h2 class="fw-bold mb-0 text-dark">Editar Legajo Familiar</h2>
-            <p class="text-muted small mb-0">Actualización de datos generales del titular y grupo familiar.</p>
-        </div>
-        <a asp-action="Index" class="btn btn-outline-secondary">
-            <i class="bi bi-arrow-left me-1"></i> Volver al Listado
+<!-- Encabezado de la Vista -->
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div>
+        <h2 class="fw-bold mb-1 text-dark">
+            <i class="bi bi-pencil-square text-success me-2"></i>Editar Legajo Familiar #@Model.Id
+        </h2>
+        <p class="text-secondary mb-0">Actualización de datos del titular, grupo familiar y estado asistencial.</p>
+    </div>
+    <div>
+        <a asp-action="Index" class="btn btn-outline-secondary rounded-pill px-4 shadow-sm">
+            <i class="bi bi-arrow-left me-1"></i> Volver al Padrón
         </a>
     </div>
+</div>
 
-    <div class="row">
-        <!-- Formulario Principal -->
-        <div class="col-lg-8 col-xl-7">
-            <div class="card shadow-sm border-0 rounded-3">
-                <div class="card-header bg-white py-3 border-bottom">
-                    <h5 class="card-title fw-bold text-success mb-0">
-                        <i class="bi bi-pencil-square me-2"></i>Formulario de Edición
-                    </h5>
-                </div>
-                <div class="card-body p-4">
-                    <form asp-action="Edit" method="post">
-                        @Html.AntiForgeryToken()
+<div class="row g-4">
+    <!-- Formulario Principal de Edición -->
+    <div class="col-12 col-lg-8">
+        <div class="card border-0 shadow-sm rounded-4 overflow-hidden bg-white">
+            <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                <span class="fw-semibold text-secondary">
+                    <i class="bi bi-file-earmark-person me-2 text-success"></i>Formulario de Modificación
+                </span>
+                <span class="badge bg-light text-secondary border font-monospace">Legajo ID: #@Model.Id</span>
+            </div>
 
-                        <!-- Campos Ocultos para Mantener la Integridad del Registro -->
-                        <input type="hidden" asp-for="Id" />
-                        <input type="hidden" asp-for="FechaAlta" />
+            <div class="card-body p-4 p-md-5">
+                <form asp-action="Edit" method="post" id="formEditarFamilia">
+                    @Html.AntiForgeryToken()
 
-                        <!-- Resumen de Errores Generales -->
-                        <div asp-validation-summary="ModelOnly" class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
-                            <strong><i class="bi bi-exclamation-triangle-fill me-2"></i>Por favor corrija los siguientes errores:</strong>
-                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    <input type="hidden" asp-for="Id" />
+                    <input type="hidden" asp-for="FechaAlta" />
+
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger rounded-3 small py-2 px-3 mb-4" role="alert"></div>
+
+                    <!-- SECCIÓN 1: DATOS DEL TITULAR -->
+                    <div class="d-flex align-items-center gap-2 border-bottom pb-2 mb-3">
+                        <i class="bi bi-person-vcard text-success fs-5"></i>
+                        <h5 class="fw-bold text-dark mb-0">Datos del Titular Responsable</h5>
+                    </div>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label asp-for="NombreTitular" class="form-label fw-semibold text-secondary">Nombre del Titular</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light text-muted"><i class="bi bi-person"></i></span>
+                                <input asp-for="NombreTitular" class="form-control" placeholder="Ej: Mario Alberto" />
+                            </div>
+                            <span asp-validation-for="NombreTitular" class="text-danger small"></span>
                         </div>
 
-                        <div class="row g-3">
-                            <!-- DNI del Titular -->
-                            <div class="col-md-6">
-                                <label asp-for="DniTitular" class="form-label fw-semibold"></label>
-                                <div class="input-group">
-                                    <span class="input-group-text bg-light text-muted"><i class="bi bi-card-heading"></i></span>
-                                    <input asp-for="DniTitular" class="form-control" placeholder="Ej: 38456789" />
-                                </div>
-                                <span asp-validation-for="DniTitular" class="text-danger small"></span>
-                            </div>
-
-                            <!-- Estado del Registro -->
-                            <div class="col-md-6">
-                                <label asp-for="Estado" class="form-label fw-semibold"></label>
-                                <select asp-for="Estado" asp-items="Html.GetEnumSelectList<NutriRed.Domain.Enums.EstadoFamilia>()" class="form-select">
-                                </select>
-                                <span asp-validation-for="Estado" class="text-danger small"></span>
-                            </div>
-
-                            <!-- Nombre del Titular -->
-                            <div class="col-md-6">
-                                <label asp-for="NombreTitular" class="form-label fw-semibold"></label>
-                                <input asp-for="NombreTitular" class="form-control" placeholder="Ej: María" />
-                                <span asp-validation-for="NombreTitular" class="text-danger small"></span>
-                            </div>
-
-                            <!-- Apellido del Titular -->
-                            <div class="col-md-6">
-                                <label asp-for="ApellidoTitular" class="form-label fw-semibold"></label>
+                        <div class="col-md-6">
+                            <label asp-for="ApellidoTitular" class="form-label fw-semibold text-secondary">Apellido del Titular</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light text-muted"><i class="bi bi-person-badge"></i></span>
                                 <input asp-for="ApellidoTitular" class="form-control" placeholder="Ej: González" />
-                                <span asp-validation-for="ApellidoTitular" class="text-danger small"></span>
                             </div>
-
-                            <!-- Teléfono -->
-                            <div class="col-md-6">
-                                <label asp-for="Telefono" class="form-label fw-semibold"></label>
-                                <div class="input-group">
-                                    <span class="input-group-text bg-light text-muted"><i class="bi bi-telephone"></i></span>
-                                    <input asp-for="Telefono" class="form-control" placeholder="Ej: +541112345678" />
-                                </div>
-                                <span asp-validation-for="Telefono" class="text-danger small"></span>
-                            </div>
-
-                            <!-- Cantidad de Integrantes -->
-                            <div class="col-md-6">
-                                <label asp-for="CantidadIntegrantes" class="form-label fw-semibold"></label>
-                                <div class="input-group">
-                                    <span class="input-group-text bg-light text-muted"><i class="bi bi-people"></i></span>
-                                    <input asp-for="CantidadIntegrantes" class="form-control" type="number" min="1" max="30" />
-                                </div>
-                                <span asp-validation-for="CantidadIntegrantes" class="text-danger small"></span>
-                            </div>
-
-                            <!-- Dirección -->
-                            <div class="col-12">
-                                <label asp-for="Direccion" class="form-label fw-semibold"></label>
-                                <div class="input-group">
-                                    <span class="input-group-text bg-light text-muted"><i class="bi bi-geo-alt"></i></span>
-                                    <input asp-for="Direccion" class="form-control" placeholder="Ej: Av. San Martín 1234, Deporte 2" />
-                                </div>
-                                <span asp-validation-for="Direccion" class="text-danger small"></span>
-                            </div>
+                            <span asp-validation-for="ApellidoTitular" class="text-danger small"></span>
                         </div>
 
-                        <hr class="my-4" />
-
-                        <!-- Botones de Acción -->
-                        <div class="d-flex justify-content-end gap-2">
-                            <a asp-action="Index" class="btn btn-light border px-4">Cancelar</a>
-                            <button type="submit" class="btn btn-success px-4 fw-semibold">
-                                <i class="bi bi-check-circle me-1"></i> Guardar Cambios
-                            </button>
+                        <div class="col-md-6">
+                            <label asp-for="DniTitular" class="form-label fw-semibold text-secondary">DNI del Titular</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light text-muted"><i class="bi bi-card-heading"></i></span>
+                                <input asp-for="DniTitular" class="form-control font-monospace" placeholder="Ej: 28456789" />
+                            </div>
+                            <span asp-validation-for="DniTitular" class="text-danger small"></span>
+                            <small class="text-muted" style="font-size: 0.75rem;">Documento verificado en el padrón social.</small>
                         </div>
-                    </form>
-                </div>
+
+                        <div class="col-md-6">
+                            <label asp-for="CantidadIntegrantes" class="form-label fw-semibold text-secondary">Cantidad de Integrantes</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light text-muted"><i class="bi bi-people"></i></span>
+                                <input asp-for="CantidadIntegrantes" class="form-control" type="number" min="1" max="25" id="inputIntegrantesEdit" />
+                            </div>
+                            <span asp-validation-for="CantidadIntegrantes" class="text-danger small"></span>
+                        </div>
+                    </div>
+
+                    <!-- SECCIÓN 2: CONTACTO Y LOCALIZACIÓN -->
+                    <div class="d-flex align-items-center gap-2 border-bottom pb-2 mb-3">
+                        <i class="bi bi-geo-alt text-success fs-5"></i>
+                        <h5 class="fw-bold text-dark mb-0">Contacto y Domicilio</h5>
+                    </div>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label asp-for="Telefono" class="form-label fw-semibold text-secondary">Teléfono de Contacto</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light text-muted"><i class="bi bi-telephone"></i></span>
+                                <input asp-for="Telefono" class="form-control" placeholder="Ej: 11-4567-8901" />
+                            </div>
+                            <span asp-validation-for="Telefono" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label asp-for="Estado" class="form-label fw-semibold text-secondary">Estado del Legajo</label>
+                            <select asp-for="Estado" asp-items="Html.GetEnumSelectList<NutriRed.Domain.Enums.EstadoFamilia>()" class="form-select bg-light fw-semibold">
+                            </select>
+                            <span asp-validation-for="Estado" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-12">
+                            <label asp-for="Direccion" class="form-label fw-semibold text-secondary">Dirección / Domicilio del Hogar</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light text-muted"><i class="bi bi-geo-alt"></i></span>
+                                <input asp-for="Direccion" class="form-control" placeholder="Ej: Calle 14 nro 543, Barrio Esperanza" />
+                            </div>
+                            <span asp-validation-for="Direccion" class="text-danger small"></span>
+                        </div>
+                    </div>
+
+                    <!-- BOTONES DE ACCIÓN -->
+                    <div class="d-flex justify-content-end align-items-center gap-2 pt-3 border-top">
+                        <a asp-action="Index" class="btn btn-light rounded-pill px-4 border">
+                            <i class="bi bi-arrow-left me-1"></i> Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-success rounded-pill px-5 shadow-sm fw-semibold">
+                            <i class="bi bi-check-circle me-1"></i> Guardar Cambios
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
+    </div>
 
-        <!-- Panel Lateral de Información y Auditoría -->
-        <div class="col-lg-4 col-xl-5 mt-4 mt-lg-0">
-            <div class="card shadow-sm border-0 rounded-3 bg-light">
-                <div class="card-body p-4">
-                    <h6 class="fw-bold text-secondary mb-3">
-                        <i class="bi bi-info-circle me-2"></i>Información del Legajo
-                    </h6>
-                    <ul class="list-unstyled mb-0 text-muted small">
-                        <li class="mb-2"><strong>ID Interno:</strong> #@Model.Id</li>
-                        <li class="mb-2"><strong>Fecha de Registro:</strong> @Model.FechaAlta.ToString("dd/MM/yyyy HH:mm") hs</li>
-                        <li class="mb-3">
-                            <strong>Estado Actual:</strong>
-                            @if (Model.Estado == NutriRed.Domain.Enums.EstadoFamilia.Activo)
-                            {
-                                <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-20">Activo</span>
-                            }
-                            else
-                            {
-                                <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-20">Inactivo</span>
-                            }
-                        </li>
-                    </ul>
-                    <hr />
-                    <h6 class="fw-bold text-secondary mb-2">Reglas de Negocio</h6>
-                    <ul class="text-muted small ps-3 mb-0">
-                        <li>El <strong>DNI</strong> se verifica contra la base de datos para no duplicar titulares.</li>
-                        <li><strong>Nombre y Apellido</strong> no permiten números ni caracteres especiales.</li>
-                        <li>Cambiar el estado a <em>Inactivo</em> deshabilita la asignación de nuevos paquetes a la familia.</li>
-                    </ul>
-                </div>
-            </div>
+    <!-- Panel Lateral de Información y Auditoría -->
+    <div class="col-12 col-lg-4">
+        <div class="card border-0 shadow-sm rounded-4 p-4 bg-white mb-4">
+            <h6 class="fw-bold text-dark mb-3">
+                <i class="bi bi-shield-check text-success me-2"></i>Auditoría del Legajo
+            </h6>
+            <ul class="list-unstyled mb-0 small">
+                <li class="mb-3 pb-2 border-bottom d-flex justify-content-between align-items-center">
+                    <span class="text-secondary">Identificador:</span>
+                    <span class="font-monospace fw-bold text-dark">#@Model.Id</span>
+                </li>
+                <li class="mb-3 pb-2 border-bottom d-flex justify-content-between align-items-center">
+                    <span class="text-secondary">Fecha de Alta:</span>
+                    <span class="fw-semibold text-dark">@Model.FechaAlta.ToString("dd/MM/yyyy HH:mm") hs</span>
+                </li>
+                <li class="mb-3 pb-2 border-bottom d-flex justify-content-between align-items-center">
+                    <span class="text-secondary">Estado Actual:</span>
+                    @if (Model.Estado == NutriRed.Domain.Enums.EstadoFamilia.Activo)
+                    {
+                        <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-3 py-1">
+                            <i class="bi bi-check-circle-fill me-1"></i>Activo
+                        </span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-warning bg-opacity-10 text-warning-emphasis rounded-pill px-3 py-1">
+                            <i class="bi bi-pause-circle-fill me-1 text-warning"></i>Suspendido
+                        </span>
+                    }
+                </li>
+                <li class="mb-0 d-flex justify-content-between align-items-center">
+                    <span class="text-secondary">Kit Asignado:</span>
+                    <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-3 py-1">
+                        @(Model.CantidadIntegrantes <= 3 ? "Kit Básico" : "Kit Familiar")
+                    </span>
+                </li>
+            </ul>
+        </div>
+
+        <div class="card border-0 shadow-sm rounded-4 p-4 bg-light">
+            <h6 class="fw-bold text-dark mb-2">
+                <i class="bi bi-info-circle text-primary me-2"></i>Reglas de Asistencia
+            </h6>
+            <ul class="text-secondary small ps-3 mb-0">
+                <li class="mb-2">El <strong>DNI</strong> se valida contra el padrón general para evitar duplicación de hogares.</li>
+                <li class="mb-2">Familias con <strong>1 a 3 integrantes</strong> reciben Kit Básico; con <strong>4 o más</strong> reciben Kit Familiar.</li>
+                <li>Si el legajo se cambia a <strong>Suspendido</strong>, el sistema bloqueará automáticamente el armado y despacho de paquetes.</li>
+            </ul>
         </div>
     </div>
 </div>
 
 @section Scripts {
-    @{
-        await Html.RenderPartialAsync("_ValidationScriptsPartial");
-    }
+    <partial name="_ValidationScriptsPartial" />
 }
