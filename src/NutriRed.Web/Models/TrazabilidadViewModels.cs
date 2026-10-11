@@ -11,12 +11,39 @@ namespace NutriRed.Web.Models
         public DateTime? FechaHasta { get; set; }
         public int? DonanteId { get; set; }
         public int? TipoPaqueteId { get; set; }
+        public string? VoluntarioId { get; set; } // Nuevo filtro de voluntario
 
         // Listas para los desplegables (Selects)
         public List<SelectListItem> Donantes { get; set; } = new();
         public List<SelectListItem> TiposPaquete { get; set; } = new();
+        public List<SelectListItem> Voluntarios { get; set; } = new(); // Lista desplegable
 
         public List<TrazabilidadEntregaGroupDto> EntregasGrouped { get; set; } = new();
+
+        // KPIs para Trazabilidad
+        public int TotalEntregas => EntregasGrouped.Count;
+
+        // Suma total de unidades/kilos/litros de todos los ítems entregados
+        public decimal TotalAlimentosEntregados => EntregasGrouped
+            .SelectMany(g => g.Items)
+            .Sum(i => i.Cantidad);
+
+        // Cantidad total de ítems/productos físicos en los paquetes
+        public int TotalItemsEntregados => EntregasGrouped
+            .SelectMany(g => g.Items)
+            .Count();
+
+        public int TotalFamiliasImpactadas => EntregasGrouped
+            .Select(g => g.FamiliaId)
+            .Distinct()
+            .Count();
+
+        public int TotalDonantesInvolucrados => EntregasGrouped
+            .SelectMany(g => g.Items)
+            .Select(i => i.DonanteId)
+            .Where(id => id > 0)
+            .Distinct()
+            .Count();
     }
 
     public class TrazabilidadEntregaGroupDto
@@ -43,6 +70,7 @@ namespace NutriRed.Web.Models
         public int LoteId { get; set; }
         public string NumeroLote { get; set; } = string.Empty;
         public string NombreProducto { get; set; } = string.Empty;
+        public string CodigoEan { get; set; } = string.Empty;
         public DateTime? FechaVencimiento { get; set; }
         public decimal Cantidad { get; set; }
         public string UnidadMedida { get; set; } = string.Empty;

@@ -3,41 +3,88 @@
     ViewData["Title"] = "Módulo de Trazabilidad";
 }
 
-<!-- Encabezado -->
+<!-- CSS Personalizado Integrado para Ajustes Finos de Armonía -->
+<style>
+    .filter-card {
+        background-color: #ffffff;
+        border: 1px solid rgba(0, 0, 0, 0.05) !important;
+    }
+
+    .form-control-custom, .form-select-custom, .input-group-text-custom {
+        padding-top: 0.625rem;
+        padding-bottom: 0.625rem;
+        font-size: 0.9rem;
+    }
+
+    .kpi-card {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        border: 1px solid rgba(0, 0, 0, 0.04) !important;
+    }
+
+        .kpi-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.08) !important;
+        }
+
+    .delivery-card {
+        border: 1px solid rgba(0, 0, 0, 0.06) !important;
+        border-left: 4px solid #198754 !important;
+        transition: box-shadow 0.2s ease;
+    }
+
+        .delivery-card:hover {
+            box-shadow: 0 0.5rem 1.25rem rgba(0, 0, 0, 0.06) !important;
+        }
+
+    .btn-toggle-detail {
+        transition: all 0.2s ease-in-out;
+    }
+
+        .btn-toggle-detail[aria-expanded="true"] {
+            background-color: #0d6efd;
+            color: #ffffff;
+            border-color: #0d6efd;
+        }
+</style>
+
+<!-- Encabezado de Página -->
 <div class="d-flex align-items-center justify-content-between mb-4">
     <div>
-        <h2 class="fw-bold text-dark mb-1">
-            <i class="bi bi-diagram-3-fill text-success me-2"></i>Módulo de Trazabilidad
+        <h2 class="fw-bold text-dark mb-1 d-flex align-items-center gap-2">
+            <span class="bg-success bg-opacity-10 text-success p-2 rounded-3 d-inline-flex align-items-center justify-content-center" style="width: 42px; height: 42px;">
+                <i class="bi bi-diagram-3-fill fs-4"></i>
+            </span>
+            Módulo de Trazabilidad
         </h2>
-        <p class="text-muted mb-0">Rastrea la cadena de custodia completa de los alimentos desde el donante hasta la familia receptora.</p>
+        <p class="text-muted mb-0 ms-1 small">Rastrea la cadena de custodia completa de los alimentos desde el donante hasta la familia receptora.</p>
     </div>
 </div>
 
-<!-- Panel Avanzado de Filtros y Búsqueda -->
-<form method="get" asp-action="Index" class="card border-0 shadow-sm rounded-4 p-4 mb-4 bg-white">
+<!-- Panel de Filtros Unificado -->
+<form method="get" asp-action="Index" class="card border-0 shadow-sm rounded-4 p-4 mb-4 filter-card">
     <div class="row g-3">
-        <!-- Fila 1: Búsqueda General -->
-        <div class="col-12 col-lg-6">
+        <!-- Fila 1: Buscador, Donante, Tipo de Kit y Voluntario -->
+        <div class="col-12 col-md-6 col-lg-3">
             <label class="form-label small fw-semibold text-secondary mb-1">
-                <i class="bi bi-search me-1"></i>Búsqueda por texto libre
+                <i class="bi bi-search me-1 text-success"></i>Búsqueda
             </label>
             <div class="input-group">
-                <span class="input-group-text bg-light border-end-0 rounded-start-3 text-muted"><i class="bi bi-qr-code-scan"></i></span>
+                <span class="input-group-text bg-light border-end-0 rounded-start-3 text-muted form-control-custom">
+                    <i class="bi bi-qr-code-scan"></i>
+                </span>
                 <input type="text" id="inputBusqueda" name="busqueda" value="@Model.Busqueda"
-                       class="form-control bg-light border-start-0 rounded-end-3"
-                       placeholder="Escriba para autocompletar (ej: gonz, PKG, Lote...)"
+                       class="form-control bg-light border-start-0 rounded-end-3 form-control-custom"
+                       placeholder="PKG, lote, apellido o DNI..."
                        list="sugerenciasList" autocomplete="off" />
-
                 <datalist id="sugerenciasList"></datalist>
             </div>
         </div>
 
-        <!-- Donante Desplegable -->
         <div class="col-12 col-md-6 col-lg-3">
             <label class="form-label small fw-semibold text-secondary mb-1">
-                <i class="bi bi-building me-1"></i>Filtrar por Donante
+                <i class="bi bi-building me-1 text-success"></i>Filtrar por Donante
             </label>
-            <select name="donanteId" class="form-select rounded-3">
+            <select name="donanteId" class="form-select rounded-3 form-select-custom bg-light">
                 <option value="">-- Todos los Donantes --</option>
                 @foreach (var item in Model.Donantes)
                 {
@@ -46,12 +93,11 @@
             </select>
         </div>
 
-        <!-- Tipo de Kit Desplegable -->
         <div class="col-12 col-md-6 col-lg-3">
             <label class="form-label small fw-semibold text-secondary mb-1">
-                <i class="bi bi-box me-1"></i>Tipo de Kit Nutricional
+                <i class="bi bi-box-seam me-1 text-success"></i>Tipo de Kit Nutricional
             </label>
-            <select name="tipoPaqueteId" class="form-select rounded-3">
+            <select name="tipoPaqueteId" class="form-select rounded-3 form-select-custom bg-light">
                 <option value="">-- Todos los Kits --</option>
                 @foreach (var item in Model.TiposPaquete)
                 {
@@ -60,111 +106,251 @@
             </select>
         </div>
 
-        <!-- Fila 2: Fechas y Botones -->
+        <div class="col-12 col-md-6 col-lg-3">
+            <label class="form-label small fw-semibold text-secondary mb-1">
+                <i class="bi bi-person-badge me-1 text-success"></i>Voluntario Despachador
+            </label>
+            <select name="voluntarioId" class="form-select rounded-3 form-select-custom bg-light">
+                <option value="">-- Todos los Voluntarios --</option>
+                @foreach (var item in Model.Voluntarios)
+                {
+                    <option value="@item.Value" selected="@(item.Value == Model.VoluntarioId)">@item.Text</option>
+                }
+            </select>
+        </div>
+
+        <!-- Fila 2: Fechas y Botones Perfectamente Alineados -->
         <div class="col-12 col-md-4 col-lg-3">
-            <label class="form-label small fw-semibold text-secondary mb-1"><i class="bi bi-calendar-event me-1"></i>Fecha Entrega Desde</label>
-            <input type="date" name="fechaDesde" value="@(Model.FechaDesde?.ToString("yyyy-MM-dd"))" class="form-control rounded-3" />
+            <label class="form-label small fw-semibold text-secondary mb-1">
+                <i class="bi bi-calendar-event me-1 text-success"></i>Fecha Entrega Desde
+            </label>
+            <input type="date" name="fechaDesde" value="@(Model.FechaDesde?.ToString("yyyy-MM-dd"))" class="form-control rounded-3 form-control-custom bg-light" />
         </div>
 
         <div class="col-12 col-md-4 col-lg-3">
-            <label class="form-label small fw-semibold text-secondary mb-1"><i class="bi bi-calendar-event me-1"></i>Fecha Entrega Hasta</label>
-            <input type="date" name="fechaHasta" value="@(Model.FechaHasta?.ToString("yyyy-MM-dd"))" class="form-control rounded-3" />
+            <label class="form-label small fw-semibold text-secondary mb-1">
+                <i class="bi bi-calendar-event me-1 text-success"></i>Fecha Entrega Hasta
+            </label>
+            <input type="date" name="fechaHasta" value="@(Model.FechaHasta?.ToString("yyyy-MM-dd"))" class="form-control rounded-3 form-control-custom bg-light" />
         </div>
 
         <div class="col-12 col-md-4 col-lg-6 d-flex align-items-end gap-2">
-            <button type="submit" class="btn btn-success rounded-3 fw-semibold flex-fill py-2">
-                <i class="bi bi-funnel-fill me-1"></i>Aplicar Filtros
+            <button type="submit" class="btn btn-success rounded-3 fw-semibold flex-fill form-control-custom d-flex align-items-center justify-content-center shadow-sm">
+                <i class="bi bi-funnel-fill me-2"></i>Aplicar Filtros
             </button>
-            <a asp-action="Index" class="btn btn-outline-secondary rounded-3 fw-semibold py-2" title="Limpiar Filtros">
+            <a asp-action="Index" class="btn btn-outline-secondary rounded-3 fw-semibold px-4 form-control-custom d-flex align-items-center justify-content-center" title="Limpiar Filtros">
                 <i class="bi bi-arrow-counterclockwise me-1"></i>Limpiar
             </a>
         </div>
     </div>
 </form>
 
-<!-- Resultados de Trazabilidad -->
+<!-- Contenido de Resultados -->
 @if (Model.EntregasGrouped != null && Model.EntregasGrouped.Any())
 {
-    <div class="d-flex align-items-center justify-content-between mb-3 px-1">
-        <span class="text-muted small">Se encontraron <strong>@Model.EntregasGrouped.Count</strong> entregas registradas en la trazabilidad.</span>
-    </div>
-
-    @foreach (var entrega in Model.EntregasGrouped)
-    {
-        <div class="card border-0 shadow-sm rounded-4 mb-4 bg-white overflow-hidden">
-            <!-- Header de Entrega -->
-            <div class="card-header bg-light border-0 py-3 px-4 d-flex flex-wrap justify-content-between align-items-center gap-2">
-                <div class="d-flex align-items-center gap-2">
-                    <span class="badge bg-primary fs-6 px-3 py-2 font-monospace">
-                        <i class="bi bi-box-seam me-1"></i>@entrega.CodigoPaquete
-                    </span>
-                    <span class="badge bg-light text-dark border px-3 py-2">
-                        Tipo: <strong>@entrega.TipoPaquete</strong>
-                    </span>
-                </div>
-                <div>
-                    <span class="badge bg-success bg-opacity-10 text-success border border-success-subtle px-3 py-2">
-                        <i class="bi bi-calendar-check me-1"></i>Entregado el @entrega.FechaEntrega.ToString("dd/MM/yyyy HH:mm")
-                    </span>
+    <!-- Panel de KPIs Informativos -->
+    <div class="row g-3 mb-4">
+        <!-- KPI 1: Total Entregas -->
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white h-100 kpi-card">
+                <div class="d-flex align-items-center">
+                    <div class="rounded-3 bg-primary bg-opacity-10 p-3 me-3 text-primary d-flex align-items-center justify-content-center" style="width: 52px; height: 52px;">
+                        <i class="bi bi-box-seam-fill fs-4"></i>
+                    </div>
+                    <div>
+                        <small class="text-muted fw-bold text-uppercase d-block mb-1" style="font-size: 0.7rem; letter-spacing: 0.5px;">Entregas Filtradas</small>
+                        <h4 class="fw-bold mb-0 text-dark">@Model.TotalEntregas</h4>
+                    </div>
                 </div>
             </div>
+        </div>
 
-            <div class="card-body p-4">
-                <!-- Información Receptores -->
-                <div class="row g-3 mb-4 pb-3 border-bottom">
-                    <div class="col-md-6">
-                        <div class="d-flex align-items-center gap-2 text-warning mb-1">
-                            <i class="bi bi-people-fill fs-5"></i>
-                            <span class="fw-bold text-dark">Familia Beneficiaria</span>
-                        </div>
-                        <div class="fw-semibold text-dark fs-6">@entrega.NombreFamilia</div>
-                        <small class="text-muted d-block"><i class="bi bi-card-heading me-1"></i>DNI Titular: @entrega.DniRepresentante</small>
-                        <small class="text-muted d-block"><i class="bi bi-geo-alt me-1"></i>Dirección: @entrega.DireccionFamilia</small>
+        <!-- KPI 2: Total Alimentos Distribuidos -->
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white h-100 kpi-card">
+                <div class="d-flex align-items-center">
+                    <div class="rounded-3 bg-success bg-opacity-10 p-3 me-3 text-success d-flex align-items-center justify-content-center" style="width: 52px; height: 52px;">
+                        <i class="bi bi-basket3-fill fs-4"></i>
                     </div>
+                    <div>
+                        <small class="text-muted fw-bold text-uppercase d-block mb-1" style="font-size: 0.7rem; letter-spacing: 0.5px;">Alimentos Distribuidos</small>
+                        <h4 class="fw-bold mb-0 text-dark">
+                            @Model.TotalAlimentosEntregados.ToString("G29")
+                            <span class="fs-6 fw-normal text-muted">unid/kg/L</span>
+                        </h4>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-                    <div class="col-md-6">
-                        <div class="d-flex align-items-center gap-2 text-info mb-1">
-                            <i class="bi bi-person-badge-fill fs-5"></i>
-                            <span class="fw-bold text-dark">Voluntario Despachador</span>
-                        </div>
-                        <div class="fw-semibold text-dark fs-6">@entrega.VoluntarioNombre</div>
-                        <small class="text-muted d-block"><i class="bi bi-person me-1"></i>Usuario: @entrega.VoluntarioUserName</small>
+        <!-- KPI 3: Familias Impactadas -->
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white h-100 kpi-card">
+                <div class="d-flex align-items-center">
+                    <div class="rounded-3 bg-warning bg-opacity-10 p-3 me-3 text-warning d-flex align-items-center justify-content-center" style="width: 52px; height: 52px;">
+                        <i class="bi bi-people-fill fs-4"></i>
+                    </div>
+                    <div>
+                        <small class="text-muted fw-bold text-uppercase d-block mb-1" style="font-size: 0.7rem; letter-spacing: 0.5px;">Familias Alcanzadas</small>
+                        <h4 class="fw-bold mb-0 text-dark">@Model.TotalFamiliasImpactadas</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- KPI 4: Donantes Involucrados -->
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white h-100 kpi-card">
+                <div class="d-flex align-items-center">
+                    <div class="rounded-3 bg-info bg-opacity-10 p-3 me-3 text-info d-flex align-items-center justify-content-center" style="width: 52px; height: 52px;">
+                        <i class="bi bi-building-fill fs-4"></i>
+                    </div>
+                    <div>
+                        <small class="text-muted fw-bold text-uppercase d-block mb-1" style="font-size: 0.7rem; letter-spacing: 0.5px;">Donantes Origen</small>
+                        <h4 class="fw-bold mb-0 text-dark">@Model.TotalDonantesInvolucrados</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lista de Tarjetas de Entrega -->
+    @foreach (var entrega in Model.EntregasGrouped)
+    {
+        var collapseId = $"detallePaquete_{entrega.PaqueteId}";
+
+        <div class="card border-0 shadow-sm rounded-4 mb-3 bg-white delivery-card">
+            <div class="card-body p-4">
+                <!-- Encabezado Tarjeta -->
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3 pb-3 border-bottom border-light">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="badge bg-primary fs-6 px-3 py-2 rounded-3 shadow-sm">
+                            <i class="bi bi-box-seam me-1"></i>@entrega.CodigoPaquete
+                        </span>
+                        <span class="badge bg-light text-dark border fs-6 px-3 py-2 rounded-3 fw-medium">
+                            Tipo: @entrega.TipoPaquete
+                        </span>
+                    </div>
+                    <div>
+                        <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2 rounded-3 fw-medium">
+                            <i class="bi bi-calendar-check me-1"></i>Entregado el @entrega.FechaEntrega.ToString("dd/MM/yyyy HH:mm")
+                        </span>
                     </div>
                 </div>
 
-                <!-- Lista de Lotes y Donantes -->
-                <h6 class="fw-bold text-dark mb-3">
-                    <i class="bi bi-list-check me-2 text-success"></i>Composición e Historial de Origen (Donantes)
-                </h6>
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0 border rounded-3">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Alimento / Producto</th>
-                                <th>Lote NutriRed</th>
-                                <th>Vencimiento</th>
-                                <th>Cantidad</th>
-                                <th>Donante de Origen</th>
-                                <th>Fecha Donación</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var item in entrega.Items)
-                            {
+                <!-- Detalle Principal -->
+                <div class="row g-3 align-items-center">
+                    <!-- Familia Beneficiaria -->
+                    <div class="col-12 col-md-5">
+                        <div class="d-flex align-items-start gap-3">
+                            <div class="rounded-3 bg-warning bg-opacity-10 p-2 text-warning">
+                                <i class="bi bi-people-fill fs-5"></i>
+                            </div>
+                            <div>
+                                <small class="text-muted fw-bold text-uppercase d-block mb-1" style="font-size: 0.7rem; letter-spacing: 0.5px;">Familia Beneficiaria</small>
+                                <h6 class="mb-1 fw-bold text-dark">@entrega.NombreFamilia</h6>
+                                <div class="small text-secondary">
+                                    <div><i class="bi bi-card-heading me-1 opacity-75"></i>DNI Titular: @entrega.DniRepresentante</div>
+                                    <div><i class="bi bi-geo-alt me-1 opacity-75"></i>Dirección: @entrega.DireccionFamilia</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Voluntario Despachador -->
+                    <div class="col-12 col-md-4">
+                        <div class="d-flex align-items-start gap-3">
+                            <div class="rounded-3 bg-info bg-opacity-10 p-2 text-info">
+                                <i class="bi bi-person-badge-fill fs-5"></i>
+                            </div>
+                            <div>
+                                <small class="text-muted fw-bold text-uppercase d-block mb-1" style="font-size: 0.7rem; letter-spacing: 0.5px;">Voluntario Despachador</small>
+                                <h6 class="mb-1 fw-bold text-dark">@entrega.VoluntarioNombre</h6>
+                                <small class="text-muted d-block">
+                                    <i class="bi bi-envelope me-1 opacity-75"></i>@entrega.VoluntarioUserName
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Accion / Boton Desplegable -->
+                    <div class="col-12 col-md-3 text-md-end">
+                        <button class="btn btn-outline-primary rounded-3 fw-semibold text-nowrap w-100 w-md-auto py-2 px-3 btn-toggle-detail shadow-sm"
+                                type="button"
+                                data-bs-toggle="collapse"
+                                data-bs-target="#@collapseId"
+                                aria-expanded="false"
+                                aria-controls="@collapseId">
+                            <i class="bi bi-list-nested me-1"></i>Ver Detalle (@entrega.Items.Count ítems)
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Seccion Colapsable: Tabla de Productos -->
+                <div class="collapse mt-4 pt-3 border-top" id="@collapseId">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <h6 class="fw-bold text-secondary mb-0 small text-uppercase" style="letter-spacing: 0.5px;">
+                            <i class="bi bi-list-check me-1 text-success"></i>Composición e Historial de Origen (Donantes)
+                        </h6>
+                    </div>
+
+                    <div class="table-responsive rounded-3 border">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light small text-secondary">
                                 <tr>
-                                    <td class="fw-semibold text-dark">@item.NombreProducto</td>
-                                    <td><span class="badge bg-secondary font-monospace">@item.NumeroLote</span></td>
-                                    <td>@(item.FechaVencimiento.HasValue? item.FechaVencimiento.Value.ToString("dd/MM/yyyy") : "-")</td>
-                                    <td><strong>@item.Cantidad.ToString("N0")</strong> @item.UnidadMedida</td>
-                                    <td>
-                                        <div class="fw-semibold text-success">@item.NombreDonante</div>
-                                        <small class="text-muted">Doc: @item.DocumentoDonante</small>
-                                    </td>
-                                    <td>@(item.FechaDonacion != DateTime.MinValue ? item.FechaDonacion.ToString("dd/MM/yyyy") : "-")</td>
+                                    <th class="py-2.5">Alimento / Producto</th>
+                                    <th class="py-2.5">Lote NutriRed</th>
+                                    <th class="py-2.5">Vencimiento</th>
+                                    <th class="py-2.5">Cantidad</th>
+                                    <th class="py-2.5">Donante de Origen</th>
+                                    <th class="py-2.5">Fecha Donación</th>
                                 </tr>
-                            }
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in entrega.Items)
+                                {
+                                    <tr>
+                                        <!-- Alimento + Codigo Barras -->
+                                        <td class="align-middle fw-medium">
+                                            <div class="text-dark">@item.NombreProducto</div>
+                                            @if (!string.IsNullOrWhiteSpace(item.CodigoEan) && item.CodigoEan != "N/A")
+                                            {
+                                                <div class="small text-muted font-monospace mt-0.5" style="font-size: 0.78rem;">
+                                                    <i class="bi bi-barcode me-1 opacity-75"></i>@item.CodigoEan
+                                                </div>
+                                            }
+                                        </td>
+
+                                        <!-- Lote -->
+                                        <td class="align-middle">
+                                            <span class="badge bg-secondary font-monospace px-2.5 py-1.5">@item.NumeroLote</span>
+                                        </td>
+
+                                        <!-- Vencimiento -->
+                                        <td class="align-middle small">
+                                            @(item.FechaVencimiento.HasValue? item.FechaVencimiento.Value.ToString("dd/MM/yyyy") : "N/A")
+                                        </td>
+
+                                        <!-- Cantidad -->
+                                        <td class="align-middle fw-bold">
+                                            @item.Cantidad.ToString("G29") <span class="fw-normal text-muted small">@item.UnidadMedida</span>
+                                        </td>
+
+                                        <!-- Donante de Origen -->
+                                        <td class="align-middle">
+                                            <div class="fw-semibold text-success">@item.NombreDonante</div>
+                                            <small class="text-muted font-monospace" style="font-size: 0.75rem;">Doc: @item.DocumentoDonante</small>
+                                        </td>
+
+                                        <!-- Fecha Donación -->
+                                        <td class="align-middle small">
+                                            @(item.FechaDonacion != DateTime.MinValue ? item.FechaDonacion.ToString("dd/MM/yyyy") : "N/A")
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
@@ -172,10 +358,17 @@
 }
 else
 {
-    <div class="card border-0 shadow-sm rounded-4 p-5 text-center bg-white">
-        <i class="bi bi-search-heart fs-1 text-muted opacity-50 mb-3"></i>
-        <h5 class="fw-bold text-dark">Sin registros para los criterios seleccionados</h5>
-        <p class="text-muted small mb-0">Utilice la barra de búsqueda o seleccione un donante/tipo de kit en los desplegables superiores para explorar la trazabilidad.</p>
+    <!-- Estado Vacío Armónico -->
+    <div class="card border-0 shadow-sm rounded-4 p-5 text-center bg-white filter-card">
+        <div class="py-4">
+            <div class="rounded-circle bg-light d-inline-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px;">
+                <i class="bi bi-search-heart fs-1 text-muted opacity-50"></i>
+            </div>
+            <h5 class="fw-bold text-dark mb-2">Sin registros para los criterios seleccionados</h5>
+            <p class="text-muted small mb-0 mx-auto" style="max-width: 480px;">
+                Utilice la barra de búsqueda o seleccione un donante, tipo de kit o voluntario en los filtros superiores para explorar la trazabilidad.
+            </p>
+        </div>
     </div>
 }
 
@@ -197,7 +390,6 @@ else
                         return;
                     }
 
-                    // Espera 300ms después de que el usuario deja de teclear
                     timeout = setTimeout(() => {
                         fetch(`/Trazabilidad/BuscarSugerencias?term=${encodeURIComponent(query)}`)
                             .then(response => response.json())

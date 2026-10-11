@@ -1,8 +1,10 @@
 ﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using NutriRed.Data;
+using NutriRed.Domain.Entities;
 using NutriRed.Web.Models;
 
 namespace NutriRed.Web.Controllers
@@ -11,13 +13,21 @@ namespace NutriRed.Web.Controllers
     public class TrazabilidadController : Controller
     {
         private readonly NutriRedDbContext _context;
+        private readonly UserManager<ApplicationUser> _userManager;
 
-        public TrazabilidadController(NutriRedDbContext context)
+        public TrazabilidadController(NutriRedDbContext context, UserManager<ApplicationUser> userManager)
         {
             _context = context;
+            _userManager = userManager;
         }
 
-        public async Task<IActionResult> Index(string? busqueda, DateTime? fechaDesde, DateTime? fechaHasta, int? donanteId, int? tipoPaqueteId)
+        public async Task<IActionResult> Index(
+            string? busqueda,
+            DateTime? fechaDesde,
+            DateTime? fechaHasta,
+            int? donanteId,
+            int? tipoPaqueteId,
+            string? voluntarioId)
         {
             var model = new TrazabilidadFiltroViewModel
             {
@@ -25,73 +35,109 @@ namespace NutriRed.Web.Controllers
                 FechaDesde = fechaDesde,
                 FechaHasta = fechaHasta,
                 DonanteId = donanteId,
-                TipoPaqueteId = tipoPaqueteId
+                TipoPaqueteId = tipoPaqueteId,
+                VoluntarioId = voluntarioId
             };
 
-            // 1. Cargar desplegables para la UI
+            // 1. Cargar desplegables
             model.Donantes = await _context.Donantes
                 .Where(d => d.Activo)
                 .OrderBy(d => d.NombreRazonSocial)
-                .Select(d => new SelectListItem
-                {
-                    Value = d.Id.ToString(),
-                    Text = d.NombreRazonSocial
-                }).ToListAsync();
+                .Select(d => new SelectListItem { Value = d.Id.ToString(), Text = d.NombreRazonSocial })
+                .ToListAsync();
 
             model.TiposPaquete = await _context.TiposPaquete
                 .Where(t => t.Activo)
                 .OrderBy(t => t.Nombre)
-                .Select(t => new SelectListItem
-                {
-                    Value = t.Id.ToString(),
-                    Text = t.Nombre
-                }).ToListAsync();
+                .Select(d => new SelectListItem { Value = d.Id.ToString(), Text = d.Nombre })
+                .ToListAsync();
 
-            // Si no se aplicó ningún filtro, retornar vista vacía
-            if (string.IsNullOrWhiteSpace(busqueda) && !fechaDesde.HasValue && !fechaHasta.HasValue && !donanteId.HasValue && !tipoPaqueteId.HasValue)
+            // Desplegable de Voluntarios (solo rol Voluntario + históricos)
+            var usuariosVoluntarios = await _userManager.GetUsersInRoleAsync("Voluntario");
+            var voluntariosUsersList = usuariosVoluntarios
+                .Select(u => new SelectListItem
+                {
+                    Value = u.Id,
+                    Text = !string.IsNullOrWhiteSpace(u.NombreCompleto) ? u.NombreCompleto : u.UserName
+                })
+                .ToList();
+
+            var voluntariosEntregas = await _context.Entregas
+                .Where(e => !string.IsNullOrEmpty(e.VoluntarioDespachoId))
+                .Select(e => e.VoluntarioDespachoId)
+                .Distinct()
+                .ToListAsync();
+
+            foreach (var vNombre in voluntariosEntregas)
+            {
+                if (vNombre.Contains("Administrador", StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                if (!voluntariosUsersList.Any(x => x.Value == vNombre || x.Text.Equals(vNombre, StringComparison.OrdinalIgnoreCase)))
+                {
+                    voluntariosUsersList.Add(new SelectListItem { Value = vNombre, Text = vNombre });
+                }
+            }
+            model.Voluntarios = voluntariosUsersList.OrderBy(x => x.Text).ToList();
+
+            // 2. Verificar si hay filtros aplicados
+            bool tieneFiltros = !string.IsNullOrWhiteSpace(busqueda) ||
+                               fechaDesde.HasValue ||
+                               fechaHasta.HasValue ||
+                               donanteId.HasValue ||
+                               tipoPaqueteId.HasValue ||
+                               !string.IsNullOrEmpty(voluntarioId);
+
+            // SI NO HAY FILTROS APLICADOS (ej: al presionar "Limpiar"), RETORNAMOS LA VISTA VACÍA
+            if (!tieneFiltros)
             {
                 return View(model);
             }
 
-            // 2. Consulta base con todas las relaciones cargadas
+            // 3. Consulta filtrada
             var query = _context.Entregas
-                .Include(e => e.Paquete)
-                    .ThenInclude(p => p.FamiliaBeneficiaria)
-                .Include(e => e.Paquete)
-                    .ThenInclude(p => p.TipoPaquete)
-                .Include(e => e.Paquete)
-                    .ThenInclude(p => p.Detalles)
-                        .ThenInclude(d => d.Lote)
-                            .ThenInclude(l => l.Producto)
+                .Include(e => e.Paquete).ThenInclude(p => p.FamiliaBeneficiaria)
+                .Include(e => e.Paquete).ThenInclude(p => p.TipoPaquete)
+                .Include(e => e.Paquete).ThenInclude(p => p.Detalles).ThenInclude(d => d.Lote).ThenInclude(l => l.Producto)
                 .AsQueryable();
 
-            // Filtros de fecha
             if (fechaDesde.HasValue)
                 query = query.Where(e => e.FechaHoraEntrega >= fechaDesde.Value);
 
             if (fechaHasta.HasValue)
                 query = query.Where(e => e.FechaHoraEntrega <= fechaHasta.Value.AddDays(1).AddTicks(-1));
 
-            // Filtro por Tipo de Kit
             if (tipoPaqueteId.HasValue)
                 query = query.Where(e => e.Paquete.TipoPaqueteId == tipoPaqueteId.Value);
 
-            // Búsqueda parcial y flexible por texto libre
+            if (!string.IsNullOrEmpty(voluntarioId))
+            {
+                var userObj = await _context.Users.FirstOrDefaultAsync(u => u.Id == voluntarioId);
+                if (userObj != null)
+                {
+                    query = query.Where(e =>
+                        e.VoluntarioDespachoId == userObj.Id ||
+                        e.VoluntarioDespachoId == userObj.NombreCompleto ||
+                        e.VoluntarioDespachoId == userObj.UserName
+                    );
+                }
+                else
+                {
+                    query = query.Where(e => e.VoluntarioDespachoId == voluntarioId);
+                }
+            }
+
             if (!string.IsNullOrWhiteSpace(busqueda))
             {
                 var term = busqueda.Trim().ToLower();
 
-                // 1. Si el usuario seleccionó una sugerencia completa como "González, Mario (DNI: 28456789)"
                 if (term.Contains("(dni:") && term.EndsWith(")"))
                 {
-                    // Extraemos solo el DNI (ejemplo: 28456789)
                     var inicioDni = term.IndexOf("(dni:") + 5;
                     var finDni = term.IndexOf(")", inicioDni);
                     if (finDni > inicioDni)
                     {
                         var dniExtraido = term.Substring(inicioDni, finDni - inicioDni).Trim();
-
-                        // Filtramos directamente por DNI exacto del titular o del receptor
                         query = query.Where(e =>
                             (e.Paquete.FamiliaBeneficiaria != null && e.Paquete.FamiliaBeneficiaria.DniTitular == dniExtraido) ||
                             e.DniReceptor == dniExtraido
@@ -100,36 +146,23 @@ namespace NutriRed.Web.Controllers
                 }
                 else
                 {
-                    // 2. Búsqueda por texto libre convencional (si el usuario escribió libremente)
                     query = query.Where(e =>
-                        // Búsqueda en Paquete
                         EF.Functions.Like(e.Paquete.CodigoSeguimiento.ToLower(), $"%{term}%") ||
-
-                        // Búsqueda en Familia (Apellido, Nombre o DNI)
                         (e.Paquete.FamiliaBeneficiaria != null && (
                             EF.Functions.Like(e.Paquete.FamiliaBeneficiaria.ApellidoTitular.ToLower(), $"%{term}%") ||
                             EF.Functions.Like(e.Paquete.FamiliaBeneficiaria.NombreTitular.ToLower(), $"%{term}%") ||
-                            EF.Functions.Like(e.Paquete.FamiliaBeneficiaria.DniTitular, $"%{term}%") ||
-                            EF.Functions.Like((e.Paquete.FamiliaBeneficiaria.ApellidoTitular + " " + e.Paquete.FamiliaBeneficiaria.NombreTitular).ToLower(), $"%{term}%") ||
-                            EF.Functions.Like((e.Paquete.FamiliaBeneficiaria.NombreTitular + " " + e.Paquete.FamiliaBeneficiaria.ApellidoTitular).ToLower(), $"%{term}%")
+                            EF.Functions.Like(e.Paquete.FamiliaBeneficiaria.DniTitular, $"%{term}%")
                         )) ||
-
-                        // Búsqueda en Lote o Nombre del Producto
-                        e.Paquete.Detalles.Any(d =>
-                            EF.Functions.Like(d.Lote.NumeroLote.ToLower(), $"%{term}%") ||
-                            EF.Functions.Like(d.Lote.Producto.Nombre.ToLower(), $"%{term}%")
-                        ) ||
-
-                        // Búsqueda en Datos de Receptor
+                        e.Paquete.Detalles.Any(d => EF.Functions.Like(d.Lote.NumeroLote.ToLower(), $"%{term}%") || EF.Functions.Like(d.Lote.Producto.Nombre.ToLower(), $"%{term}%")) ||
                         EF.Functions.Like(e.NombreReceptor.ToLower(), $"%{term}%") ||
                         EF.Functions.Like(e.DniReceptor, $"%{term}%")
                     );
                 }
             }
 
-            var entregas = await query.ToListAsync();
+            var entregas = await query.OrderByDescending(e => e.FechaHoraEntrega).Take(20).ToListAsync();
 
-            // 3. Consultar Donantes asociados a los Lotes en memoria
+            // 4. Mapear Donantes y Usuarios
             var loteIds = entregas
                 .SelectMany(e => e.Paquete?.Detalles ?? Enumerable.Empty<NutriRed.Domain.Entities.PaqueteDetalle>())
                 .Select(d => d.LoteId)
@@ -137,31 +170,40 @@ namespace NutriRed.Web.Controllers
                 .ToList();
 
             var donacionesPorLote = await _context.DonacionDetalles
-                .Include(dd => dd.Donacion)
-                    .ThenInclude(don => don.Donante)
+                .Include(dd => dd.Donacion).ThenInclude(don => don.Donante)
                 .Where(dd => loteIds.Contains(dd.LoteId))
                 .GroupBy(dd => dd.LoteId)
-                .ToDictionaryAsync(
-                    g => g.Key,
-                    g => g.Select(dd => dd.Donacion).FirstOrDefault()
-                );
+                .ToDictionaryAsync(g => g.Key, g => g.Select(dd => dd.Donacion).FirstOrDefault());
 
-            // 4. Consultar Usuarios
-            var usuarioIds = entregas.Select(e => e.VoluntarioDespachoId).Where(id => !string.IsNullOrEmpty(id)).Distinct().ToList();
-            var usuarios = await _context.Users.Where(u => usuarioIds.Contains(u.Id)).ToDictionaryAsync(u => u.Id);
+            var usuarioIds = entregas.Select(e => e.VoluntarioDespachoId).Where(id => !string.IsNullOrWhiteSpace(id)).Distinct().ToList();
+            var usuarios = await _context.Users
+                .Where(u => usuarioIds.Contains(u.Id) || usuarioIds.Contains(u.NombreCompleto) || usuarioIds.Contains(u.UserName))
+                .ToListAsync();
 
-            // 5. Construcción del resultado
+            // 5. Armar DTOs
             foreach (var e in entregas)
             {
                 var fam = e.Paquete?.FamiliaBeneficiaria;
-
                 string voluntarioNombre = "Voluntario General";
                 string voluntarioUserName = "voluntario";
 
-                if (!string.IsNullOrEmpty(e.VoluntarioDespachoId) && usuarios.TryGetValue(e.VoluntarioDespachoId, out var userObj))
+                if (!string.IsNullOrWhiteSpace(e.VoluntarioDespachoId))
                 {
-                    voluntarioNombre = !string.IsNullOrWhiteSpace(userObj.NombreCompleto) ? userObj.NombreCompleto : (userObj.UserName ?? "Voluntario");
-                    voluntarioUserName = userObj.UserName ?? "voluntario";
+                    var userObj = usuarios.FirstOrDefault(u =>
+                        u.Id == e.VoluntarioDespachoId ||
+                        u.NombreCompleto.Equals(e.VoluntarioDespachoId, StringComparison.OrdinalIgnoreCase) ||
+                        u.UserName.Equals(e.VoluntarioDespachoId, StringComparison.OrdinalIgnoreCase));
+
+                    if (userObj != null)
+                    {
+                        voluntarioNombre = !string.IsNullOrWhiteSpace(userObj.NombreCompleto) ? userObj.NombreCompleto : userObj.UserName;
+                        voluntarioUserName = userObj.UserName ?? "voluntario";
+                    }
+                    else
+                    {
+                        voluntarioNombre = e.VoluntarioDespachoId;
+                        voluntarioUserName = e.VoluntarioDespachoId.ToLower().Replace(" ", "_");
+                    }
                 }
 
                 var grupoDto = new TrazabilidadEntregaGroupDto
@@ -170,12 +212,10 @@ namespace NutriRed.Web.Controllers
                     CodigoPaquete = e.Paquete?.CodigoSeguimiento ?? "N/A",
                     TipoPaquete = e.Paquete?.TipoPaquete?.Nombre ?? "Familiar",
                     FechaArmado = e.Paquete?.FechaCreacion ?? DateTime.MinValue,
-
                     FamiliaId = fam?.Id ?? 0,
                     NombreFamilia = fam != null ? $"{fam.ApellidoTitular}, {fam.NombreTitular}" : "N/A",
                     DniRepresentante = fam?.DniTitular ?? "N/A",
                     DireccionFamilia = fam?.Direccion ?? "N/A",
-
                     VoluntarioNombre = voluntarioNombre,
                     VoluntarioUserName = voluntarioUserName,
                     FechaEntrega = e.FechaHoraEntrega
@@ -194,7 +234,6 @@ namespace NutriRed.Web.Controllers
                     {
                         donacionIdVal = donacionObj.Id;
                         fechaDonacion = donacionObj.FechaHora;
-
                         if (donacionObj.Donante != null)
                         {
                             idDonanteVal = donacionObj.Donante.Id;
@@ -204,21 +243,18 @@ namespace NutriRed.Web.Controllers
                         }
                     }
 
-                    // Filtro secundario por Donante (si fue seleccionado en el desplegable)
                     if (donanteId.HasValue && idDonanteVal != donanteId.Value)
-                    {
                         continue;
-                    }
 
                     grupoDto.Items.Add(new TrazabilidadItemDto
                     {
                         LoteId = d.LoteId,
                         NumeroLote = d.Lote?.NumeroLote ?? "N/A",
                         NombreProducto = d.Lote?.Producto?.Nombre ?? "Alimento",
+                        CodigoEan = d.Lote?.Producto?.CodigoBarras ?? "N/A", // <-- Asignamos el Código EAN
                         FechaVencimiento = d.Lote?.FechaVencimiento,
                         Cantidad = d.Cantidad,
                         UnidadMedida = d.Lote?.Producto?.UnidadMedida.ToString() ?? "kg",
-
                         DonacionId = donacionIdVal,
                         DonanteId = idDonanteVal,
                         NombreDonante = nombreDonante,
@@ -228,10 +264,7 @@ namespace NutriRed.Web.Controllers
                     });
                 }
 
-                if (grupoDto.Items.Any())
-                {
-                    model.EntregasGrouped.Add(grupoDto);
-                }
+                model.EntregasGrouped.Add(grupoDto);
             }
 
             return View(model);
