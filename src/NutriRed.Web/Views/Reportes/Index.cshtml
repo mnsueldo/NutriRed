@@ -1,0 +1,378 @@
+﻿@model NutriRed.Web.Models.ReportesIndexViewModel
+@{
+    ViewData["Title"] = "Módulo de Reportes";
+}
+
+<!-- Estilos finos para armonía visual de pestañas y botones de exportación -->
+<style>
+    .nav-tabs-custom .nav-link {
+        color: #6c757d;
+        font-weight: 600;
+        border: none;
+        border-bottom: 3px solid transparent;
+        padding: 0.75rem 1.25rem;
+        transition: all 0.2s ease;
+    }
+
+        .nav-tabs-custom .nav-link:hover {
+            color: #198754;
+            border-color: transparent;
+        }
+
+        .nav-tabs-custom .nav-link.active {
+            color: #198754;
+            background-color: transparent;
+            border-bottom: 3px solid #198754;
+        }
+
+    .filter-card {
+        background-color: #ffffff;
+        border: 1px solid rgba(0, 0, 0, 0.05) !important;
+    }
+
+    .btn-export-excel {
+        background-color: #0d6efd;
+        color: #ffffff;
+    }
+
+        .btn-export-excel:hover {
+            background-color: #0b5ed7;
+            color: #ffffff;
+        }
+
+    .btn-export-pdf {
+        background-color: #6f42c1;
+        color: #ffffff;
+    }
+
+        .btn-export-pdf:hover {
+            background-color: #5c35a5;
+            color: #ffffff;
+        }
+</style>
+
+<!-- Encabezado de la Página -->
+<div class="d-flex align-items-center justify-content-between mb-4">
+    <div>
+        <h2 class="fw-bold text-dark mb-1 d-flex align-items-center gap-2">
+            <span class="bg-success bg-opacity-10 text-success p-2 rounded-3 d-inline-flex align-items-center justify-content-center" style="width: 42px; height: 42px;">
+                <i class="bi bi-file-earmark-bar-graph-fill fs-4"></i>
+            </span>
+            Reportes
+        </h2>
+        <p class="text-muted mb-0 small ms-1">Generá y descargá reportes del sistema en el formato que necesites.</p>
+    </div>
+</div>
+
+<!-- Menú de Pestañas (Tabs) -->
+<ul class="nav nav-tabs nav-tabs-custom border-bottom mb-4">
+    <li class="nav-item">
+        <a class="nav-link @(Model.TabActiva == "inventario" ? "active" : "")" asp-action="Index" asp-route-tab="inventario">
+            <i class="bi bi-box-seam me-1"></i>Inventario
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link @(Model.TabActiva == "donaciones" ? "active" : "")" asp-action="Index" asp-route-tab="donaciones">
+            <i class="bi bi-gift me-1"></i>Donaciones
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link @(Model.TabActiva == "entregas" ? "active" : "")" asp-action="Index" asp-route-tab="entregas">
+            <i class="bi bi-truck me-1"></i>Entregas
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link @(Model.TabActiva == "familias" ? "active" : "")" asp-action="Index" asp-route-tab="familias">
+            <i class="bi bi-people me-1"></i>Familias
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link @(Model.TabActiva == "trazabilidad" ? "active" : "")" asp-action="Index" asp-route-tab="trazabilidad">
+            <i class="bi bi-diagram-3 me-1"></i>Trazabilidad
+        </a>
+    </li>
+</ul>
+
+<!-- Panel de Filtros según la Pestaña Activa -->
+<form method="get" asp-action="Index" class="card border-0 shadow-sm rounded-4 p-4 mb-4 filter-card">
+    <input type="hidden" name="tab" value="@Model.TabActiva" />
+
+    <div class="row g-3 align-items-end">
+        <!-- Filtros Dinámicos según la pestaña -->
+        @if (Model.TabActiva == "inventario")
+        {
+            <div class="col-12 col-md-4 col-lg-4">
+                <label class="form-label small fw-semibold text-secondary mb-1">Categoría</label>
+                <select name="categoriaId" class="form-select rounded-3 bg-light">
+                    <option value="">Todas las Categorías</option>
+                    @foreach (var cat in Model.Categorias)
+                    {
+                        <option value="@cat.Value" selected="@(cat.Value == Model.CategoriaId?.ToString())">@cat.Text</option>
+                    }
+                </select>
+            </div>
+            <div class="col-12 col-md-4 col-lg-4">
+                <label class="form-label small fw-semibold text-secondary mb-1">Estado de Lote</label>
+                <select name="estadoLote" class="form-select rounded-3 bg-light">
+                    <option value="">Todos los Estados</option>
+                    <option value="Óptimo" selected="@(Model.EstadoLote == "Óptimo")">Óptimo</option>
+                    <option value="Atención" selected="@(Model.EstadoLote == "Atención")">Atención (Stock Mínimo)</option>
+                    <option value="Próximo a vencer" selected="@(Model.EstadoLote == "Próximo a vencer")">Próximo a vencer</option>
+                    <option value="Vencido" selected="@(Model.EstadoLote == "Vencido")">Vencido</option>
+                </select>
+            </div>
+        }
+        else if (Model.TabActiva == "familias")
+        {
+            <div class="col-12 col-md-8 col-lg-8">
+                <label class="form-label small fw-semibold text-secondary mb-1">Búsqueda de Familia</label>
+                <input type="text" name="busqueda" value="@Model.Busqueda" class="form-control rounded-3 bg-light" placeholder="Apellido, nombre o DNI titular..." />
+            </div>
+        }
+        else
+        {
+            <div class="col-12 col-md-3 col-lg-3">
+                <label class="form-label small fw-semibold text-secondary mb-1">Fecha Desde</label>
+                <input type="date" name="fechaDesde" value="@(Model.FechaDesde?.ToString("yyyy-MM-dd"))" class="form-control rounded-3 bg-light" />
+            </div>
+            <div class="col-12 col-md-3 col-lg-3">
+                <label class="form-label small fw-semibold text-secondary mb-1">Fecha Hasta</label>
+                <input type="date" name="fechaHasta" value="@(Model.FechaHasta?.ToString("yyyy-MM-dd"))" class="form-control rounded-3 bg-light" />
+            </div>
+
+            @if (Model.TabActiva == "donaciones")
+            {
+                <div class="col-12 col-md-3 col-lg-3">
+                    <label class="form-label small fw-semibold text-secondary mb-1">Donante</label>
+                    <select name="donanteId" class="form-select rounded-3 bg-light">
+                        <option value="">Todos los Donantes</option>
+                        @foreach (var d in Model.Donantes)
+                        {
+                            <option value="@d.Value" selected="@(d.Value == Model.DonanteId?.ToString())">@d.Text</option>
+                        }
+                    </select>
+                </div>
+            }
+            else if (Model.TabActiva == "entregas")
+            {
+                <div class="col-12 col-md-3 col-lg-3">
+                    <label class="form-label small fw-semibold text-secondary mb-1">Tipo de Kit</label>
+                    <select name="tipoPaqueteId" class="form-select rounded-3 bg-light">
+                        <option value="">Todos los Kits</option>
+                        @foreach (var t in Model.TiposPaquete)
+                        {
+                            <option value="@t.Value" selected="@(t.Value == Model.TipoPaqueteId?.ToString())">@t.Text</option>
+                        }
+                    </select>
+                </div>
+            }
+        }
+
+        <!-- Botón Generar/Filtrar -->
+        <div class="col-12 col-md-4 col-lg-2 ms-auto">
+            <button type="submit" class="btn btn-success rounded-3 fw-semibold w-100 py-2 shadow-sm">
+                <i class="bi bi-funnel-fill me-1"></i>Generar
+            </button>
+        </div>
+    </div>
+</form>
+
+<!-- Grid Principal: Tabla de Resultados (Izquierda) + Panel de Exportación (Derecha) -->
+<div class="row g-4">
+    <!-- Tabla con Datos del Reporte -->
+    <div class="col-12 col-lg-8 col-xl-9">
+        <div class="card border-0 shadow-sm rounded-4 p-4 bg-white filter-card h-100">
+            <h5 class="fw-bold text-dark mb-3 text-capitalize">
+                <i class="bi bi-journal-text text-success me-2"></i>Reporte de @Model.TabActiva
+            </h5>
+
+            <div class="table-responsive rounded-3 border">
+                @if (Model.TabActiva == "inventario")
+                {
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light small text-secondary">
+                            <tr>
+                                <th>Producto</th>
+                                <th>Categoría</th>
+                                <th>Stock Total</th>
+                                <th>Lotes</th>
+                                <th>Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model.ReporteInventario)
+                            {
+                                <tr>
+                                    <td class="fw-medium">
+                                        <div>@item.Producto</div>
+                                        <small class="text-muted font-monospace">@item.CodigoEan</small>
+                                    </td>
+                                    <td>@item.Categoria</td>
+                                    <td class="fw-bold">@item.StockTotal.ToString("G29") <small class="text-muted fw-normal">@item.UnidadMedida</small></td>
+                                    <td><span class="badge bg-light text-dark border px-2.5 py-1.5">@item.CantidadLotes</span></td>
+                                    <td>
+                                        @if (item.Estado == "Óptimo")
+                                        {
+                                            <span class="badge bg-success-subtle text-success border border-success-subtle px-2.5 py-1.5 rounded-pill"><i class="bi bi-circle-fill me-1 small"></i>Óptimo</span>
+                                        }
+                                        else if (item.Estado == "Atención")
+                                        {
+                                            <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2.5 py-1.5 rounded-pill"><i class="bi bi-circle-fill me-1 small"></i>Atención</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2.5 py-1.5 rounded-pill"><i class="bi bi-circle-fill me-1 small"></i>@item.Estado</span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+                else if (Model.TabActiva == "donaciones")
+                {
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light small text-secondary">
+                            <tr>
+                                <th>Comprobante</th>
+                                <th>Fecha</th>
+                                <th>Donante</th>
+                                <th>Ítems</th>
+                                <th>Total Vol.</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model.ReporteDonaciones)
+                            {
+                                <tr>
+                                    <td class="fw-bold text-primary">@item.Comprobante</td>
+                                    <td class="small">@item.FechaHora.ToString("dd/MM/yyyy HH:mm")</td>
+                                    <td>
+                                        <div class="fw-medium">@item.Donante</div>
+                                        <small class="text-muted">Doc: @item.Documento</small>
+                                    </td>
+                                    <td><span class="badge bg-light text-dark border">@item.CantidadItems ítems</span></td>
+                                    <td class="fw-bold">@item.CantidadTotal.ToString("G29")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+                else if (Model.TabActiva == "entregas")
+                {
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light small text-secondary">
+                            <tr>
+                                <th>Código PKG</th>
+                                <th>Fecha Entrega</th>
+                                <th>Familia Beneficiaria</th>
+                                <th>Tipo Kit</th>
+                                <th>Voluntario</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model.ReporteEntregas)
+                            {
+                                <tr>
+                                    <td class="fw-bold text-success">@item.CodigoPaquete</td>
+                                    <td class="small">@item.FechaEntrega.ToString("dd/MM/yyyy HH:mm")</td>
+                                    <td>
+                                        <div class="fw-medium">@item.Familia</div>
+                                        <small class="text-muted">DNI: @item.DniTitular</small>
+                                    </td>
+                                    <td><span class="badge bg-light text-dark border">@item.TipoKit</span></td>
+                                    <td class="small text-secondary">@item.Voluntario</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+                else if (Model.TabActiva == "familias")
+                {
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light small text-secondary">
+                            <tr>
+                                <th>Familia</th>
+                                <th>DNI Titular</th>
+                                <th>Integrantes</th>
+                                <th>Kits Recibidos</th>
+                                <th>Última Entrega</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model.ReporteFamilias)
+                            {
+                                <tr>
+                                    <td class="fw-medium">@item.Familia</td>
+                                    <td class="font-monospace small">@item.DniTitular</td>
+                                    <td><span class="badge bg-light text-dark border">@item.Integrantes pers.</span></td>
+                                    <td class="fw-bold text-success">@item.TotalKitsRecibidos</td>
+                                    <td class="small">@(item.UltimaEntrega.HasValue? item.UltimaEntrega.Value.ToString("dd/MM/yyyy") : "Sin entregas")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+                else if (Model.TabActiva == "trazabilidad")
+                {
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light small text-secondary">
+                            <tr>
+                                <th>Paquete</th>
+                                <th>Alimento</th>
+                                <th>Lote</th>
+                                <th>Familia Receptora</th>
+                                <th>Fecha Entrega</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model.ReporteTrazabilidad)
+                            {
+                                <tr>
+                                    <td class="fw-bold text-primary">@item.CodigoPaquete</td>
+                                    <td class="fw-medium">@item.Alimento</td>
+                                    <td><span class="badge bg-secondary font-monospace">@item.NumeroLote</span></td>
+                                    <td>@item.FamiliaBeneficiaria</td>
+                                    <td class="small">@item.FechaEntrega.ToString("dd/MM/yyyy")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Panel Lateral de Exportación -->
+    <div class="col-12 col-lg-4 col-xl-3">
+        <div class="card border-0 shadow-sm rounded-4 p-4 bg-white filter-card h-100 d-flex flex-column justify-content-between">
+            <div>
+                <h5 class="fw-bold text-dark mb-1 d-flex align-items-center gap-2">
+                    <i class="bi bi-download text-success"></i>Exportar
+                </h5>
+                <p class="text-muted small mb-4">Elegí el formato del reporte:</p>
+
+                <div class="d-grid gap-3">
+                    <button type="button" class="btn btn-success rounded-3 fw-semibold py-2.5 d-flex align-items-center justify-content-center gap-2 shadow-sm" onclick="alert('Exportando a CSV...')">
+                        <i class="bi bi-file-earmark-spreadsheet-fill fs-5"></i>Descargar CSV
+                    </button>
+
+                    <button type="button" class="btn btn-export-excel rounded-3 fw-semibold py-2.5 d-flex align-items-center justify-content-center gap-2 shadow-sm" onclick="alert('Exportando a Excel...')">
+                        <i class="bi bi-file-earmark-excel-fill fs-5"></i>Descargar Excel
+                    </button>
+
+                    <button type="button" class="btn btn-export-pdf rounded-3 fw-semibold py-2.5 d-flex align-items-center justify-content-center gap-2 shadow-sm" onclick="alert('Exportando a PDF...')">
+                        <i class="bi bi-file-earmark-pdf-fill fs-5"></i>Descargar PDF
+                    </button>
+                </div>
+            </div>
+
+            <div class="mt-4 pt-3 border-top">
+                <p class="text-muted small mb-0 d-flex align-items-start gap-2">
+                    <i class="bi bi-info-circle text-primary mt-0.5"></i>
+                    <span>Los reportes incluyen la información filtrada según los criterios seleccionados.</span>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>

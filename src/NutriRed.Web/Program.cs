@@ -3,6 +3,8 @@ using Microsoft.EntityFrameworkCore;
 using NutriRed.Data;
 using NutriRed.Domain.Entities;
 using NutriRed.Services;
+using NutriRed.Services.Interfaces;
+using NutriRed.Services.Implementations;
 
 // Compatibilidad de fechas para PostgreSQL (Npgsql) en Supabase
 AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
