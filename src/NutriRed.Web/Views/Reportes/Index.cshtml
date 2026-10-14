@@ -3,7 +3,6 @@
     ViewData["Title"] = "Módulo de Reportes";
 }
 
-<!-- Estilos finos para armonía visual de pestañas y botones de exportación -->
 <style>
     .nav-tabs-custom .nav-link {
         color: #6c757d;
@@ -60,7 +59,7 @@
             </span>
             Reportes
         </h2>
-        <p class="text-muted mb-0 small ms-1">Generá y descargá reportes del sistema en el formato que necesites.</p>
+        <p class="text-muted mb-0 small ms-1">Generá y descargá reportes consolidados del sistema.</p>
     </div>
 </div>
 
@@ -93,7 +92,7 @@
     </li>
 </ul>
 
-<!-- Panel de Filtros según la Pestaña Activa -->
+<!-- Panel de Filtros unificados -->
 <form method="get" asp-action="Index" class="card border-0 shadow-sm rounded-4 p-4 mb-4 filter-card">
     <input type="hidden" name="tab" value="@Model.TabActiva" />
 
@@ -134,13 +133,6 @@
                 </select>
             </div>
         }
-        else if (Model.TabActiva == "familias")
-        {
-            <div class="col-12 col-md-8 col-lg-8">
-                <label class="form-label small fw-semibold text-secondary mb-1">Búsqueda de Familia</label>
-                <input type="text" name="busqueda" value="@Model.Busqueda" class="form-control rounded-3 bg-light" placeholder="Apellido, nombre o DNI titular..." />
-            </div>
-        }
         else
         {
             <div class="col-12 col-md-3 col-lg-3">
@@ -178,9 +170,15 @@
                     </select>
                 </div>
             }
+            else if (Model.TabActiva == "familias" || Model.TabActiva == "trazabilidad")
+            {
+                <div class="col-12 col-md-4 col-lg-4">
+                    <label class="form-label small fw-semibold text-secondary mb-1">Búsqueda avanzada</label>
+                    <input type="text" name="busqueda" value="@Model.Busqueda" class="form-control rounded-3 bg-light" placeholder="Apellido, DNI o PKG..." />
+                </div>
+            }
         }
 
-        <!-- Botón Generar/Filtrar -->
         <div class="col-12 col-md-4 col-lg-2 ms-auto">
             <button type="submit" class="btn btn-success rounded-3 fw-semibold w-100 py-2 shadow-sm">
                 <i class="bi bi-funnel-fill me-1"></i>Generar
@@ -189,9 +187,51 @@
     </div>
 </form>
 
-<!-- Grid Principal: Tabla de Resultados (Izquierda) + Panel de Exportación (Derecha) -->
+<!-- Tarjetas de Impacto / KPIs Superiores -->
+<div class="row g-3 mb-4">
+    <div class="col-12 col-md-4">
+        <div class="card border-0 shadow-sm rounded-4 p-3 bg-white">
+            <div class="d-flex align-items-center gap-3">
+                <div class="rounded-circle bg-success bg-opacity-10 p-3 text-success d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
+                    <i class="bi bi-journal-check fs-5"></i>
+                </div>
+                <div>
+                    <span class="text-muted small fw-semibold text-uppercase d-block">Registros Filtrados</span>
+                    <span class="fs-4 fw-bold text-dark">@Model.TotalRegistros</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-md-4">
+        <div class="card border-0 shadow-sm rounded-4 p-3 bg-white">
+            <div class="d-flex align-items-center gap-3">
+                <div class="rounded-circle bg-primary bg-opacity-10 p-3 text-primary d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
+                    <i class="bi bi-layers fs-5"></i>
+                </div>
+                <div>
+                    <span class="text-muted small fw-semibold text-uppercase d-block">Página Actual</span>
+                    <span class="fs-4 fw-bold text-dark">@Model.PaginaActual de @(Model.TotalPaginas > 0 ? Model.TotalPaginas : 1)</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-md-4">
+        <div class="card border-0 shadow-sm rounded-4 p-3 bg-white">
+            <div class="d-flex align-items-center gap-3">
+                <div class="rounded-circle bg-warning bg-opacity-10 p-3 text-warning-emphasis d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
+                    <i class="bi bi-shield-check fs-5 text-warning"></i>
+                </div>
+                <div>
+                    <span class="text-muted small fw-semibold text-uppercase d-block">Estado del Módulo</span>
+                    <span class="fs-6 fw-bold text-success">Producción Activa</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Grilla y Exportación -->
 <div class="row g-4">
-    <!-- Tabla con Datos del Reporte -->
     <div class="col-12 col-lg-8 col-xl-9">
         <div class="card border-0 shadow-sm rounded-4 p-4 bg-white filter-card h-100 d-flex flex-column justify-content-between">
             <div>
@@ -207,7 +247,7 @@
                                 <tr>
                                     <th>Producto / EAN</th>
                                     <th>Lote & Vencimiento</th>
-                                    <th>Ingreso (Fecha / Usuario)</th>
+                                    <th>Ingreso</th>
                                     <th>Stock</th>
                                     <th>Estado</th>
                                 </tr>
@@ -227,40 +267,9 @@
                                                 <small class="text-muted">Vence: @item.FechaVencimiento.ToString("dd/MM/yyyy")</small>
                                             }
                                         </td>
-                                        <td>
-                                            @if (item.FechaIngreso != DateTime.MinValue)
-                                            {
-                                                <div class="small">@item.FechaIngreso.ToString("dd/MM/yyyy HH:mm")</div>
-                                                <small class="text-muted">Por: @item.UsuarioIngreso</small>
-                                            }
-                                            else
-                                            {
-                                                <span class="text-muted small">-</span>
-                                            }
-                                        </td>
+                                        <td><small>@(item.FechaIngreso != DateTime.MinValue ? item.FechaIngreso.ToString("dd/MM/yyyy") : "-")</small></td>
                                         <td class="fw-bold">@item.StockDisponible.ToString("G29") <small class="text-muted fw-normal">@item.UnidadMedida</small></td>
-                                        <td>
-                                            @if (item.Estado.Contains("Crítico") || item.Estado.Contains("Vencido"))
-                                            {
-                                                <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2.5 py-1.5 rounded-pill"><i class="bi bi-circle-fill me-1 small"></i>@item.Estado</span>
-                                            }
-                                            else if (item.Estado.Contains("Urgente"))
-                                            {
-                                                <span class="badge px-2.5 py-1.5 rounded-pill" style="background-color: #fff3cd; color: #fd7e14; border: 1px solid #ffeeba;"><i class="bi bi-circle-fill me-1 small"></i>@item.Estado</span>
-                                            }
-                                            else if (item.Estado.Contains("Atención"))
-                                            {
-                                                <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2.5 py-1.5 rounded-pill"><i class="bi bi-circle-fill me-1 small"></i>@item.Estado</span>
-                                            }
-                                            else if (item.Estado.Contains("Sin Stock"))
-                                            {
-                                                <span class="badge bg-light text-secondary border px-2.5 py-1.5 rounded-pill"><i class="bi bi-dash-circle me-1 small"></i>Sin Stock</span>
-                                            }
-                                            else
-                                            {
-                                                <span class="badge bg-success-subtle text-success border border-success-subtle px-2.5 py-1.5 rounded-pill"><i class="bi bi-circle-fill me-1 small"></i>@item.Estado</span>
-                                            }
-                                        </td>
+                                        <td><span class="badge bg-success-subtle text-success border px-2.5 py-1.5 rounded-pill">@item.Estado</span></td>
                                     </tr>
                                 }
                             </tbody>
@@ -284,22 +293,15 @@
                                 {
                                     <tr>
                                         <td class="fw-bold text-primary font-monospace">@item.Comprobante</td>
-                                        <td class="small">
-                                            <div class="fw-medium text-dark">@item.FechaHora.ToString("dd/MM/yyyy")</div>
-                                            <small class="text-muted">@item.FechaHora.ToString("HH:mm") hs</small>
-                                        </td>
+                                        <td class="small">@item.FechaHora.ToString("dd/MM/yyyy HH:mm")</td>
                                         <td>
                                             <div class="fw-medium text-dark">@item.Donante</div>
                                             <small class="text-muted font-monospace">Doc: @item.Documento</small>
                                         </td>
-                                        <td class="text-center">
-                                            <span class="badge bg-light text-dark border px-2 py-1">@item.CantidadItems ítems</span>
-                                        </td>
-                                        <td class="text-center fw-bold text-dark font-monospace">
-                                            @item.CantidadTotal.ToString("G29")
-                                        </td>
+                                        <td class="text-center"><span class="badge bg-light text-dark border">@item.CantidadItems ítems</span></td>
+                                        <td class="text-center fw-bold font-monospace">@item.CantidadTotal.ToString("G29")</td>
                                         <td class="text-end pe-4">
-                                            <a asp-controller="Donaciones" asp-action="Comprobante" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary rounded-pill px-2.5 py-1 fw-semibold text-nowrap shadow-sm" title="Ver Comprobante">
+                                            <a asp-controller="Donaciones" asp-action="Comprobante" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary rounded-pill px-2.5 py-1 fw-semibold shadow-sm">
                                                 <i class="bi bi-receipt me-1"></i> Comprobante
                                             </a>
                                         </td>
@@ -313,25 +315,29 @@
                         <table class="table table-hover align-middle mb-0">
                             <thead class="table-light small text-secondary">
                                 <tr>
-                                    <th>Código PKG</th>
-                                    <th>Fecha Entrega</th>
-                                    <th>Familia Beneficiaria</th>
-                                    <th>Tipo Kit</th>
-                                    <th>Voluntario</th>
+                                    <th style="width: 22%;">Código PKG</th>
+                                    <th style="width: 18%;">Fecha Entrega</th>
+                                    <th style="width: 30%;">Familia</th>
+                                    <th style="width: 16%;">Kit</th>
+                                    <th class="text-end pe-4" style="width: 14%;">Acción</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @foreach (var item in Model.ReporteEntregas)
                                 {
                                     <tr>
-                                        <td class="fw-bold text-success">@item.CodigoPaquete</td>
+                                        <td class="fw-bold text-success font-monospace">@item.CodigoPaquete</td>
                                         <td class="small">@item.FechaEntrega.ToString("dd/MM/yyyy HH:mm")</td>
                                         <td>
-                                            <div class="fw-medium">@item.Familia</div>
+                                            <div class="fw-medium text-dark">@item.Familia</div>
                                             <small class="text-muted">DNI: @item.DniTitular</small>
                                         </td>
                                         <td><span class="badge bg-light text-dark border">@item.TipoKit</span></td>
-                                        <td class="small text-secondary">@item.Voluntario</td>
+                                        <td class="text-end pe-4">
+                                            <a asp-controller="Despacho" asp-action="Comprobante" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary rounded-pill px-2.5 py-1 fw-semibold shadow-sm">
+                                                <i class="bi bi-receipt me-1"></i> Comprobante
+                                            </a>
+                                        </td>
                                     </tr>
                                 }
                             </tbody>
@@ -392,22 +398,18 @@
                 </div>
             </div>
 
-            <!-- Paginación (Cada 10 registros) -->
+            <!-- Paginación Global de 10 en 10 -->
             @if (Model.TotalPaginas > 1)
             {
                 <nav class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top px-2">
                     <small class="text-muted">
-                        Mostrando página <strong>@Model.PaginaActual</strong> de <strong>@Model.TotalPaginas</strong> (@Model.TotalRegistros registros en total)
+                        Mostrando página <strong>@Model.PaginaActual</strong> de <strong>@Model.TotalPaginas</strong> (@Model.TotalRegistros registros)
                     </small>
                     <ul class="pagination pagination-sm mb-0">
                         <li class="page-item @(Model.PaginaActual == 1 ? "disabled" : "")">
                             <a class="page-link rounded-start-3" asp-action="Index"
                                asp-route-tab="@Model.TabActiva"
                                asp-route-pagina="@(Model.PaginaActual - 1)"
-                               asp-route-busquedaInventario="@Model.BusquedaInventario"
-                               asp-route-categoriaId="@Model.CategoriaId"
-                               asp-route-estadoStock="@Model.EstadoStock"
-                               asp-route-semaforoFefo="@Model.SemaforoFefo"
                                asp-route-fechaDesde="@(Model.FechaDesde?.ToString("yyyy-MM-dd"))"
                                asp-route-fechaHasta="@(Model.FechaHasta?.ToString("yyyy-MM-dd"))"
                                asp-route-donanteId="@Model.DonanteId"
@@ -419,10 +421,6 @@
                                 <a class="page-link" asp-action="Index"
                                    asp-route-tab="@Model.TabActiva"
                                    asp-route-pagina="@i"
-                                   asp-route-busquedaInventario="@Model.BusquedaInventario"
-                                   asp-route-categoriaId="@Model.CategoriaId"
-                                   asp-route-estadoStock="@Model.EstadoStock"
-                                   asp-route-semaforoFefo="@Model.SemaforoFefo"
                                    asp-route-fechaDesde="@(Model.FechaDesde?.ToString("yyyy-MM-dd"))"
                                    asp-route-fechaHasta="@(Model.FechaHasta?.ToString("yyyy-MM-dd"))"
                                    asp-route-donanteId="@Model.DonanteId"
@@ -433,10 +431,6 @@
                             <a class="page-link rounded-end-3" asp-action="Index"
                                asp-route-tab="@Model.TabActiva"
                                asp-route-pagina="@(Model.PaginaActual + 1)"
-                               asp-route-busquedaInventario="@Model.BusquedaInventario"
-                               asp-route-categoriaId="@Model.CategoriaId"
-                               asp-route-estadoStock="@Model.EstadoStock"
-                               asp-route-semaforoFefo="@Model.SemaforoFefo"
                                asp-route-fechaDesde="@(Model.FechaDesde?.ToString("yyyy-MM-dd"))"
                                asp-route-fechaHasta="@(Model.FechaHasta?.ToString("yyyy-MM-dd"))"
                                asp-route-donanteId="@Model.DonanteId"
@@ -448,34 +442,40 @@
         </div>
     </div>
 
-    <!-- Panel Lateral de Exportación -->
+    <!-- Panel Lateral de Exportación Funcional -->
     <div class="col-12 col-lg-4 col-xl-3">
         <div class="card border-0 shadow-sm rounded-4 p-4 bg-white filter-card h-100 d-flex flex-column justify-content-between">
             <div>
                 <h5 class="fw-bold text-dark mb-1 d-flex align-items-center gap-2">
                     <i class="bi bi-download text-success"></i>Exportar
                 </h5>
-                <p class="text-muted small mb-4">Elegí el formato del reporte:</p>
+                <p class="text-muted small mb-4">Descargá el reporte filtrado:</p>
 
                 <div class="d-grid gap-3">
-                    <button type="button" class="btn btn-success rounded-3 fw-semibold py-2.5 d-flex align-items-center justify-content-center gap-2 shadow-sm" onclick="alert('Exportando a CSV...')">
+                    <a asp-action="Exportar" asp-route-formato="csv" asp-route-tab="@Model.TabActiva"
+                       asp-route-fechaDesde="@(Model.FechaDesde?.ToString("yyyy-MM-dd"))" asp-route-fechaHasta="@(Model.FechaHasta?.ToString("yyyy-MM-dd"))" asp-route-busqueda="@Model.Busqueda"
+                       class="btn btn-success rounded-3 fw-semibold py-2.5 d-flex align-items-center justify-content-center gap-2 shadow-sm text-decoration-none">
                         <i class="bi bi-file-earmark-spreadsheet-fill fs-5"></i>Descargar CSV
-                    </button>
+                    </a>
 
-                    <button type="button" class="btn btn-export-excel rounded-3 fw-semibold py-2.5 d-flex align-items-center justify-content-center gap-2 shadow-sm" onclick="alert('Exportando a Excel...')">
+                    <a asp-action="Exportar" asp-route-formato="excel" asp-route-tab="@Model.TabActiva"
+                       asp-route-fechaDesde="@(Model.FechaDesde?.ToString("yyyy-MM-dd"))" asp-route-fechaHasta="@(Model.FechaHasta?.ToString("yyyy-MM-dd"))" asp-route-busqueda="@Model.Busqueda"
+                       class="btn btn-export-excel rounded-3 fw-semibold py-2.5 d-flex align-items-center justify-content-center gap-2 shadow-sm text-decoration-none">
                         <i class="bi bi-file-earmark-excel-fill fs-5"></i>Descargar Excel
-                    </button>
+                    </a>
 
-                    <button type="button" class="btn btn-export-pdf rounded-3 fw-semibold py-2.5 d-flex align-items-center justify-content-center gap-2 shadow-sm" onclick="alert('Exportando a PDF...')">
+                    <a asp-action="Exportar" asp-route-formato="pdf" asp-route-tab="@Model.TabActiva"
+                       asp-route-fechaDesde="@(Model.FechaDesde?.ToString("yyyy-MM-dd"))" asp-route-fechaHasta="@(Model.FechaHasta?.ToString("yyyy-MM-dd"))" asp-route-busqueda="@Model.Busqueda"
+                       class="btn btn-export-pdf rounded-3 fw-semibold py-2.5 d-flex align-items-center justify-content-center gap-2 shadow-sm text-decoration-none">
                         <i class="bi bi-file-earmark-pdf-fill fs-5"></i>Descargar PDF
-                    </button>
+                    </a>
                 </div>
             </div>
 
             <div class="mt-4 pt-3 border-top">
                 <p class="text-muted small mb-0 d-flex align-items-start gap-2">
                     <i class="bi bi-info-circle text-primary mt-0.5"></i>
-                    <span>Los reportes incluyen la información filtrada según los criterios seleccionados.</span>
+                    <span>Exporta exactamente los registros que coinciden con los filtros actuales.</span>
                 </p>
             </div>
         </div>
