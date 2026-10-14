@@ -264,9 +264,6 @@
                 </tbody>
             </table>
         </div>
-        <div class="card-footer bg-white border-top p-3 px-4 d-flex flex-column flex-sm-row justify-content-between align-items-center gap-2">
-            <small class="text-muted">Total de alimentos listados: <strong>@Model.Count()</strong></small>
-            <small class="text-muted"><i class="bi bi-qr-code-scan me-1 text-primary"></i> Los códigos EAN son escaneables desde la App Android.</small>
-        </div>
+        <partial name="_Paginacion" model="ViewBag.Paginacion as NutriRed.Web.Models.PaginacionViewModel" />
     }
 </div>

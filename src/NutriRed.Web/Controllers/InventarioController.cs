@@ -27,7 +27,7 @@ public class InventarioController : Controller
     }
 
     // GET: /Inventario / /Inventario/Index (Stock Consolidado & FEFO)
-    public async Task<IActionResult> Index(int diasAlerta = 30)
+    public async Task<IActionResult> Index(int diasAlerta = 30, int pagina = 1)
     {
         var resultadoStock = await _inventarioService.ObtenerStockConsolidadoAsync();
         var stockConsolidado = (resultadoStock.Data ?? Enumerable.Empty<StockProductoDto>()).ToList();
@@ -41,13 +41,25 @@ public class InventarioController : Controller
 
         ViewBag.Categorias = categorias;
 
-        // KPIs de resumen para los bloques superiores
+        // KPIs de resumen para los bloques superiores (con el total completo consolidado)
         ViewBag.TotalProductos = stockConsolidado.Count;
         ViewBag.StockDisponibleTotal = stockConsolidado.Sum(s => s.StockActual);
         ViewBag.ProductosEnAlerta = stockConsolidado.Count(s => s.EstadoFEFO == "Alerta");
         ViewBag.ProductosVencidos = stockConsolidado.Count(s => s.EstadoFEFO == "Vencido");
 
-        return View(stockConsolidado);
+        var (itemsPaginados, paginacion) = stockConsolidado.Paginar(
+            pagina,
+            tamanoPagina: 10,
+            accion: nameof(Index),
+            controlador: "Inventario",
+            parametrosRuta: new Dictionary<string, string>
+            {
+                ["diasAlerta"] = diasAlerta.ToString()
+            }
+        );
+
+        ViewBag.Paginacion = paginacion;
+        return View(itemsPaginados);
     }
 
     // GET: /Inventario/Historial?productoId=5

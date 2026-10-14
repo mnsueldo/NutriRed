@@ -34,7 +34,7 @@ public class PaquetesController : Controller
     }
 
     // GET: Paquetes
-    public async Task<IActionResult> Index(EstadoPaquete? estado = null, string? codigo = null)
+    public async Task<IActionResult> Index(EstadoPaquete? estado = null, string? codigo = null, int pagina = 1)
     {
         var viewModel = new PaqueteIndexViewModel
         {
@@ -54,19 +54,36 @@ public class PaquetesController : Controller
                 TempData["Advertencia"] = $"No se encontró ningún paquete con el código de seguimiento '{viewModel.CodigoSeguimiento}'.";
                 viewModel.Paquetes = Enumerable.Empty<PaqueteDto>();
             }
-            return View(viewModel);
-        }
-
-        var result = await _paqueteService.ObtenerTodosAsync(estado);
-        if (!result.Success || result.Data == null)
-        {
-            TempData["Error"] = result.ErrorMessage ?? "No se pudieron obtener los paquetes armados.";
-            viewModel.Paquetes = Enumerable.Empty<PaqueteDto>();
         }
         else
         {
-            viewModel.Paquetes = result.Data;
+            var result = await _paqueteService.ObtenerTodosAsync(estado);
+            if (!result.Success || result.Data == null)
+            {
+                TempData["Error"] = result.ErrorMessage ?? "No se pudieron obtener los paquetes armados.";
+                viewModel.Paquetes = Enumerable.Empty<PaqueteDto>();
+            }
+            else
+            {
+                viewModel.Paquetes = result.Data;
+            }
         }
+
+        var listaPaquetes = viewModel.Paquetes.ToList();
+        var (itemsPaginados, paginacion) = listaPaquetes.Paginar(
+            pagina,
+            tamanoPagina: 10,
+            accion: nameof(Index),
+            controlador: "Paquetes",
+            parametrosRuta: new Dictionary<string, string>
+            {
+                ["estado"] = estado?.ToString() ?? "",
+                ["codigo"] = codigo ?? ""
+            }
+        );
+
+        viewModel.Paquetes = itemsPaginados;
+        ViewBag.Paginacion = paginacion;
 
         return View(viewModel);
     }

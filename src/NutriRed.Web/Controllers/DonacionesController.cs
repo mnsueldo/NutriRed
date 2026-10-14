@@ -30,7 +30,7 @@ public class DonacionesController : Controller
     }
 
     // GET: Donaciones
-    public async Task<IActionResult> Index(DateTime? desde = null, DateTime? hasta = null, string? codigo = null, string? rango = null)
+    public async Task<IActionResult> Index(DateTime? desde = null, DateTime? hasta = null, string? codigo = null, string? rango = null, int pagina = 1)
     {
         var hoy = DateTime.Today;
         if (!string.IsNullOrWhiteSpace(rango))
@@ -81,19 +81,38 @@ public class DonacionesController : Controller
                 TempData["Advertencia"] = $"No se encontró ninguna donación con el comprobante '{viewModel.CodigoComprobante}'.";
                 viewModel.Donaciones = Enumerable.Empty<DonacionComprobanteDto>();
             }
-            return View(viewModel);
-        }
-
-        var result = await _donacionService.ObtenerTodasAsync(desde, hasta);
-        if (!result.Success || result.Data == null)
-        {
-            TempData["Error"] = result.ErrorMessage ?? "No se pudo recuperar el historial de donaciones.";
-            viewModel.Donaciones = Enumerable.Empty<DonacionComprobanteDto>();
         }
         else
         {
-            viewModel.Donaciones = result.Data;
+            var result = await _donacionService.ObtenerTodasAsync(desde, hasta);
+            if (!result.Success || result.Data == null)
+            {
+                TempData["Error"] = result.ErrorMessage ?? "No se pudo recuperar el historial de donaciones.";
+                viewModel.Donaciones = Enumerable.Empty<DonacionComprobanteDto>();
+            }
+            else
+            {
+                viewModel.Donaciones = result.Data;
+            }
         }
+
+        var listaDonaciones = viewModel.Donaciones.ToList();
+        var (itemsPaginados, paginacion) = listaDonaciones.Paginar(
+            pagina,
+            tamanoPagina: 10,
+            accion: nameof(Index),
+            controlador: "Donaciones",
+            parametrosRuta: new Dictionary<string, string>
+            {
+                ["desde"] = desde?.ToString("yyyy-MM-dd") ?? "",
+                ["hasta"] = hasta?.ToString("yyyy-MM-dd") ?? "",
+                ["codigo"] = codigo ?? "",
+                ["rango"] = rango ?? ""
+            }
+        );
+
+        viewModel.Donaciones = itemsPaginados;
+        ViewBag.Paginacion = paginacion;
 
         return View(viewModel);
     }

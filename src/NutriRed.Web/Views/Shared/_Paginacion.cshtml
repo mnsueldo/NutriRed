@@ -1,0 +1,102 @@
+@model NutriRed.Web.Models.PaginacionViewModel
+
+@if (Model != null && Model.TotalRegistros > 0)
+{
+    <div class="card-footer bg-white border-top p-3 px-4 d-flex flex-column flex-sm-row justify-content-between align-items-center gap-3">
+        <small class="text-muted">
+            Mostrando registros <strong>@Model.RegistroInicio</strong> a <strong>@Model.RegistroFin</strong> de un total de <strong>@Model.TotalRegistros</strong>
+        </small>
+
+        @if (Model.TotalPaginas > 1)
+        {
+            <nav aria-label="Navegación de páginas">
+                <ul class="pagination pagination-sm mb-0 shadow-sm">
+                    <!-- Botón Anterior -->
+                    <li class="page-item @(!Model.TienePaginaAnterior ? "disabled" : "")">
+                        @if (Model.TienePaginaAnterior)
+                        {
+                            <a class="page-link" asp-controller="@Model.Controlador" asp-action="@Model.Accion" asp-all-route-data="@Model.ObtenerRutaConPagina(Model.PaginaActual - 1)" aria-label="Anterior">
+                                <i class="bi bi-chevron-left me-1"></i> Anterior
+                            </a>
+                        }
+                        else
+                        {
+                            <span class="page-link text-muted"><i class="bi bi-chevron-left me-1"></i> Anterior</span>
+                        }
+                    </li>
+
+                    <!-- Ventana de páginas (máximo 5 botones numerados visibles) -->
+                    @{
+                        int radio = 2;
+                        int inicio = Math.Max(1, Model.PaginaActual - radio);
+                        int fin = Math.Min(Model.TotalPaginas, Model.PaginaActual + radio);
+
+                        if (fin - inicio < 4)
+                        {
+                            if (inicio == 1)
+                            {
+                                fin = Math.Min(Model.TotalPaginas, inicio + 4);
+                            }
+                            else if (fin == Model.TotalPaginas)
+                            {
+                                inicio = Math.Max(1, fin - 4);
+                            }
+                        }
+                    }
+
+                    @if (inicio > 1)
+                    {
+                        <li class="page-item">
+                            <a class="page-link" asp-controller="@Model.Controlador" asp-action="@Model.Accion" asp-all-route-data="@Model.ObtenerRutaConPagina(1)">1</a>
+                        </li>
+                        @if (inicio > 2)
+                        {
+                            <li class="page-item disabled"><span class="page-link">&hellip;</span></li>
+                        }
+                    }
+
+                    @for (int i = inicio; i <= fin; i++)
+                    {
+                        if (i == Model.PaginaActual)
+                        {
+                            <li class="page-item active" aria-current="page">
+                                <span class="page-link bg-success border-success text-white fw-bold">@i</span>
+                            </li>
+                        }
+                        else
+                        {
+                            <li class="page-item">
+                                <a class="page-link" asp-controller="@Model.Controlador" asp-action="@Model.Accion" asp-all-route-data="@Model.ObtenerRutaConPagina(i)">@i</a>
+                            </li>
+                        }
+                    }
+
+                    @if (fin < Model.TotalPaginas)
+                    {
+                        @if (fin < Model.TotalPaginas - 1)
+                        {
+                            <li class="page-item disabled"><span class="page-link">&hellip;</span></li>
+                        }
+                        <li class="page-item">
+                            <a class="page-link" asp-controller="@Model.Controlador" asp-action="@Model.Accion" asp-all-route-data="@Model.ObtenerRutaConPagina(Model.TotalPaginas)">@Model.TotalPaginas</a>
+                        </li>
+                    }
+
+                    <!-- Botón Siguiente -->
+                    <li class="page-item @(!Model.TienePaginaSiguiente ? "disabled" : "")">
+                        @if (Model.TienePaginaSiguiente)
+                        {
+                            <a class="page-link" asp-controller="@Model.Controlador" asp-action="@Model.Accion" asp-all-route-data="@Model.ObtenerRutaConPagina(Model.PaginaActual + 1)" aria-label="Siguiente">
+                                Siguiente <i class="bi bi-chevron-right ms-1"></i>
+                            </a>
+                        }
+                        else
+                        {
+                            <span class="page-link text-muted">Siguiente <i class="bi bi-chevron-right ms-1"></i></span>
+                        }
+                    </li>
+                </ul>
+            </nav>
+        }
+    </div>
+}

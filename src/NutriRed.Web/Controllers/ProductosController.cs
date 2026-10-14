@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using NutriRed.Domain.Entities;
 using NutriRed.Services.Interfaces;
+using NutriRed.Web.Models;
 
 namespace NutriRed.Web.Controllers;
 
@@ -24,7 +25,7 @@ public class ProductosController : Controller
     }
 
     // GET: /Productos
-    public async Task<IActionResult> Index(string? busqueda, int? categoriaId, bool verTodos = false)
+    public async Task<IActionResult> Index(string? busqueda, int? categoriaId, bool verTodos = false, int pagina = 1)
     {
         var productosResult = await _productoService.ObtenerTodosAsync(soloActivos: !verTodos);
 
@@ -63,7 +64,22 @@ public class ProductosController : Controller
         ViewBag.CategoriaId = categoriaId;
         ViewBag.VerTodos = verTodos;
 
-        return View(productos.OrderBy(p => p.Nombre).ToList());
+        var listaOrdenada = productos.OrderBy(p => p.Nombre).ToList();
+        var (itemsPaginados, paginacion) = listaOrdenada.Paginar(
+            pagina,
+            tamanoPagina: 10,
+            accion: nameof(Index),
+            controlador: "Productos",
+            parametrosRuta: new Dictionary<string, string>
+            {
+                ["busqueda"] = busqueda ?? "",
+                ["categoriaId"] = categoriaId?.ToString() ?? "",
+                ["verTodos"] = verTodos.ToString()
+            }
+        );
+
+        ViewBag.Paginacion = paginacion;
+        return View(itemsPaginados);
     }
 
     // GET: /Productos/Detalles/5

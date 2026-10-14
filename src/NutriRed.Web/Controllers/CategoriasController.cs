@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NutriRed.Domain.Entities;
 using NutriRed.Services.Interfaces;
+using NutriRed.Web.Models;
 
 namespace NutriRed.Web.Controllers;
 
@@ -16,7 +17,7 @@ public class CategoriasController : Controller
     }
 
     // GET: /Categorias
-    public async Task<IActionResult> Index(bool verTodas = false)
+    public async Task<IActionResult> Index(bool verTodas = false, int pagina = 1)
     {
         var result = await _categoriaService.ObtenerTodasAsync(soloActivas: !verTodas);
 
@@ -26,8 +27,21 @@ public class CategoriasController : Controller
             return View(Enumerable.Empty<Categoria>());
         }
 
+        var lista = (result.Data ?? Enumerable.Empty<Categoria>()).ToList();
+        var (itemsPaginados, paginacion) = lista.Paginar(
+            pagina,
+            tamanoPagina: 10,
+            accion: nameof(Index),
+            controlador: "Categorias",
+            parametrosRuta: new Dictionary<string, string>
+            {
+                ["verTodas"] = verTodas.ToString()
+            }
+        );
+
         ViewBag.VerTodas = verTodas;
-        return View(result.Data);
+        ViewBag.Paginacion = paginacion;
+        return View(itemsPaginados);
     }
 
     // GET: /Categorias/Create

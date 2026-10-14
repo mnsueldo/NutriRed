@@ -27,7 +27,7 @@ public class EntregasController : Controller
     }
 
     // GET: Entregas
-    public async Task<IActionResult> Index(string? codigoQr = null, string? tab = "pendientes", string? estado = null)
+    public async Task<IActionResult> Index(string? codigoQr = null, string? tab = "pendientes", string? estado = null, int pagina = 1)
     {
         // Búsqueda directa por código QR escaneado o escrito
         if (!string.IsNullOrWhiteSpace(codigoQr))
@@ -53,17 +53,58 @@ public class EntregasController : Controller
             filtrados = filtrados.Where(p => p.Estado == estadoFiltro);
         }
 
+        var tabActiva = string.IsNullOrWhiteSpace(tab) ? "pendientes" : tab;
+        PaginacionViewModel paginacion;
+        List<PaquetePendienteDespachoDto> listosPaginados = listos;
+        List<PaqueteDespachoHistorialDto> historialPaginados = filtrados.ToList();
+
+        if (tabActiva == "todos")
+        {
+            var (items, pag) = filtrados.ToList().Paginar(
+                pagina,
+                tamanoPagina: 10,
+                accion: nameof(Index),
+                controlador: "Entregas",
+                parametrosRuta: new Dictionary<string, string>
+                {
+                    ["tab"] = "todos",
+                    ["estado"] = estado ?? "",
+                    ["codigoQr"] = codigoQr ?? ""
+                }
+            );
+            historialPaginados = items;
+            paginacion = pag;
+        }
+        else
+        {
+            var (items, pag) = listos.Paginar(
+                pagina,
+                tamanoPagina: 10,
+                accion: nameof(Index),
+                controlador: "Entregas",
+                parametrosRuta: new Dictionary<string, string>
+                {
+                    ["tab"] = "pendientes",
+                    ["codigoQr"] = codigoQr ?? ""
+                }
+            );
+            listosPaginados = items;
+            paginacion = pag;
+        }
+
         var model = new EntregaIndexViewModel
         {
-            PaquetesListos = listos,
-            HistorialPaquetes = filtrados.ToList(),
+            PaquetesListos = listosPaginados,
+            HistorialPaquetes = historialPaginados,
             CodigoQrBusqueda = codigoQr,
-            TabActiva = string.IsNullOrWhiteSpace(tab) ? "pendientes" : tab,
+            TabActiva = tabActiva,
             FiltroEstado = estado,
             TotalEntregados = todos.Count(p => p.Estado == EstadoPaquete.Entregado),
             TotalCancelados = todos.Count(p => p.Estado == EstadoPaquete.Cancelado),
             TotalTodos = todos.Count
         };
+
+        ViewBag.Paginacion = paginacion;
 
         return View(model);
     }

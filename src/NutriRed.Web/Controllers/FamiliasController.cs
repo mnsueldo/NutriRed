@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using NutriRed.Domain.Entities;
 using NutriRed.Domain.Enums;
 using NutriRed.Services.Interfaces;
+using NutriRed.Web.Models;
 
 namespace NutriRed.Web.Controllers
 {
@@ -17,7 +18,7 @@ namespace NutriRed.Web.Controllers
         }
 
         // GET: Familias
-        public async Task<IActionResult> Index(bool mostrarTodos = false, string? busqueda = null, EstadoFamilia? estado = null)
+        public async Task<IActionResult> Index(bool mostrarTodos = false, string? busqueda = null, EstadoFamilia? estado = null, int pagina = 1)
         {
             // Si se especificó un estado o se pidió ver todos, incluimos inactivos para filtrar correctamente
             bool incluirInactivos = mostrarTodos || estado.HasValue;
@@ -39,7 +40,22 @@ namespace NutriRed.Web.Controllers
                 data = data.Where(f => f.Estado == estado.Value);
             }
 
-            return View(data);
+            var listaFamilias = data.ToList();
+            var (itemsPaginados, paginacion) = listaFamilias.Paginar(
+                pagina,
+                tamanoPagina: 10,
+                accion: nameof(Index),
+                controlador: "Familias",
+                parametrosRuta: new Dictionary<string, string>
+                {
+                    ["mostrarTodos"] = mostrarTodos.ToString(),
+                    ["busqueda"] = busqueda ?? "",
+                    ["estado"] = estado?.ToString() ?? ""
+                }
+            );
+
+            ViewBag.Paginacion = paginacion;
+            return View(itemsPaginados);
         }
 
         // GET: Familias/Detalles/5

@@ -1,10 +1,12 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using NutriRed.Services.DTOs;
 using NutriRed.Services.Interfaces;
 using NutriRed.Web.Models;
 
 namespace NutriRed.Web.Controllers;
 
+[Authorize]
 public class DashboardController : Controller
 {
     private readonly IFamiliaService _familiaService;
