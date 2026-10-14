@@ -1,11 +1,12 @@
-﻿using System;
+﻿using Microsoft.EntityFrameworkCore;
+using NutriRed.Data;
+using NutriRed.Domain.Entities;
+using NutriRed.Services.DTOs;
+using NutriRed.Services.Interfaces;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.EntityFrameworkCore;
-using NutriRed.Data;
-using NutriRed.Services.DTOs;
-using NutriRed.Services.Interfaces;
 
 namespace NutriRed.Services.Implementations;
 
@@ -18,7 +19,11 @@ public class ReporteService : IReporteService
         _context = context;
     }
 
-    public async Task<List<ReporteInventarioItemDto>> ObtenerReporteInventarioAsync(int? categoriaId, string? estadoLote)
+    public async Task<List<ReporteInventarioItemDto>> ObtenerReporteInventarioAsync(
+        int? categoriaId,
+        string? busquedaInventario,
+        string? estadoStock,
+        string? semaforoFefo)
     {
         var query = _context.Productos
             .AsNoTracking()
@@ -30,45 +35,101 @@ public class ReporteService : IReporteService
         if (categoriaId.HasValue)
             query = query.Where(p => p.CategoriaId == categoriaId.Value);
 
+        if (!string.IsNullOrWhiteSpace(busquedaInventario))
+        {
+            var term = busquedaInventario.Trim().ToLower();
+            query = query.Where(p =>
+                (p.Nombre != null && EF.Functions.Like(p.Nombre.ToLower(), $"%{term}%")) ||
+                (p.CodigoBarras != null && EF.Functions.Like(p.CodigoBarras.ToLower(), $"%{term}%"))
+            );
+        }
+
         var productos = await query.ToListAsync();
         var resultado = new List<ReporteInventarioItemDto>();
         var hoy = DateTime.Today;
 
         foreach (var p in productos)
         {
-            var lotesActivos = p.Lotes.Where(l => l.CantidadDisponible > 0).ToList();
-            decimal stockTotal = lotesActivos.Sum(l => l.CantidadDisponible);
+            var lotesDisponibles = p.Lotes.Where(l => l.CantidadDisponible > 0).ToList();
 
-            string estado = "Óptimo";
-            if (lotesActivos.Any(l => l.FechaVencimiento <= hoy))
+            // CASO 1: El producto NO tiene lotes activos (Agotado / Sin stock)
+            if (!lotesDisponibles.Any())
             {
-                estado = "Vencido";
-            }
-            else if (lotesActivos.Any(l => l.FechaVencimiento <= hoy.AddDays(30)))
-            {
-                estado = "Próximo a vencer";
-            }
-            else if (stockTotal <= p.StockMinimo)
-            {
-                estado = "Atención";
-            }
+                string situacionStockAgotado = "Agotado / Sin stock";
+                string estadoFefoAgotado = "Sin Stock";
 
-            if (!string.IsNullOrEmpty(estadoLote) && !estado.Equals(estadoLote, StringComparison.OrdinalIgnoreCase))
+                // Aplicar filtros si el usuario los seleccionó
+                if (!string.IsNullOrEmpty(estadoStock) && !situacionStockAgotado.Equals(estadoStock, StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                if (!string.IsNullOrEmpty(semaforoFefo) && !semaforoFefo.Contains("Sin Stock", StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                resultado.Add(new ReporteInventarioItemDto
+                {
+                    Producto = p.Nombre,
+                    CodigoEan = p.CodigoBarras ?? "N/A",
+                    Categoria = p.Categoria?.Nombre ?? "Sin Categoría",
+                    NumeroLote = "Sin Lotes Aptos",
+                    FechaVencimiento = DateTime.MinValue,
+                    FechaIngreso = DateTime.MinValue,
+                    UsuarioIngreso = "-",
+                    StockDisponible = 0,
+                    UnidadMedida = p.UnidadMedida.ToString(),
+                    Estado = estadoFefoAgotado
+                });
+
                 continue;
+            }
 
-            resultado.Add(new ReporteInventarioItemDto
+            // CASO 2: El producto tiene lotes con stock
+            foreach (var l in lotesDisponibles)
             {
-                Producto = p.Nombre,
-                CodigoEan = p.CodigoBarras ?? "N/A",
-                Categoria = p.Categoria?.Nombre ?? "Sin Categoría",
-                StockTotal = stockTotal,
-                UnidadMedida = p.UnidadMedida.ToString(),
-                CantidadLotes = lotesActivos.Count,
-                Estado = estado
-            });
+                int diasRestantes = (l.FechaVencimiento - hoy).Days;
+
+                string estadoFefo = "Óptimo (> 15 días)";
+                if (diasRestantes <= 0)
+                {
+                    estadoFefo = "Crítico / Vencido";
+                }
+                else if (diasRestantes <= 5)
+                {
+                    estadoFefo = "Urgente (<= 5 días)";
+                }
+                else if (diasRestantes <= 15)
+                {
+                    estadoFefo = "Atención (<= 15 días)";
+                }
+
+                if (!string.IsNullOrEmpty(semaforoFefo) && !estadoFefo.Equals(semaforoFefo, StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                string situacionStock = "Con stock suficiente";
+                if (l.CantidadDisponible <= p.StockMinimo)
+                {
+                    situacionStock = "Bajo stock mínimo";
+                }
+
+                if (!string.IsNullOrEmpty(estadoStock) && !situacionStock.Equals(estadoStock, StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                resultado.Add(new ReporteInventarioItemDto
+                {
+                    Producto = p.Nombre,
+                    CodigoEan = p.CodigoBarras ?? "N/A",
+                    Categoria = p.Categoria?.Nombre ?? "Sin Categoría",
+                    NumeroLote = l.NumeroLote,
+                    FechaVencimiento = l.FechaVencimiento,
+                    FechaIngreso = l.FechaIngreso,
+                    UsuarioIngreso = "Voluntario / Sistema",
+                    StockDisponible = l.CantidadDisponible,
+                    UnidadMedida = p.UnidadMedida.ToString(),
+                    Estado = estadoFefo
+                });
+            }
         }
 
-        return resultado.OrderBy(r => r.Producto).ToList();
+        return resultado.OrderBy(r => r.Producto).ThenBy(r => r.FechaVencimiento).ToList();
     }
 
     public async Task<List<ReporteDonacionItemDto>> ObtenerReporteDonacionesAsync(DateTime? desde, DateTime? hasta, int? donanteId)
@@ -83,25 +144,25 @@ public class ReporteService : IReporteService
             query = query.Where(d => d.FechaHora >= desde.Value);
 
         if (hasta.HasValue)
-            query = query.Where(d => d.FechaHora <= hasta.Value.AddDays(1).AddTicks(-1));
+            query = query.Where(d => d.FechaHora <= hasta.Value.AddDays(1).AddSeconds(-1));
 
         if (donanteId.HasValue)
             query = query.Where(d => d.DonanteId == donanteId.Value);
 
-        return await query
-            .OrderByDescending(d => d.FechaHora)
-            .Select(d => new ReporteDonacionItemDto
-            {
-                Comprobante = $"DON-{d.FechaHora.Year}-{d.Id:D5}",
-                FechaHora = d.FechaHora,
-                Donante = d.Donante != null ? d.Donante.NombreRazonSocial : "Donante Anónimo",
-                Documento = d.Donante != null ? (d.Donante.NumeroDocumento ?? "N/A") : "N/A",
-                TipoDonante = d.Donante != null ? d.Donante.Tipo.ToString() : "Anónimo",
-                CantidadItems = d.Detalles.Count,
-                CantidadTotal = d.Detalles.Sum(dt => dt.Cantidad),
-                Receptor = "Voluntario Receptor"
-            })
-            .ToListAsync();
+        var donaciones = await query.OrderByDescending(d => d.FechaHora).ToListAsync();
+
+        return donaciones.Select(d => new ReporteDonacionItemDto
+        {
+            Id = d.Id,
+            Comprobante = d.CodigoComprobante ?? $"DON-{d.Id:D5}",
+            FechaHora = d.FechaHora,
+            Donante = d.Donante != null ? d.Donante.NombreRazonSocial : "Donante Anónimo",
+            Documento = d.Donante != null ? (d.Donante.NumeroDocumento ?? "N/A") : "N/A", // CORREGIDO: Usar NumeroDocumento
+            TipoDonante = d.Donante != null ? d.Donante.Tipo.ToString() : "Individuo",     // CORREGIDO: Obtener el tipo desde d.Donante.Tipo
+            CantidadItems = d.Detalles?.Count ?? 0,
+            CantidadTotal = d.Detalles?.Sum(dt => dt.Cantidad) ?? 0,
+            Receptor = d.VoluntarioReceptorId ?? "Sistema"
+        }).ToList();
     }
 
     public async Task<List<ReporteEntregaItemDto>> ObtenerReporteEntregasAsync(DateTime? desde, DateTime? hasta, int? tipoPaqueteId, string? voluntarioId)
@@ -157,16 +218,39 @@ public class ReporteService : IReporteService
         }
 
         var familias = await query.ToListAsync();
+        var familiaIds = familias.Select(f => f.Id).ToList();
 
-        return familias.Select(f => new ReporteFamiliaItemDto
+        // CORRECCIÓN: Incluir la relación anidada FamiliaBeneficiaria y validar nulos
+        var entregas = await _context.Entregas
+            .AsNoTracking()
+            .Include(e => e.Paquete)
+                .ThenInclude(p => p.FamiliaBeneficiaria)
+            .Where(e => e.Paquete != null && e.Paquete.FamiliaBeneficiaria != null && familiaIds.Contains(e.Paquete.FamiliaBeneficiaria.Id))
+            .ToListAsync();
+
+        var entregasPorFamilia = entregas
+            .Where(e => e.Paquete?.FamiliaBeneficiaria != null)
+            .GroupBy(e => e.Paquete!.FamiliaBeneficiaria.Id)
+            .ToDictionary(g => g.Key, g => g.OrderByDescending(e => e.FechaHoraEntrega).ToList());
+
+        return familias.Select(f =>
         {
-            Familia = $"{f.ApellidoTitular}, {f.NombreTitular}",
-            DniTitular = f.DniTitular,
-            Direccion = f.Direccion ?? "Sin dirección",
-            Integrantes = f.CantidadIntegrantes,
-            TotalKitsRecibidos = 0,
-            UltimaEntrega = null,
-            Estado = "Activa" // Estado predeterminado o mapeado según la propiedad de tu entidad
+            entregasPorFamilia.TryGetValue(f.Id, out var entregasFamilia);
+            entregasFamilia ??= new List<Entrega>();
+
+            int totalKits = entregasFamilia.Count;
+            DateTime? ultimaEntrega = entregasFamilia.FirstOrDefault()?.FechaHoraEntrega;
+
+            return new ReporteFamiliaItemDto
+            {
+                Familia = $"{f.ApellidoTitular}, {f.NombreTitular}",
+                DniTitular = f.DniTitular,
+                Direccion = f.Direccion ?? "Sin dirección",
+                Integrantes = f.CantidadIntegrantes,
+                TotalKitsRecibidos = totalKits,
+                UltimaEntrega = ultimaEntrega,
+                Estado = "Activa"
+            };
         }).OrderBy(f => f.Familia).ToList();
     }
 

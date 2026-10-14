@@ -8,14 +8,21 @@ public class ReporteInventarioItemDto
     public string Producto { get; set; } = string.Empty;
     public string CodigoEan { get; set; } = string.Empty;
     public string Categoria { get; set; } = string.Empty;
-    public decimal StockTotal { get; set; }
+
+    // Datos específicos del Lote y Auditoría
+    public string NumeroLote { get; set; } = string.Empty;
+    public DateTime FechaVencimiento { get; set; }
+    public DateTime FechaIngreso { get; set; }
+    public string UsuarioIngreso { get; set; } = string.Empty;
+
+    public decimal StockDisponible { get; set; }
     public string UnidadMedida { get; set; } = string.Empty;
-    public int CantidadLotes { get; set; }
     public string Estado { get; set; } = "Óptimo";
 }
 
 public class ReporteDonacionItemDto
 {
+    public int Id { get; set; } // Identificador para vincular el comprobante
     public string Comprobante { get; set; } = string.Empty;
     public DateTime FechaHora { get; set; }
     public string Donante { get; set; } = string.Empty;

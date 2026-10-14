@@ -7,7 +7,7 @@ namespace NutriRed.Services.Interfaces;
 
 public interface IReporteService
 {
-    Task<List<ReporteInventarioItemDto>> ObtenerReporteInventarioAsync(int? categoriaId, string? estadoLote);
+    Task<List<ReporteInventarioItemDto>> ObtenerReporteInventarioAsync(int? categoriaId, string? busquedaInventario, string? estadoStock, string? semaforoFefo);
     Task<List<ReporteDonacionItemDto>> ObtenerReporteDonacionesAsync(DateTime? desde, DateTime? hasta, int? donanteId);
     Task<List<ReporteEntregaItemDto>> ObtenerReporteEntregasAsync(DateTime? desde, DateTime? hasta, int? tipoPaqueteId, string? voluntarioId);
     Task<List<ReporteFamiliaItemDto>> ObtenerReporteFamiliasAsync(string? busqueda);
