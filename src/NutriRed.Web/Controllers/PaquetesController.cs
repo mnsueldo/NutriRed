@@ -69,6 +69,14 @@ public class PaquetesController : Controller
             }
         }
 
+        // Obtener totales globales estables para el panel superior de métricas
+        var todosResult = await _paqueteService.ObtenerTodosAsync(null);
+        var todos = todosResult.Success && todosResult.Data != null ? todosResult.Data.ToList() : new List<PaqueteDto>();
+        viewModel.TotalGlobal = todos.Count;
+        viewModel.PreparadosGlobal = todos.Count(p => p.Estado == EstadoPaquete.Preparado);
+        viewModel.EntregadosGlobal = todos.Count(p => p.Estado == EstadoPaquete.Entregado);
+        viewModel.CanceladosGlobal = todos.Count(p => p.Estado == EstadoPaquete.Cancelado);
+
         var listaPaquetes = viewModel.Paquetes.ToList();
         var (itemsPaginados, paginacion) = listaPaquetes.Paginar(
             pagina,
@@ -122,6 +130,8 @@ public class PaquetesController : Controller
                     ProductoId = i.ProductoId,
                     NombreProducto = i.NombreProducto,
                     CodigoBarras = i.CodigoBarras,
+                    CategoriaId = i.CategoriaId,
+                    CategoriaNombre = i.CategoriaNombre,
                     Cantidad = i.CantidadRequerida,
                     EsSustituto = false,
                     ProductoSustituidoId = null
@@ -180,6 +190,8 @@ public class PaquetesController : Controller
                     ProductoId = i.ProductoId,
                     NombreProducto = i.NombreProducto,
                     CodigoBarras = i.CodigoBarras,
+                    CategoriaId = i.CategoriaId,
+                    CategoriaNombre = i.CategoriaNombre,
                     Cantidad = i.CantidadRequerida,
                     EsSustituto = false,
                     ProductoSustituidoId = null
@@ -195,6 +207,8 @@ public class PaquetesController : Controller
                 ProductoId = i.ProductoId,
                 NombreProducto = i.NombreProducto,
                 CodigoBarras = i.CodigoBarras,
+                CategoriaId = i.CategoriaId,
+                CategoriaNombre = i.CategoriaNombre,
                 Cantidad = i.CantidadRequerida,
                 EsSustituto = false,
                 ProductoSustituidoId = null
@@ -315,5 +329,150 @@ public class PaquetesController : Controller
         ViewBag.Productos = productosResult.Success && productosResult.Data != null
             ? productosResult.Data.ToList()
             : new List<Producto>();
+    }
+
+    // GET: Paquetes/Plantillas
+    public async Task<IActionResult> Plantillas()
+    {
+        var result = await _paqueteService.ObtenerTiposPaqueteAsync();
+        var model = new PlantillasIndexViewModel
+        {
+            TiposPaquete = result.Success && result.Data != null ? result.Data : Enumerable.Empty<TipoPaquete>()
+        };
+        return View(model);
+    }
+
+    // GET: Paquetes/CrearPlantilla
+    public IActionResult CrearPlantilla()
+    {
+        var model = new CrearPlantillaViewModel
+        {
+            MinIntegrantes = 1,
+            MaxIntegrantes = 3,
+            Activo = true
+        };
+        return View(model);
+    }
+
+    // POST: Paquetes/CrearPlantilla
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> CrearPlantilla(CrearPlantillaViewModel model)
+    {
+        if (model.MinIntegrantes > model.MaxIntegrantes)
+        {
+            ModelState.AddModelError(nameof(model.MaxIntegrantes), "El máximo de integrantes debe ser mayor o igual al mínimo.");
+        }
+
+        if (!ModelState.IsValid)
+        {
+            return View(model);
+        }
+
+        var result = await _paqueteService.CrearTipoPaqueteAsync(
+            model.Nombre,
+            model.Descripcion,
+            model.MinIntegrantes,
+            model.MaxIntegrantes,
+            model.Activo);
+
+        if (!result.Success || result.Data == null)
+        {
+            ModelState.AddModelError(string.Empty, result.ErrorMessage ?? "No se pudo crear la plantilla de kit.");
+            return View(model);
+        }
+
+        TempData["Exito"] = $"Plantilla '{result.Data.Nombre}' creada exitosamente. Ahora puedes configurar sus alimentos.";
+        return RedirectToAction(nameof(EditarPlantilla), new { id = result.Data.Id });
+    }
+
+    // GET: Paquetes/EditarPlantilla/3
+    public async Task<IActionResult> EditarPlantilla(int id)
+    {
+        if (id <= 0)
+        {
+            return NotFound();
+        }
+
+        var result = await _paqueteService.ObtenerTipoPaquetePorIdAsync(id);
+        if (!result.Success || result.Data == null)
+        {
+            TempData["Error"] = result.ErrorMessage ?? "No se encontró la plantilla solicitada.";
+            return RedirectToAction(nameof(Plantillas));
+        }
+
+        var prodResult = await _productoService.ObtenerTodosAsync(soloActivos: true);
+        ViewBag.ProductosCatalogo = prodResult.Success && prodResult.Data != null
+            ? prodResult.Data.ToList()
+            : new List<Producto>();
+
+        var tipo = result.Data;
+        var model = new EditarPlantillaViewModel
+        {
+            Id = tipo.Id,
+            Nombre = tipo.Nombre,
+            Descripcion = tipo.Descripcion,
+            MinIntegrantes = tipo.MinIntegrantes,
+            MaxIntegrantes = tipo.MaxIntegrantes,
+            Activo = tipo.Activo,
+            Items = tipo.ItemsPlantilla.Select(i => new ItemPlantillaViewModel
+            {
+                Id = i.Id,
+                ProductoId = i.ProductoId,
+                NombreProducto = i.Producto?.Nombre ?? "Alimento",
+                CodigoBarras = i.Producto?.CodigoBarras,
+                CategoriaNombre = i.Producto?.Categoria?.Nombre ?? "General",
+                CantidadRequerida = i.CantidadRequerida
+            }).ToList()
+        };
+
+        return View(model);
+    }
+
+    // POST: Paquetes/EditarPlantilla
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> EditarPlantilla(EditarPlantillaViewModel model)
+    {
+        if (model.MinIntegrantes > model.MaxIntegrantes)
+        {
+            ModelState.AddModelError(nameof(model.MaxIntegrantes), "El máximo de integrantes debe ser mayor o igual al mínimo.");
+        }
+
+        if (!ModelState.IsValid)
+        {
+            var prodResult = await _productoService.ObtenerTodosAsync(soloActivos: true);
+            ViewBag.ProductosCatalogo = prodResult.Success && prodResult.Data != null
+                ? prodResult.Data.ToList()
+                : new List<Producto>();
+            return View(model);
+        }
+
+        var itemsList = model.Items?
+            .Where(i => i.ProductoId > 0 && i.CantidadRequerida > 0)
+            .Select(i => (i.ProductoId, i.CantidadRequerida))
+            .ToList() ?? new List<(int, decimal)>();
+
+        var result = await _paqueteService.ActualizarPlantillaAsync(
+            model.Id,
+            model.Nombre,
+            model.Descripcion,
+            model.MinIntegrantes,
+            model.MaxIntegrantes,
+            model.Activo,
+            itemsList);
+
+        if (!result.Success)
+        {
+            ModelState.AddModelError(string.Empty, result.ErrorMessage ?? "No se pudo actualizar la plantilla.");
+            var prodResult = await _productoService.ObtenerTodosAsync(soloActivos: true);
+            ViewBag.ProductosCatalogo = prodResult.Success && prodResult.Data != null
+                ? prodResult.Data.ToList()
+                : new List<Producto>();
+            return View(model);
+        }
+
+        TempData["Exito"] = $"La receta de '{model.Nombre}' fue actualizada con éxito.";
+        return RedirectToAction(nameof(Plantillas));
     }
 }

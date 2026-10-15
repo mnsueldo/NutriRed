@@ -23,6 +23,8 @@ public class ItemPropuestaDto
     public int ProductoId { get; set; }
     public string NombreProducto { get; set; } = string.Empty;
     public string CodigoBarras { get; set; } = string.Empty;
+    public int CategoriaId { get; set; }
+    public string CategoriaNombre { get; set; } = string.Empty;
     public decimal CantidadRequerida { get; set; }
     public decimal CantidadDisponible { get; set; }
     public decimal Faltante => Math.Max(0, CantidadRequerida - CantidadDisponible);

@@ -1,0 +1,344 @@
+@model NutriRed.Web.Models.EditarPlantillaViewModel
+
+@{
+    ViewData["Title"] = $"Editar Receta - {Model.Nombre}";
+    var productosCatalogo = ViewBag.ProductosCatalogo as List<NutriRed.Domain.Entities.Producto> ?? new List<NutriRed.Domain.Entities.Producto>();
+}
+
+<div class="container-fluid py-4 px-md-4">
+    <!-- Encabezado y Navegación -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb small mb-1">
+                    <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index" class="text-decoration-none">Inicio</a></li>
+                    <li class="breadcrumb-item"><a asp-controller="Paquetes" asp-action="Plantillas" class="text-decoration-none">Plantillas</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Editar Receta</li>
+                </ol>
+            </nav>
+            <h2 class="fw-bold text-dark mb-0">
+                <i class="bi bi-pencil-square text-warning me-2"></i>Configurar Receta: @Model.Nombre
+            </h2>
+            <p class="text-secondary mb-0">Ajusta las cantidades requeridas e incorpora nuevos alimentos oficiales para esta franja familiar.</p>
+        </div>
+        <a asp-action="Plantillas" class="btn btn-outline-secondary rounded-pill px-4 py-2">
+            <i class="bi bi-arrow-left me-1"></i> Volver a Plantillas
+        </a>
+    </div>
+
+    @if (!ViewData.ModelState.IsValid)
+    {
+        <div class="alert alert-danger rounded-4 border-0 shadow-sm mb-4">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>Por favor revisa los errores en el formulario antes de guardar.
+            <div asp-validation-summary="All" class="small mt-2 mb-0"></div>
+        </div>
+    }
+
+    <form asp-action="EditarPlantilla" method="post" id="formEditarPlantilla">
+        @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="Id" />
+
+        <div class="row g-4">
+            <!-- Columna Izquierda: Parámetros del Kit -->
+            <div class="col-lg-4">
+                <div class="card border rounded-4 shadow-sm p-4 sticky-top" style="top: 1rem;">
+                    <h5 class="fw-bold text-dark mb-3">
+                        <i class="bi bi-sliders2 text-primary me-2"></i>Parámetros del Kit
+                    </h5>
+
+                    <div class="mb-3">
+                        <label asp-for="Nombre" class="form-label small fw-semibold text-secondary">Nombre de la Plantilla *</label>
+                        <input asp-for="Nombre" class="form-control" placeholder="Ej: Kit Básico (1-2 miembros)" />
+                        <span asp-validation-for="Nombre" class="text-danger small"></span>
+                    </div>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label asp-for="MinIntegrantes" class="form-label small fw-semibold text-secondary">Mín. Personas *</label>
+                            <input asp-for="MinIntegrantes" type="number" class="form-control font-mono" min="1" max="30" />
+                            <span asp-validation-for="MinIntegrantes" class="text-danger small"></span>
+                        </div>
+                        <div class="col-6">
+                            <label asp-for="MaxIntegrantes" class="form-label small fw-semibold text-secondary">Máx. Personas *</label>
+                            <input asp-for="MaxIntegrantes" type="number" class="form-control font-mono" min="1" max="50" />
+                            <span asp-validation-for="MaxIntegrantes" class="text-danger small"></span>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Descripcion" class="form-label small fw-semibold text-secondary">Descripción</label>
+                        <textarea asp-for="Descripcion" class="form-control" rows="3" placeholder="Detalle bromatológico o destino del kit..."></textarea>
+                        <span asp-validation-for="Descripcion" class="text-danger small"></span>
+                    </div>
+
+                    <div class="form-check form-switch mb-4">
+                        <input class="form-check-input" type="checkbox" asp-for="Activo" id="switchActivo">
+                        <label class="form-check-label small fw-semibold text-dark" for="switchActivo">
+                            Plantilla activa para asignación automática
+                        </label>
+                    </div>
+
+                    <!-- Resumen en Vivo -->
+                    <div class="p-3 bg-light rounded-3 border mb-4">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span class="small text-muted">Variedad de Alimentos:</span>
+                            <span class="small fw-bold text-dark font-mono" id="txtTotalVariedades">@Model.Items.Count</span>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span class="small text-muted">Total Unidades por Kit:</span>
+                            <span class="small fw-bold text-primary font-mono" id="txtTotalUnidadesReceta">@Math.Round(Model.Items.Sum(i => i.CantidadRequerida))</span>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary rounded-pill w-100 py-2 fw-semibold shadow-xs">
+                        <i class="bi bi-save me-1"></i> Guardar Cambios de la Receta
+                    </button>
+                </div>
+            </div>
+
+            <!-- Columna Derecha: Alimentos de la Receta Oficial -->
+            <div class="col-lg-8">
+                <!-- Panel para Incorporar Alimento Nuevo -->
+                <div class="card border rounded-4 shadow-sm p-4 mb-4 bg-light bg-opacity-50">
+                    <h6 class="fw-bold text-dark mb-3">
+                        <i class="bi bi-plus-circle-fill text-success me-2"></i>Incorporar Alimento a la Receta Oficial
+                    </h6>
+                    <div class="row g-2 align-items-end">
+                        <div class="col-md-7">
+                            <label class="form-label small fw-semibold text-secondary mb-1">Alimento del Catálogo:</label>
+                            <select id="selectNuevoAlimento" class="form-select form-select-sm">
+                                <option value="">-- Seleccionar alimento a incorporar --</option>
+                                @foreach (var grupo in productosCatalogo.GroupBy(p => p.Categoria?.Nombre ?? "Otros").OrderBy(g => g.Key))
+                                {
+                                    <optgroup label="@grupo.Key">
+                                        @foreach (var p in grupo.OrderBy(p => p.Nombre))
+                                        {
+                                            <option value="@p.Id" data-nombre="@p.Nombre" data-cat="@grupo.Key" data-ean="@p.CodigoBarras">
+                                                @p.Nombre (EAN: @p.CodigoBarras)
+                                            </option>
+                                        }
+                                    </optgroup>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small fw-semibold text-secondary mb-1">Cantidad Requerida:</label>
+                            <input type="number" id="inputNuevaCantidad" class="form-control form-control-sm font-mono text-center" min="1" max="50" value="1" />
+                        </div>
+                        <div class="col-md-2">
+                            <button type="button" id="btnAgregarItem" class="btn btn-success btn-sm rounded-pill w-100 fw-semibold">
+                                <i class="bi bi-plus-lg me-1"></i> Agregar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tabla de Alimentos Configurados -->
+                <div class="card border rounded-4 shadow-sm overflow-hidden">
+                    <div class="card-header bg-white border-bottom p-3 d-flex justify-content-between align-items-center">
+                        <h6 class="fw-bold text-dark mb-0">
+                            <i class="bi bi-basket3-fill text-primary me-2"></i>Alimentos Oficiales en la Plantilla
+                        </h6>
+                        <span class="badge bg-light text-secondary border font-mono small rounded-pill px-3 py-1">
+                            Orden bromatológico
+                        </span>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0" id="tablaItemsPlantilla">
+                            <thead class="table-light text-secondary small text-uppercase">
+                                <tr>
+                                    <th class="ps-4">Alimento</th>
+                                    <th>Categoría</th>
+                                    <th class="text-center" style="width: 150px;">Cantidad Requerida (u.)</th>
+                                    <th class="text-center pe-4" style="width: 80px;">Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody id="cuerpoTablaItems">
+                                @for (int i = 0; i < Model.Items.Count; i++)
+                                {
+                                    <tr id="fila_@i">
+                                        <input type="hidden" name="Items.Index" value="@i" />
+                                        <input type="hidden" name="Items[@i].Id" value="@Model.Items[i].Id" />
+                                        <input type="hidden" name="Items[@i].ProductoId" value="@Model.Items[i].ProductoId" />
+                                        <input type="hidden" name="Items[@i].NombreProducto" value="@Model.Items[i].NombreProducto" />
+                                        <input type="hidden" name="Items[@i].CodigoBarras" value="@Model.Items[i].CodigoBarras" />
+                                        <input type="hidden" name="Items[@i].CategoriaNombre" value="@Model.Items[i].CategoriaNombre" />
+
+                                        <td class="ps-4">
+                                            <span class="fw-bold text-dark d-block">@Model.Items[i].NombreProducto</span>
+                                            <small class="text-muted font-mono">EAN: @Model.Items[i].CodigoBarras</small>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-secondary bg-opacity-10 text-secondary border small rounded-pill px-2 py-1">
+                                                @Model.Items[i].CategoriaNombre
+                                            </span>
+                                        </td>
+                                        <td class="text-center">
+                                            <input type="number" name="Items[@i].CantidadRequerida" class="form-control form-control-sm font-mono text-center input-cantidad-item" min="1" max="50" value="@Math.Round(Model.Items[i].CantidadRequerida)" />
+                                        </td>
+                                        <td class="text-center pe-4">
+                                            <button type="button" class="btn btn-outline-danger btn-sm rounded-pill px-2 py-1 btn-eliminar-item" title="Quitar alimento de la receta">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div id="mensajeSinItems" class="p-4 text-center text-muted small @(Model.Items.Any() ? "d-none" : "")">
+                        <i class="bi bi-inbox fs-2 text-secondary opacity-50 d-block mb-2"></i>
+                        Esta plantilla no posee alimentos configurados. Utiliza el panel superior para incorporar los productos.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const cuerpoTablaItems = document.getElementById("cuerpoTablaItems");
+            const selectNuevoAlimento = document.getElementById("selectNuevoAlimento");
+            const inputNuevaCantidad = document.getElementById("inputNuevaCantidad");
+            const btnAgregarItem = document.getElementById("btnAgregarItem");
+            const txtTotalVariedades = document.getElementById("txtTotalVariedades");
+            const txtTotalUnidadesReceta = document.getElementById("txtTotalUnidadesReceta");
+            const mensajeSinItems = document.getElementById("mensajeSinItems");
+
+            function actualizarMetricasReceta() {
+                const filas = cuerpoTablaItems.querySelectorAll("tr");
+                let totalUnidades = 0;
+
+                filas.forEach(f => {
+                    const cantInput = f.querySelector(".input-cantidad-item");
+                    if (cantInput) {
+                        totalUnidades += parseFloat(cantInput.value) || 0;
+                    }
+                });
+
+                if (txtTotalVariedades) txtTotalVariedades.textContent = filas.length;
+                if (txtTotalUnidadesReceta) txtTotalUnidadesReceta.textContent = Math.round(totalUnidades);
+
+                if (mensajeSinItems) {
+                    if (filas.length === 0) {
+                        mensajeSinItems.classList.remove("d-none");
+                    } else {
+                        mensajeSinItems.classList.add("d-none");
+                    }
+                }
+            }
+
+            function vincularEventos() {
+                document.querySelectorAll(".btn-eliminar-item").forEach(btn => {
+                    btn.onclick = function () {
+                        const tr = this.closest("tr");
+                        if (tr) {
+                            tr.remove();
+                            actualizarMetricasReceta();
+                        }
+                    };
+                });
+
+                document.querySelectorAll(".input-cantidad-item").forEach(input => {
+                    input.oninput = actualizarMetricasReceta;
+                });
+            }
+
+            if (btnAgregarItem) {
+                btnAgregarItem.addEventListener("click", function () {
+                    const prodIdStr = selectNuevoAlimento.value;
+                    const cantidad = parseInt(inputNuevaCantidad.value) || 1;
+
+                    if (!prodIdStr) {
+                        alert("Por favor selecciona un alimento del catálogo.");
+                        selectNuevoAlimento.focus();
+                        return;
+                    }
+
+                    if (cantidad <= 0) {
+                        alert("La cantidad requerida debe ser mayor a cero.");
+                        inputNuevaCantidad.focus();
+                        return;
+                    }
+
+                    const opt = selectNuevoAlimento.options[selectNuevoAlimento.selectedIndex];
+                    const prodId = parseInt(prodIdStr);
+                    const prodNombre = opt.getAttribute("data-nombre") || opt.text;
+                    const prodCat = opt.getAttribute("data-cat") || "General";
+                    const prodEan = opt.getAttribute("data-ean") || "S/D";
+
+                    // Verificar si ya existe en la tabla para actualizar la cantidad
+                    const filas = cuerpoTablaItems.querySelectorAll("tr");
+                    let filaExistente = null;
+
+                    filas.forEach(f => {
+                        const hiddenProd = f.querySelector(`input[name$=".ProductoId"][value="${prodId}"]`);
+                        if (hiddenProd) filaExistente = f;
+                    });
+
+                    if (filaExistente) {
+                        const cantInput = filaExistente.querySelector(".input-cantidad-item");
+                        if (cantInput) {
+                            const cantActual = parseFloat(cantInput.value) || 0;
+                            cantInput.value = cantActual + cantidad;
+                        }
+                        filaExistente.classList.add("table-warning");
+                        setTimeout(() => filaExistente.classList.remove("table-warning"), 800);
+
+                        selectNuevoAlimento.value = "";
+                        inputNuevaCantidad.value = 1;
+                        actualizarMetricasReceta();
+                        return;
+                    }
+
+                    const customIdx = "item_" + Date.now();
+                    const tr = document.createElement("tr");
+                    tr.id = `fila_${customIdx}`;
+                    tr.innerHTML = `
+                        <input type="hidden" name="Items.Index" value="${customIdx}" />
+                        <input type="hidden" name="Items[${customIdx}].Id" value="" />
+                        <input type="hidden" name="Items[${customIdx}].ProductoId" value="${prodId}" />
+                        <input type="hidden" name="Items[${customIdx}].NombreProducto" value="${prodNombre}" />
+                        <input type="hidden" name="Items[${customIdx}].CodigoBarras" value="${prodEan}" />
+                        <input type="hidden" name="Items[${customIdx}].CategoriaNombre" value="${prodCat}" />
+
+                        <td class="ps-4">
+                            <span class="fw-bold text-dark d-block">${prodNombre}</span>
+                            <small class="text-muted font-mono">EAN: ${prodEan}</small>
+                        </td>
+                        <td>
+                            <span class="badge bg-secondary bg-opacity-10 text-secondary border small rounded-pill px-2 py-1">
+                                ${prodCat}
+                            </span>
+                        </td>
+                        <td class="text-center">
+                            <input type="number" name="Items[${customIdx}].CantidadRequerida" class="form-control form-control-sm font-mono text-center input-cantidad-item" min="1" max="50" value="${cantidad}" />
+                        </td>
+                        <td class="text-center pe-4">
+                            <button type="button" class="btn btn-outline-danger btn-sm rounded-pill px-2 py-1 btn-eliminar-item" title="Quitar alimento de la receta">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </td>
+                    `;
+
+                    cuerpoTablaItems.appendChild(tr);
+
+                    selectNuevoAlimento.value = "";
+                    inputNuevaCantidad.value = 1;
+
+                    vincularEventos();
+                    actualizarMetricasReceta();
+                });
+            }
+
+            vincularEventos();
+            actualizarMetricasReceta();
+        });
+    </script>
+}

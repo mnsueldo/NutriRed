@@ -1,0 +1,89 @@
+@model NutriRed.Web.Models.CrearPlantillaViewModel
+
+@{
+    ViewData["Title"] = "Crear Plantilla de Kit";
+}
+
+<div class="container-fluid py-4 px-md-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-6 col-md-8">
+            <!-- Navegación -->
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb small mb-1">
+                    <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index" class="text-decoration-none">Inicio</a></li>
+                    <li class="breadcrumb-item"><a asp-controller="Paquetes" asp-action="Plantillas" class="text-decoration-none">Plantillas</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Crear Plantilla</li>
+                </ol>
+            </nav>
+
+            <div class="card border rounded-4 shadow-sm p-4 p-md-5 mt-3">
+                <div class="text-center mb-4">
+                    <div class="bg-warning bg-opacity-10 text-warning d-inline-flex p-3 rounded-circle mb-3">
+                        <i class="bi bi-box-seam fs-1"></i>
+                    </div>
+                    <h3 class="fw-bold text-dark">Nueva Plantilla de Kit</h3>
+                    <p class="text-muted small mx-auto" style="max-width: 420px;">
+                        Define el rango de integrantes de la familia y el nombre del kit. Luego podrás incorporar los alimentos que componen la receta.
+                    </p>
+                </div>
+
+                @if (!ViewData.ModelState.IsValid)
+                {
+                    <div class="alert alert-danger rounded-4 border-0 shadow-sm mb-4">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>Por favor revisa los errores indicados abajo.
+                        <div asp-validation-summary="All" class="small mt-2 mb-0"></div>
+                    </div>
+                }
+
+                <form asp-action="CrearPlantilla" method="post">
+                    @Html.AntiForgeryToken()
+
+                    <div class="mb-3">
+                        <label asp-for="Nombre" class="form-label small fw-semibold text-secondary">Nombre del Kit *</label>
+                        <input asp-for="Nombre" class="form-control" placeholder="Ej: Kit Especial Celíaco / Sin TACC" autofocus />
+                        <span asp-validation-for="Nombre" class="text-danger small"></span>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-6">
+                            <label asp-for="MinIntegrantes" class="form-label small fw-semibold text-secondary">Mínimo de Integrantes *</label>
+                            <input asp-for="MinIntegrantes" type="number" class="form-control font-mono" min="1" max="30" />
+                            <span asp-validation-for="MinIntegrantes" class="text-danger small"></span>
+                        </div>
+                        <div class="col-6">
+                            <label asp-for="MaxIntegrantes" class="form-label small fw-semibold text-secondary">Máximo de Integrantes *</label>
+                            <input asp-for="MaxIntegrantes" type="number" class="form-control font-mono" min="1" max="50" />
+                            <span asp-validation-for="MaxIntegrantes" class="text-danger small"></span>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label asp-for="Descripcion" class="form-label small fw-semibold text-secondary">Descripción</label>
+                        <textarea asp-for="Descripcion" class="form-control" rows="3" placeholder="Detalle bromatológico o requerimiento especial del kit..."></textarea>
+                        <span asp-validation-for="Descripcion" class="text-danger small"></span>
+                    </div>
+
+                    <div class="form-check form-switch mb-4">
+                        <input class="form-check-input" type="checkbox" asp-for="Activo" id="switchActivoNuevo" checked>
+                        <label class="form-check-label small fw-semibold text-dark" for="switchActivoNuevo">
+                            Plantilla activa para asignación automática
+                        </label>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center pt-3 border-top gap-2">
+                        <a asp-action="Plantillas" class="btn btn-outline-secondary rounded-pill px-4 py-2">
+                            Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-primary rounded-pill px-4 py-2 fw-semibold shadow-xs">
+                            <i class="bi bi-arrow-right-circle me-1"></i> Continuar a Configurar Alimentos
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

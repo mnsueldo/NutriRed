@@ -11,33 +11,17 @@ public static class DbInitializer
 
     public static async Task SeedAsync(NutriRedDbContext context)
     {
-        // 1. Asegurar que la base de datos existe
+        // 1. Asegurar que la estructura de la base de datos existe
         await context.Database.EnsureCreatedAsync();
 
-        // Si ya existen las 5 familias oficiales y el catálogo completo (con unidades unificadas), la base ya tiene el dataset exhaustivo
-        if (await context.FamiliasBeneficiarias.AnyAsync(f => f.DniTitular == "20987654") &&
-            await context.Productos.AnyAsync(p => p.CodigoBarras == "7790080022331" && p.UnidadMedida == UnidadMedida.Unidades))
+        // 2. PROTECCIÓN DEFENSIVA: Si la base ya contiene datos operativos (Categorías o Familias),
+        // NUNCA borramos nada. Preservamos rigurosamente cualquier dato ingresado por el usuario o apps.
+        if (await context.Categorias.AnyAsync() || await context.FamiliasBeneficiarias.AnyAsync())
         {
+            // Solo aseguramos defensivamente que existan las 3 plantillas de kits necesarias si faltara alguna,
+            // sin tocar jamás familias, productos, lotes, paquetes ni entregas existentes.
+            await AsegurarTiposPaqueteDefensivoAsync(context);
             return;
-        }
-
-        // Si la base tiene datos previos parciales o de pruebas anteriores, limpiamos en orden de dependencias para garantizar integridad referencial
-        if (await context.Categorias.AnyAsync())
-        {
-            context.Entregas.RemoveRange(context.Entregas);
-            context.PaqueteDetalles.RemoveRange(context.PaqueteDetalles);
-            context.Paquetes.RemoveRange(context.Paquetes);
-            context.PlantillaPaqueteDetalles.RemoveRange(context.PlantillaPaqueteDetalles);
-            context.TiposPaquete.RemoveRange(context.TiposPaquete);
-            context.FamiliasBeneficiarias.RemoveRange(context.FamiliasBeneficiarias);
-            context.MovimientosStock.RemoveRange(context.MovimientosStock);
-            context.DonacionDetalles.RemoveRange(context.DonacionDetalles);
-            context.Donaciones.RemoveRange(context.Donaciones);
-            context.Lotes.RemoveRange(context.Lotes);
-            context.Productos.RemoveRange(context.Productos);
-            context.Donantes.RemoveRange(context.Donantes);
-            context.Categorias.RemoveRange(context.Categorias);
-            await context.SaveChangesAsync();
         }
 
         // ==========================================
@@ -620,51 +604,76 @@ public static class DbInitializer
         await context.SaveChangesAsync();
 
         // ==========================================
-        // 7. PLANTILLAS DE PAQUETES (Kits Nutricionales)
+        // 7. PLANTILLAS DE PAQUETES (Kits Nutricionales - 3 Franjas)
         // ==========================================
         var kitBasico = new TipoPaquete
         {
-            Nombre = "Kit Nutricional Básico (1 a 3 Integrantes)",
-            Descripcion = "Ración esencial quincenal para familias pequeñas",
+            Nombre = "Kit Nutricional Básico (1 a 2 Integrantes)",
+            Descripcion = "Ración quincenal esencial para 1 o 2 integrantes (monoparental / parejas)",
             MinIntegrantes = 1,
-            MaxIntegrantes = 3,
+            MaxIntegrantes = 2,
             Activo = true
         };
 
         var kitFamiliar = new TipoPaquete
         {
-            Nombre = "Kit Nutricional Familiar (4 o más Integrantes)",
-            Descripcion = "Ración reforzada quincenal para familias numerosas",
-            MinIntegrantes = 4,
-            MaxIntegrantes = 20,
+            Nombre = "Kit Nutricional Familiar (3 a 5 Integrantes)",
+            Descripcion = "Ración quincenal estándar para familias medianas con niños",
+            MinIntegrantes = 3,
+            MaxIntegrantes = 5,
             Activo = true
         };
 
-        context.TiposPaquete.AddRange(kitBasico, kitFamiliar);
+        var kitFamiliarNumeroso = new TipoPaquete
+        {
+            Nombre = "Kit Nutricional Familiar Numeroso (6 o más Integrantes)",
+            Descripcion = "Ración quincenal reforzada para familias numerosas con alta demanda nutricional",
+            MinIntegrantes = 6,
+            MaxIntegrantes = 30,
+            Activo = true
+        };
+
+        context.TiposPaquete.AddRange(kitBasico, kitFamiliar, kitFamiliarNumeroso);
         await context.SaveChangesAsync();
 
         context.PlantillaPaqueteDetalles.AddRange(
-            // Items Kit Básico
+            // Items Kit Básico (1 a 2 integrantes - ~9 unidades)
             new PlantillaPaqueteDetalle { TipoPaqueteId = kitBasico.Id, ProductoId = prodArroz.Id, CantidadRequerida = 1 },
-            new PlantillaPaqueteDetalle { TipoPaqueteId = kitBasico.Id, ProductoId = prodFideos.Id, CantidadRequerida = 2 },
+            new PlantillaPaqueteDetalle { TipoPaqueteId = kitBasico.Id, ProductoId = prodFideos.Id, CantidadRequerida = 1 },
             new PlantillaPaqueteDetalle { TipoPaqueteId = kitBasico.Id, ProductoId = prodAceite.Id, CantidadRequerida = 1 },
             new PlantillaPaqueteDetalle { TipoPaqueteId = kitBasico.Id, ProductoId = prodLeche.Id, CantidadRequerida = 2 },
-            new PlantillaPaqueteDetalle { TipoPaqueteId = kitBasico.Id, ProductoId = prodTomate.Id, CantidadRequerida = 2 },
+            new PlantillaPaqueteDetalle { TipoPaqueteId = kitBasico.Id, ProductoId = prodTomate.Id, CantidadRequerida = 1 },
+            new PlantillaPaqueteDetalle { TipoPaqueteId = kitBasico.Id, ProductoId = prodLentejas.Id, CantidadRequerida = 1 },
             new PlantillaPaqueteDetalle { TipoPaqueteId = kitBasico.Id, ProductoId = prodAzucar.Id, CantidadRequerida = 1 },
             new PlantillaPaqueteDetalle { TipoPaqueteId = kitBasico.Id, ProductoId = prodYerba.Id, CantidadRequerida = 1 },
 
-            // Items Kit Familiar
+            // Items Kit Familiar Estándar (3 a 5 integrantes - ~17 unidades)
             new PlantillaPaqueteDetalle { TipoPaqueteId = kitFamiliar.Id, ProductoId = prodArroz.Id, CantidadRequerida = 2 },
-            new PlantillaPaqueteDetalle { TipoPaqueteId = kitFamiliar.Id, ProductoId = prodFideos.Id, CantidadRequerida = 3 },
-            new PlantillaPaqueteDetalle { TipoPaqueteId = kitFamiliar.Id, ProductoId = prodSpaghetti.Id, CantidadRequerida = 2 },
-            new PlantillaPaqueteDetalle { TipoPaqueteId = kitFamiliar.Id, ProductoId = prodAceite.Id, CantidadRequerida = 2 },
-            new PlantillaPaqueteDetalle { TipoPaqueteId = kitFamiliar.Id, ProductoId = prodLeche.Id, CantidadRequerida = 4 },
-            new PlantillaPaqueteDetalle { TipoPaqueteId = kitFamiliar.Id, ProductoId = prodTomate.Id, CantidadRequerida = 3 },
+            new PlantillaPaqueteDetalle { TipoPaqueteId = kitFamiliar.Id, ProductoId = prodFideos.Id, CantidadRequerida = 2 },
+            new PlantillaPaqueteDetalle { TipoPaqueteId = kitFamiliar.Id, ProductoId = prodSpaghetti.Id, CantidadRequerida = 1 },
+            new PlantillaPaqueteDetalle { TipoPaqueteId = kitFamiliar.Id, ProductoId = prodAceite.Id, CantidadRequerida = 1 },
+            new PlantillaPaqueteDetalle { TipoPaqueteId = kitFamiliar.Id, ProductoId = prodLeche.Id, CantidadRequerida = 3 },
+            new PlantillaPaqueteDetalle { TipoPaqueteId = kitFamiliar.Id, ProductoId = prodTomate.Id, CantidadRequerida = 2 },
             new PlantillaPaqueteDetalle { TipoPaqueteId = kitFamiliar.Id, ProductoId = prodLentejas.Id, CantidadRequerida = 2 },
-            new PlantillaPaqueteDetalle { TipoPaqueteId = kitFamiliar.Id, ProductoId = prodHarina.Id, CantidadRequerida = 2 },
-            new PlantillaPaqueteDetalle { TipoPaqueteId = kitFamiliar.Id, ProductoId = prodAzucar.Id, CantidadRequerida = 2 },
-            new PlantillaPaqueteDetalle { TipoPaqueteId = kitFamiliar.Id, ProductoId = prodArvejas.Id, CantidadRequerida = 2 },
-            new PlantillaPaqueteDetalle { TipoPaqueteId = kitFamiliar.Id, ProductoId = prodAtun.Id, CantidadRequerida = 2 }
+            new PlantillaPaqueteDetalle { TipoPaqueteId = kitFamiliar.Id, ProductoId = prodHarina.Id, CantidadRequerida = 1 },
+            new PlantillaPaqueteDetalle { TipoPaqueteId = kitFamiliar.Id, ProductoId = prodAzucar.Id, CantidadRequerida = 1 },
+            new PlantillaPaqueteDetalle { TipoPaqueteId = kitFamiliar.Id, ProductoId = prodArvejas.Id, CantidadRequerida = 1 },
+            new PlantillaPaqueteDetalle { TipoPaqueteId = kitFamiliar.Id, ProductoId = prodYerba.Id, CantidadRequerida = 1 },
+
+            // Items Kit Familiar Numeroso (6 o más integrantes - ~26 unidades)
+            new PlantillaPaqueteDetalle { TipoPaqueteId = kitFamiliarNumeroso.Id, ProductoId = prodArroz.Id, CantidadRequerida = 3 },
+            new PlantillaPaqueteDetalle { TipoPaqueteId = kitFamiliarNumeroso.Id, ProductoId = prodFideos.Id, CantidadRequerida = 3 },
+            new PlantillaPaqueteDetalle { TipoPaqueteId = kitFamiliarNumeroso.Id, ProductoId = prodSpaghetti.Id, CantidadRequerida = 2 },
+            new PlantillaPaqueteDetalle { TipoPaqueteId = kitFamiliarNumeroso.Id, ProductoId = prodAceite.Id, CantidadRequerida = 2 },
+            new PlantillaPaqueteDetalle { TipoPaqueteId = kitFamiliarNumeroso.Id, ProductoId = prodLeche.Id, CantidadRequerida = 5 },
+            new PlantillaPaqueteDetalle { TipoPaqueteId = kitFamiliarNumeroso.Id, ProductoId = prodTomate.Id, CantidadRequerida = 3 },
+            new PlantillaPaqueteDetalle { TipoPaqueteId = kitFamiliarNumeroso.Id, ProductoId = prodLentejas.Id, CantidadRequerida = 2 },
+            new PlantillaPaqueteDetalle { TipoPaqueteId = kitFamiliarNumeroso.Id, ProductoId = prodGarbanzos.Id, CantidadRequerida = 1 },
+            new PlantillaPaqueteDetalle { TipoPaqueteId = kitFamiliarNumeroso.Id, ProductoId = prodHarina.Id, CantidadRequerida = 2 },
+            new PlantillaPaqueteDetalle { TipoPaqueteId = kitFamiliarNumeroso.Id, ProductoId = prodAzucar.Id, CantidadRequerida = 2 },
+            new PlantillaPaqueteDetalle { TipoPaqueteId = kitFamiliarNumeroso.Id, ProductoId = prodArvejas.Id, CantidadRequerida = 2 },
+            new PlantillaPaqueteDetalle { TipoPaqueteId = kitFamiliarNumeroso.Id, ProductoId = prodAtun.Id, CantidadRequerida = 2 },
+            new PlantillaPaqueteDetalle { TipoPaqueteId = kitFamiliarNumeroso.Id, ProductoId = prodYerba.Id, CantidadRequerida = 1 }
         );
         await context.SaveChangesAsync();
 
@@ -743,7 +752,7 @@ public static class DbInitializer
         {
             CodigoSeguimiento = "PKG-2026-00001",
             FamiliaBeneficiariaId = familia1.Id,
-            TipoPaqueteId = kitBasico.Id,
+            TipoPaqueteId = kitFamiliar.Id,
             FechaCreacion = DateTime.UtcNow.AddDays(-5),
             Estado = EstadoPaquete.Entregado,
             UsuarioArmadorId = "Pablo Cavallero"
@@ -841,7 +850,7 @@ public static class DbInitializer
         {
             CodigoSeguimiento = "PKG-2026-00004",
             FamiliaBeneficiariaId = familia4.Id,
-            TipoPaqueteId = kitFamiliar.Id,
+            TipoPaqueteId = kitFamiliarNumeroso.Id,
             FechaCreacion = DateTime.UtcNow.AddDays(-3),
             Estado = EstadoPaquete.Cancelado,
             UsuarioArmadorId = "Laura Gómez"
@@ -877,14 +886,14 @@ public static class DbInitializer
         };
         context.Entregas.Add(entrega4);
 
-        // --- PAQUETE 5: Pendiente (Representación del estado Pendiente en métricas) ---
+        // --- PAQUETE 5: Preparado (Listo en depósito para entrega inmediata) ---
         var paquete5 = new Paquete
         {
             CodigoSeguimiento = "PKG-2026-00005",
             FamiliaBeneficiariaId = familia4.Id,
-            TipoPaqueteId = kitBasico.Id,
+            TipoPaqueteId = kitFamiliarNumeroso.Id,
             FechaCreacion = DateTime.UtcNow.AddHours(-2),
-            Estado = EstadoPaquete.Pendiente,
+            Estado = EstadoPaquete.Preparado,
             UsuarioArmadorId = "Pablo Cavallero"
         };
         context.Paquetes.Add(paquete5);
@@ -900,6 +909,91 @@ public static class DbInitializer
             new PaqueteDetalle { PaqueteId = paquete5.Id, ProductoId = prodYerba.Id, LoteId = loteYerba.Id, Cantidad = 1 }
         );
 
+        await context.SaveChangesAsync();
+    }
+
+    /// <summary>
+    /// Garantiza de forma 100% no destructiva que existan las 3 franjas de paquetes asistenciales
+    /// (1-2 integrantes, 3-5 integrantes, 6 o más integrantes) sin alterar ningún dato operativo del usuario.
+    /// </summary>
+    private static async Task AsegurarTiposPaqueteDefensivoAsync(NutriRedDbContext context)
+    {
+        // 1. Kit Básico (1 a 2 Integrantes)
+        if (!await context.TiposPaquete.AnyAsync(t => t.MinIntegrantes == 1 && t.MaxIntegrantes == 2))
+        {
+            var kitBasico = new TipoPaquete
+            {
+                Nombre = "Kit Nutricional Básico (1 a 2 Integrantes)",
+                Descripcion = "Ración quincenal esencial para 1 o 2 integrantes (monoparental / parejas)",
+                MinIntegrantes = 1,
+                MaxIntegrantes = 2,
+                Activo = true
+            };
+            context.TiposPaquete.Add(kitBasico);
+            await context.SaveChangesAsync();
+            await AsociarPlantillaDefensivaAsync(context, kitBasico.Id, 1);
+        }
+
+        // 2. Kit Familiar Estándar (3 a 5 Integrantes)
+        if (!await context.TiposPaquete.AnyAsync(t => t.MinIntegrantes == 3 && t.MaxIntegrantes == 5))
+        {
+            var kitFamiliar = new TipoPaquete
+            {
+                Nombre = "Kit Nutricional Familiar (3 a 5 Integrantes)",
+                Descripcion = "Ración quincenal estándar para familias medianas con niños",
+                MinIntegrantes = 3,
+                MaxIntegrantes = 5,
+                Activo = true
+            };
+            context.TiposPaquete.Add(kitFamiliar);
+            await context.SaveChangesAsync();
+            await AsociarPlantillaDefensivaAsync(context, kitFamiliar.Id, 2);
+        }
+
+        // 3. Kit Familiar Numeroso (6 o más Integrantes)
+        if (!await context.TiposPaquete.AnyAsync(t => t.MinIntegrantes >= 6))
+        {
+            var kitFamiliarNumeroso = new TipoPaquete
+            {
+                Nombre = "Kit Nutricional Familiar Numeroso (6 o más Integrantes)",
+                Descripcion = "Ración quincenal reforzada para familias numerosas con alta demanda nutricional",
+                MinIntegrantes = 6,
+                MaxIntegrantes = 30,
+                Activo = true
+            };
+            context.TiposPaquete.Add(kitFamiliarNumeroso);
+            await context.SaveChangesAsync();
+            await AsociarPlantillaDefensivaAsync(context, kitFamiliarNumeroso.Id, 3);
+        }
+    }
+
+    private static async Task AsociarPlantillaDefensivaAsync(NutriRedDbContext context, int tipoPaqueteId, int nivel)
+    {
+        var yaTieneItems = await context.PlantillaPaqueteDetalles.AnyAsync(p => p.TipoPaqueteId == tipoPaqueteId);
+        if (yaTieneItems) return;
+
+        var productos = await context.Productos.Where(p => p.Activo).Take(15).ToListAsync();
+        if (!productos.Any()) return;
+
+        var items = new List<PlantillaPaqueteDetalle>();
+        foreach (var prod in productos)
+        {
+            decimal cant = nivel switch
+            {
+                1 => 1,
+                2 => (prod.Nombre.Contains("Leche") || prod.Nombre.Contains("Arroz") || prod.Nombre.Contains("Fideo")) ? 2 : 1,
+                3 => (prod.Nombre.Contains("Leche")) ? 4 : (prod.Nombre.Contains("Arroz") || prod.Nombre.Contains("Fideo") || prod.Nombre.Contains("Tomate")) ? 3 : 2,
+                _ => 1
+            };
+            items.Add(new PlantillaPaqueteDetalle
+            {
+                TipoPaqueteId = tipoPaqueteId,
+                ProductoId = prod.Id,
+                CantidadRequerida = cant
+            });
+        }
+
+        context.PlantillaPaqueteDetalles.AddRange(items);
         await context.SaveChangesAsync();
     }
 

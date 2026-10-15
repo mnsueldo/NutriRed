@@ -104,15 +104,24 @@ using (var scope = app.Services.CreateScope())
     }
 
     // 2. Catálogo de Dominio y Datos Operativos
+    var seedEnabled = app.Configuration.GetValue<bool>("SeedData:Enabled", false);
     try
     {
         var context = services.GetRequiredService<NutriRedDbContext>();
-        await DbInitializer.SeedAsync(context);
-        logger.LogInformation("Datos del dominio y catálogo sembrados exitosamente.");
+        // Ejecutar sembrado únicamente si está habilitado por configuración o si la base de datos está totalmente vacía
+        if (seedEnabled || !await context.Categorias.AnyAsync())
+        {
+            await DbInitializer.SeedAsync(context);
+            logger.LogInformation("Verificación no destructiva de base de datos completada exitosamente.");
+        }
+        else
+        {
+            logger.LogInformation("SeedData deshabilitado en configuración: la base de datos de Supabase se preserva intacta.");
+        }
     }
     catch (Exception ex)
     {
-        logger.LogError(ex, "Ocurrió un error al sembrar los datos iniciales de NutriRed.");
+        logger.LogError(ex, "Ocurrió un error al verificar los datos iniciales de NutriRed.");
     }
 }
 

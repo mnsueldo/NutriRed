@@ -13,4 +13,7 @@ public interface IPaqueteService
     Task<OperationResult<PaqueteDto>> ObtenerPorCodigoSeguimientoAsync(string codigoSeguimiento);
     Task<OperationResult<IEnumerable<PaqueteDto>>> ObtenerTodosAsync(EstadoPaquete? estado = null);
     Task<OperationResult<IEnumerable<TipoPaquete>>> ObtenerTiposPaqueteAsync();
+    Task<OperationResult<TipoPaquete>> ObtenerTipoPaquetePorIdAsync(int id);
+    Task<OperationResult<TipoPaquete>> ActualizarPlantillaAsync(int id, string nombre, string? descripcion, int minIntegrantes, int maxIntegrantes, bool activo, List<(int productoId, decimal cantidad)> items);
+    Task<OperationResult<TipoPaquete>> CrearTipoPaqueteAsync(string nombre, string? descripcion, int minIntegrantes, int maxIntegrantes, bool activo);
 }

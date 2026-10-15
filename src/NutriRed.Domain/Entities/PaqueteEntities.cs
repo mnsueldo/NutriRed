@@ -126,7 +126,7 @@ public class Paquete
 
     [Required]
     [Display(Name = "Estado")]
-    public EstadoPaquete Estado { get; set; } = EstadoPaquete.Pendiente;
+    public EstadoPaquete Estado { get; set; } = EstadoPaquete.Preparado;
 
     [Required]
     [StringLength(100)]

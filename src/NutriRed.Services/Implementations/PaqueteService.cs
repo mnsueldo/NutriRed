@@ -48,6 +48,7 @@ public class PaqueteService : IPaqueteService
                 tipoPaquete = await _context.TiposPaquete
                     .Include(t => t.ItemsPlantilla)
                         .ThenInclude(i => i.Producto)
+                            .ThenInclude(p => p.Categoria)
                     .FirstOrDefaultAsync(t => t.Id == tipoPaqueteIdPersonalizado.Value && t.Activo);
             }
             else
@@ -56,6 +57,7 @@ public class PaqueteService : IPaqueteService
                 tipoPaquete = await _context.TiposPaquete
                     .Include(t => t.ItemsPlantilla)
                         .ThenInclude(i => i.Producto)
+                            .ThenInclude(p => p.Categoria)
                     .FirstOrDefaultAsync(t => t.Activo &&
                                               t.MinIntegrantes <= familia.CantidadIntegrantes &&
                                               t.MaxIntegrantes >= familia.CantidadIntegrantes);
@@ -88,6 +90,8 @@ public class PaqueteService : IPaqueteService
                     ProductoId = item.ProductoId,
                     NombreProducto = item.Producto?.Nombre ?? "Producto Desconocido",
                     CodigoBarras = item.Producto?.CodigoBarras ?? string.Empty,
+                    CategoriaId = item.Producto?.CategoriaId ?? 0,
+                    CategoriaNombre = item.Producto?.Categoria?.Nombre ?? "General",
                     CantidadRequerida = item.CantidadRequerida
                 };
 
@@ -135,12 +139,33 @@ public class PaqueteService : IPaqueteService
         using var transaction = await _context.Database.BeginTransactionAsync();
         try
         {
-            // 1. Validar disponibilidad FEFO para cada alimento antes de descontar
+            // 1. Consolidar requerimientos para validación y asignación FEFO atómica
+            var itemsValidos = request.Items
+                .Where(i => i.Cantidad > 0)
+                .GroupBy(i => new { i.ProductoId, i.EsSustituto, i.ProductoSustituidoId })
+                .Select(g => new ItemArmadoRequest
+                {
+                    ProductoId = g.Key.ProductoId,
+                    Cantidad = g.Sum(x => x.Cantidad),
+                    EsSustituto = g.Key.EsSustituto,
+                    ProductoSustituidoId = g.Key.ProductoSustituidoId
+                })
+                .ToList();
+
+            if (!itemsValidos.Any())
+            {
+                return OperationResult<PaqueteDto>.Fail("No se puede armar un paquete con cantidades en cero.");
+            }
+
+            var requerimientosPorProducto = itemsValidos
+                .GroupBy(i => i.ProductoId)
+                .ToDictionary(g => g.Key, g => g.Sum(x => x.Cantidad));
+
             var asignacionesPorProducto = new Dictionary<int, ResultadoFefoDto>();
 
-            foreach (var item in request.Items)
+            foreach (var req in requerimientosPorProducto)
             {
-                var fefo = await _inventarioService.CalcularAsignacionFefoAsync(item.ProductoId, item.Cantidad);
+                var fefo = await _inventarioService.CalcularAsignacionFefoAsync(req.Key, req.Value);
 
                 // Regla de Negocio (Pág. 9 del PDF):
                 // "Stock insuficiente: Si se intenta confirmar un paquete con ítems en estado FALTANTE sin haber aplicado un sustituto válido, bloquear"
@@ -150,7 +175,7 @@ public class PaqueteService : IPaqueteService
                     return OperationResult<PaqueteDto>.Fail("Stock insuficiente: No se puede preparar el paquete: existen productos con stock insuficiente.");
                 }
 
-                asignacionesPorProducto[item.ProductoId] = fefo.Data;
+                asignacionesPorProducto[req.Key] = fefo.Data;
             }
 
             // 2. Generar Código QR Único de Rotulación (ej: PKG-2026-00001)
@@ -177,7 +202,7 @@ public class PaqueteService : IPaqueteService
             var itemsDto = new List<PaqueteItemDto>();
 
             // 4. Descontar Stock de los Lotes asignados por FEFO y asentar movimientos
-            foreach (var item in request.Items)
+            foreach (var item in itemsValidos)
             {
                 var fefoData = asignacionesPorProducto[item.ProductoId];
                 var producto = await _context.Productos.FindAsync(item.ProductoId);
@@ -382,6 +407,112 @@ public class PaqueteService : IPaqueteService
         catch (Exception ex)
         {
             return OperationResult<IEnumerable<TipoPaquete>>.Fail($"Error al obtener los tipos de paquetes: {ex.Message}");
+        }
+    }
+
+    public async Task<OperationResult<TipoPaquete>> ObtenerTipoPaquetePorIdAsync(int id)
+    {
+        try
+        {
+            var tipo = await _context.TiposPaquete
+                .Include(t => t.ItemsPlantilla)
+                    .ThenInclude(i => i.Producto)
+                        .ThenInclude(p => p.Categoria)
+                .FirstOrDefaultAsync(t => t.Id == id);
+
+            if (tipo == null)
+            {
+                return OperationResult<TipoPaquete>.Fail($"No se encontró la plantilla de kit con ID {id}.");
+            }
+
+            return OperationResult<TipoPaquete>.Ok(tipo);
+        }
+        catch (Exception ex)
+        {
+            return OperationResult<TipoPaquete>.Fail($"Error al obtener la plantilla de kit: {ex.Message}");
+        }
+    }
+
+    public async Task<OperationResult<TipoPaquete>> ActualizarPlantillaAsync(
+        int id,
+        string nombre,
+        string? descripcion,
+        int minIntegrantes,
+        int maxIntegrantes,
+        bool activo,
+        List<(int productoId, decimal cantidad)> items)
+    {
+        try
+        {
+            var tipo = await _context.TiposPaquete
+                .Include(t => t.ItemsPlantilla)
+                .FirstOrDefaultAsync(t => t.Id == id);
+
+            if (tipo == null)
+            {
+                return OperationResult<TipoPaquete>.Fail($"No se encontró la plantilla de kit con ID {id}.");
+            }
+
+            tipo.Nombre = nombre.Trim();
+            tipo.Descripcion = descripcion?.Trim();
+            tipo.MinIntegrantes = minIntegrantes;
+            tipo.MaxIntegrantes = maxIntegrantes;
+            tipo.Activo = activo;
+
+            // Actualizar ítems de la plantilla
+            _context.PlantillaPaqueteDetalles.RemoveRange(tipo.ItemsPlantilla);
+
+            if (items != null && items.Any())
+            {
+                foreach (var item in items)
+                {
+                    if (item.cantidad > 0)
+                    {
+                        _context.PlantillaPaqueteDetalles.Add(new PlantillaPaqueteDetalle
+                        {
+                            TipoPaqueteId = tipo.Id,
+                            ProductoId = item.productoId,
+                            CantidadRequerida = item.cantidad
+                        });
+                    }
+                }
+            }
+
+            await _context.SaveChangesAsync();
+            return OperationResult<TipoPaquete>.Ok(tipo);
+        }
+        catch (Exception ex)
+        {
+            return OperationResult<TipoPaquete>.Fail($"Error al actualizar la plantilla de kit: {ex.Message}");
+        }
+    }
+
+    public async Task<OperationResult<TipoPaquete>> CrearTipoPaqueteAsync(
+        string nombre,
+        string? descripcion,
+        int minIntegrantes,
+        int maxIntegrantes,
+        bool activo)
+    {
+        try
+        {
+            var tipo = new TipoPaquete
+            {
+                Nombre = nombre.Trim(),
+                Descripcion = descripcion?.Trim(),
+                MinIntegrantes = minIntegrantes,
+                MaxIntegrantes = maxIntegrantes,
+                Activo = activo
+            };
+
+            _context.TiposPaquete.Add(tipo);
+            await _context.SaveChangesAsync();
+
+            return OperationResult<TipoPaquete>.Ok(tipo);
+        }
+        catch (Exception ex)
+        {
+            return OperationResult<TipoPaquete>.Fail($"Error al crear el nuevo tipo de kit: {ex.Message}");
         }
     }
 

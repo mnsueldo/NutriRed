@@ -38,22 +38,8 @@
                 </div>
                 <div>
                     <span class="text-muted small fw-semibold text-uppercase d-block">Total Paquetes</span>
-                    <span class="fs-4 fw-bold text-dark">@Model.TotalPaquetes</span>
+                    <span class="fs-4 fw-bold text-dark">@Model.TotalGlobal</span>
                     <small class="text-muted d-block" style="font-size: 0.72rem;">Historial acumulado</small>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-12 col-sm-6 col-xl-3">
-        <div class="card border-0 shadow-sm rounded-4 p-3 bg-white h-100">
-            <div class="d-flex align-items-center gap-3">
-                <div class="rounded-circle bg-warning bg-opacity-10 p-3 text-warning-emphasis d-flex align-items-center justify-content-center" style="width: 52px; height: 52px;">
-                    <i class="bi bi-hourglass-split fs-4 text-warning"></i>
-                </div>
-                <div>
-                    <span class="text-muted small fw-semibold text-uppercase d-block">Pendientes</span>
-                    <span class="fs-4 fw-bold text-warning-emphasis">@Model.Pendientes</span>
-                    <small class="text-muted d-block" style="font-size: 0.72rem;">En preparación</small>
                 </div>
             </div>
         </div>
@@ -66,7 +52,7 @@
                 </div>
                 <div>
                     <span class="text-muted small fw-semibold text-uppercase d-block">Listos en Depósito</span>
-                    <span class="fs-4 fw-bold text-dark">@Model.Preparados</span>
+                    <span class="fs-4 fw-bold text-dark">@Model.PreparadosGlobal</span>
                     <small class="text-muted d-block" style="font-size: 0.72rem;">Para retiro o despacho</small>
                 </div>
             </div>
@@ -80,8 +66,22 @@
                 </div>
                 <div>
                     <span class="text-muted small fw-semibold text-uppercase d-block">Entregados</span>
-                    <span class="fs-4 fw-bold text-success">@Model.Entregados</span>
+                    <span class="fs-4 fw-bold text-success">@Model.EntregadosGlobal</span>
                     <small class="text-muted d-block" style="font-size: 0.72rem;">Recepción confirmada</small>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="card border-0 shadow-sm rounded-4 p-3 bg-white h-100">
+            <div class="d-flex align-items-center gap-3">
+                <div class="rounded-circle bg-danger bg-opacity-10 p-3 text-danger d-flex align-items-center justify-content-center" style="width: 52px; height: 52px;">
+                    <i class="bi bi-x-circle fs-4"></i>
+                </div>
+                <div>
+                    <span class="text-muted small fw-semibold text-uppercase d-block">Cancelados</span>
+                    <span class="fs-4 fw-bold text-danger">@Model.CanceladosGlobal</span>
+                    <small class="text-muted d-block" style="font-size: 0.72rem;">No retirados / bajas</small>
                 </div>
             </div>
         </div>
@@ -96,14 +96,14 @@
         <a asp-action="Index" asp-route-codigo="@Model.CodigoSeguimiento" class="btn btn-sm rounded-pill px-3 py-1 fw-semibold @(!Model.EstadoFiltro.HasValue ? "btn-success text-white shadow-sm" : "btn-light border text-secondary")">
             Todos
         </a>
-        <a asp-action="Index" asp-route-estado="@EstadoPaquete.Pendiente" asp-route-codigo="@Model.CodigoSeguimiento" class="btn btn-sm rounded-pill px-3 py-1 fw-semibold @(Model.EstadoFiltro == EstadoPaquete.Pendiente ? "btn-warning text-dark shadow-sm" : "btn-light border text-secondary")">
-            <i class="bi bi-hourglass-split me-1"></i> Pendientes
-        </a>
         <a asp-action="Index" asp-route-estado="@EstadoPaquete.Preparado" asp-route-codigo="@Model.CodigoSeguimiento" class="btn btn-sm rounded-pill px-3 py-1 fw-semibold @(Model.EstadoFiltro == EstadoPaquete.Preparado ? "btn-info text-white shadow-sm" : "btn-light border text-secondary")">
             <i class="bi bi-box-seam me-1"></i> Listos en Depósito
         </a>
         <a asp-action="Index" asp-route-estado="@EstadoPaquete.Entregado" asp-route-codigo="@Model.CodigoSeguimiento" class="btn btn-sm rounded-pill px-3 py-1 fw-semibold @(Model.EstadoFiltro == EstadoPaquete.Entregado ? "btn-success text-white shadow-sm" : "btn-light border text-secondary")">
             <i class="bi bi-check2-circle me-1"></i> Entregados
+        </a>
+        <a asp-action="Index" asp-route-estado="@EstadoPaquete.Cancelado" asp-route-codigo="@Model.CodigoSeguimiento" class="btn btn-sm rounded-pill px-3 py-1 fw-semibold @(Model.EstadoFiltro == EstadoPaquete.Cancelado ? "btn-danger text-white shadow-sm" : "btn-light border text-secondary")">
+            <i class="bi bi-x-circle me-1"></i> Cancelados
         </a>
     </div>
 
@@ -112,10 +112,10 @@
             <label class="form-label small text-muted mb-1 fw-semibold">Filtrar por estado</label>
             <select name="estado" class="form-select bg-light">
                 <option value="">Todos los estados</option>
-                @foreach (var estado in Enum.GetValues<EstadoPaquete>())
+                @foreach (var estado in Enum.GetValues<EstadoPaquete>().Where(e => e != EstadoPaquete.Pendiente))
                 {
                     <option value="@estado" selected="@(Model.EstadoFiltro == estado)">
-                        @estado
+                        @(estado == EstadoPaquete.Preparado ? "Listo en Depósito (Preparado)" : (estado == EstadoPaquete.Entregado ? "Entregado a Beneficiario" : "Cancelado / Anulado"))
                     </option>
                 }
             </select>

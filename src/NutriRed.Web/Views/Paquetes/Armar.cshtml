@@ -191,13 +191,77 @@
                 </div>
 
                 <!-- Alerta de Faltantes -->
-                <div id="alertaFaltantes" class="alert alert-warning border-start border-4 border-warning d-flex align-items-center mb-4 shadow-sm rounded-3 @(tienePropuestaInicial && Model.Propuesta!.HayFaltantes ? "" : "d-none")" role="alert">
-                    <i class="bi bi-exclamation-triangle-fill fs-3 text-warning me-3"></i>
-                    <div>
-                        <strong>Alerta de faltantes de inventario</strong>
-                        <div>
-                            No hay suficiente stock en los lotes activos para completar todos los alimentos de la receta estándar.
-                            Puede optar por confirmar el paquete con faltante o aplicar una <strong>sustitución supervisada</strong> en la columna derecha.
+                <div id="alertaFaltantes" class="alert alert-warning border-start border-4 border-warning mb-4 shadow-sm rounded-3 @(tienePropuestaInicial && Model.Propuesta!.HayFaltantes ? "" : "d-none")" role="alert">
+                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-exclamation-triangle-fill fs-3 text-warning me-3"></i>
+                            <div>
+                                <strong class="d-block text-dark">Alerta de faltantes de inventario</strong>
+                                <span class="small text-secondary">
+                                    No hay suficiente stock en los lotes activos para completar todos los alimentos de la receta estándar.
+                                    Puede aplicar sustituciones supervisadas por ítem o resolverlas automáticamente con un solo clic.
+                                </span>
+                            </div>
+                        </div>
+                        <button type="button" id="btnAutoSustituirTodo" class="btn btn-warning text-dark btn-sm rounded-pill px-3 py-2 fw-bold shadow-sm d-flex align-items-center gap-2">
+                            <i class="bi bi-magic"></i>
+                            <span>Auto-sustituir faltantes con FEFO</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- BARRA DE COMPOSICIÓN Y BALANCE BROMATOLÓGICO -->
+                <div class="p-3 bg-light bg-opacity-75 rounded-4 border mb-4 shadow-xs">
+                    <div class="row g-3 align-items-center mb-3">
+                        <div class="col-md-3 border-end">
+                            <small class="text-muted d-block fw-semibold text-uppercase" style="font-size: 0.68rem;">Unidades Totales</small>
+                            <div class="d-flex align-items-baseline gap-2">
+                                <span class="fs-4 fw-bold text-dark font-mono" id="txtMetricaTotalUnidades">@(Model.Propuesta?.Items.Sum(x => x.CantidadRequerida).ToString("N0") ?? "0")</span>
+                                <span class="badge bg-primary bg-opacity-10 text-primary small rounded-pill">alimentos</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6 border-end">
+                            <small class="text-muted d-block fw-semibold text-uppercase mb-1" style="font-size: 0.68rem;">Grupos Nutricionales Representados</small>
+                            <div class="d-flex flex-wrap gap-1" id="contenedorBadgesCategorias">
+                                @if (tienePropuestaInicial)
+                                {
+                                    @foreach (var cat in Model.Propuesta!.Items.Select(x => x.CategoriaNombre).Where(c => !string.IsNullOrEmpty(c)).Distinct())
+                                    {
+                                        <span class="badge bg-secondary bg-opacity-10 text-secondary border small rounded-pill px-2 py-1">
+                                            <i class="bi bi-tag-fill me-1"></i>@cat
+                                        </span>
+                                    }
+                                }
+                            </div>
+                        </div>
+                        <div class="col-md-3 text-md-end">
+                            <small class="text-muted d-block fw-semibold text-uppercase mb-1" style="font-size: 0.68rem;">Estado Bromatológico</small>
+                            <div id="badgeSemaforoBalance">
+                                <span class="badge bg-success bg-opacity-10 text-success border border-success rounded-pill px-3 py-1">
+                                    <i class="bi bi-shield-check me-1"></i>Kit Equilibrado
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Barra Visual de Distribución Bromatológica -->
+                    <div class="pt-2 border-top">
+                        <div class="d-flex justify-content-between align-items-center mb-1 flex-wrap gap-2">
+                            <span class="small fw-bold text-secondary text-uppercase" style="font-size: 0.7rem;">
+                                <i class="bi bi-pie-chart-fill me-1 text-primary"></i>Distribución Bromatológica de la Ración
+                            </span>
+                            <div class="small text-muted d-flex flex-wrap gap-3 font-mono" style="font-size: 0.72rem;">
+                                <span class="d-flex align-items-center gap-1"><span class="d-inline-block rounded-circle" style="width: 8px; height: 8px; background-color: #0284c7;"></span> Carbohidratos: <strong id="lblPctCarbos">0%</strong></span>
+                                <span class="d-flex align-items-center gap-1"><span class="d-inline-block rounded-circle" style="width: 8px; height: 8px; background-color: #059669;"></span> Proteínas/Lácteos: <strong id="lblPctProte">0%</strong></span>
+                                <span class="d-flex align-items-center gap-1"><span class="d-inline-block rounded-circle" style="width: 8px; height: 8px; background-color: #d97706;"></span> Conservas: <strong id="lblPctConservas">0%</strong></span>
+                                <span class="d-flex align-items-center gap-1"><span class="d-inline-block rounded-circle" style="width: 8px; height: 8px; background-color: #7c3aed;"></span> Grasas/Infusiones: <strong id="lblPctOtros">0%</strong></span>
+                            </div>
+                        </div>
+                        <div class="progress rounded-pill shadow-none" style="height: 10px; background-color: #e2e8f0;">
+                            <div id="barCarbos" class="progress-bar" role="progressbar" style="width: 0%; background-color: #0284c7;" title="Granos, Harinas y Pastas"></div>
+                            <div id="barProte" class="progress-bar" role="progressbar" style="width: 0%; background-color: #059669;" title="Lácteos, Legumbres y Proteínas"></div>
+                            <div id="barConservas" class="progress-bar" role="progressbar" style="width: 0%; background-color: #d97706;" title="Enlatados y Conservas"></div>
+                            <div id="barOtros" class="progress-bar" role="progressbar" style="width: 0%; background-color: #7c3aed;" title="Aceites, Infusiones y Otros"></div>
                         </div>
                     </div>
                 </div>
@@ -211,7 +275,8 @@
                                 <th class="text-center">Disponible</th>
                                 <th>Lotes reservados</th>
                                 <th>Estado cobertura</th>
-                                <th class="pe-3">Sustitución supervisada</th>
+                                <th>Sustitución supervisada</th>
+                                <th class="text-center pe-3">Acción</th>
                             </tr>
                         </thead>
                         <tbody id="cuerpoTablaPropuesta">
@@ -220,20 +285,25 @@
                                 for (int i = 0; i < Model.Propuesta!.Items.Count; i++)
                                 {
                                     var item = Model.Propuesta.Items[i];
-                                    <tr>
+                                    <tr id="fila_@i" data-cat="@item.CategoriaNombre">
                                         <input type="hidden" name="Items.Index" value="@i" />
                                         <input type="hidden" name="Items[@i].ProductoId" id="prodId_@i" value="@item.ProductoId" />
                                         <input type="hidden" name="Items[@i].NombreProducto" id="prodNombre_@i" value="@item.NombreProducto" />
                                         <input type="hidden" name="Items[@i].CodigoBarras" value="@item.CodigoBarras" />
-                                        <input type="hidden" name="Items[@i].Cantidad" value="@item.CantidadRequerida" />
+                                        <input type="hidden" name="Items[@i].CategoriaId" value="@item.CategoriaId" />
+                                        <input type="hidden" name="Items[@i].CategoriaNombre" id="prodCat_@i" value="@item.CategoriaNombre" />
+                                        <input type="hidden" name="Items[@i].Cantidad" id="prodCant_@i" value="@item.CantidadRequerida" />
                                         <input type="hidden" name="Items[@i].EsSustituto" id="esSustituto_@i" value="false" />
                                         <input type="hidden" name="Items[@i].ProductoSustituidoId" id="prodSustituidoId_@i" value="" />
 
                                         <td class="ps-3">
                                             <div class="fw-bold text-dark" id="displayNombre_@i">@item.NombreProducto</div>
-                                            <small class="text-muted font-mono">EAN: @item.CodigoBarras</small>
+                                            <div class="d-flex align-items-center gap-1 mt-1">
+                                                <small class="text-muted font-mono">EAN: @item.CodigoBarras</small>
+                                                <span class="badge bg-light text-secondary border small rounded-pill px-2">@item.CategoriaNombre</span>
+                                            </div>
                                         </td>
-                                        <td class="text-center fw-bold fs-6 font-mono">
+                                        <td class="text-center fw-bold fs-6 font-mono" id="displayCant_@i">
                                             @item.CantidadRequerida.ToString("N0")
                                         </td>
                                         <td class="text-center fw-bold @(item.CubiertoTotalmente ? "text-success" : "text-danger") fs-6 font-mono">
@@ -270,22 +340,87 @@
                                                 </span>
                                             }
                                         </td>
-                                        <td class="pe-3">
+                                        <td>
                                             <div class="input-group input-group-sm" style="max-width: 280px;">
-                                                <select class="form-select select-sustituto" data-index="@i" data-original-id="@item.ProductoId" data-original-nombre="@item.NombreProducto">
+                                                <select class="form-select select-sustituto" data-index="@i" data-original-id="@item.ProductoId" data-original-nombre="@item.NombreProducto" data-original-cat="@item.CategoriaId">
                                                     <option value="">-- Sin sustitución --</option>
-                                                    @foreach (var alt in productosCatalogo.Where(p => p.Id != item.ProductoId))
+                                                    @{
+                                                        var mismaCat = productosCatalogo.Where(p => p.Id != item.ProductoId && p.CategoriaId == item.CategoriaId).ToList();
+                                                        var otraCat = productosCatalogo.Where(p => p.Id != item.ProductoId && p.CategoriaId != item.CategoriaId).ToList();
+                                                    }
+                                                    @if (mismaCat.Any())
                                                     {
-                                                        <option value="@alt.Id">Sustituir por: @alt.Nombre</option>
+                                                        <optgroup label="Misma Categoría: @item.CategoriaNombre (Recomendado)">
+                                                            @foreach (var alt in mismaCat)
+                                                            {
+                                                                var stockDisp = alt.Lotes?.Where(l => l.Estado == EstadoLote.Disponible && l.FechaVencimiento > DateTime.Today).Sum(l => l.CantidadDisponible) ?? 0;
+                                                                <option value="@alt.Id" data-cat="@alt.Categoria?.Nombre" data-same-cat="true">Sustituir por: @alt.Nombre (Stock: @stockDisp.ToString("N0") u.)</option>
+                                                            }
+                                                        </optgroup>
+                                                    }
+                                                    @if (otraCat.Any())
+                                                    {
+                                                        <optgroup label="Otras Categorías Nutricionales">
+                                                            @foreach (var alt in otraCat)
+                                                            {
+                                                                var stockDisp = alt.Lotes?.Where(l => l.Estado == EstadoLote.Disponible && l.FechaVencimiento > DateTime.Today).Sum(l => l.CantidadDisponible) ?? 0;
+                                                                <option value="@alt.Id" data-cat="@alt.Categoria?.Nombre" data-same-cat="false">Sustituir por: @alt.Nombre [@alt.Categoria?.Nombre] (Stock: @stockDisp.ToString("N0") u.)</option>
+                                                            }
+                                                        </optgroup>
                                                     }
                                                 </select>
                                             </div>
+                                        </td>
+                                        <td class="text-center pe-3">
+                                            <button type="button" class="btn btn-outline-danger btn-sm rounded-pill px-2 py-1 btn-quitar-item" title="Quitar este alimento del kit">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
                                         </td>
                                     </tr>
                                 }
                             }
                         </tbody>
                     </table>
+                </div>
+
+                <!-- PANEL DE ARMADO MANUAL: AGREGAR ALIMENTO ADICIONAL -->
+                <div class="card border border-2 border-dashed rounded-4 p-3 my-4 bg-light bg-opacity-50">
+                    <div class="row g-3 align-items-center">
+                        <div class="col-lg-5 col-md-12">
+                            <label for="selectNuevoProducto" class="form-label small fw-bold text-dark mb-1">
+                                <i class="bi bi-plus-circle-fill text-primary me-1"></i>Incorporar alimento adicional del depósito:
+                            </label>
+                            <select id="selectNuevoProducto" class="form-select form-select-sm">
+                                <option value="">-- Seleccionar alimento a incorporar --</option>
+                                @foreach (var grupo in productosCatalogo.GroupBy(p => p.Categoria?.Nombre ?? "Otros").OrderBy(g => g.Key))
+                                {
+                                    <optgroup label="@grupo.Key">
+                                        @foreach (var prod in grupo.OrderBy(p => p.Nombre))
+                                        {
+                                            var stockDisp = prod.Lotes?.Where(l => l.Estado == EstadoLote.Disponible && l.FechaVencimiento > DateTime.Today).Sum(l => l.CantidadDisponible) ?? 0;
+                                            <option value="@prod.Id" data-stock="@stockDisp" data-nombre="@prod.Nombre" data-cat="@grupo.Key" data-cat-id="@prod.CategoriaId" data-ean="@prod.CodigoBarras">
+                                                @prod.Nombre (Stock: @stockDisp.ToString("N0") u.)
+                                            </option>
+                                        }
+                                    </optgroup>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-lg-3 col-md-6">
+                            <label for="inputNuevaCantidad" class="form-label small fw-bold text-dark mb-1">Cantidad a incluir:</label>
+                            <div class="input-group input-group-sm">
+                                <button type="button" class="btn btn-outline-secondary" id="btnRestarCantManual">-</button>
+                                <input type="number" id="inputNuevaCantidad" class="form-control text-center font-mono fw-bold" value="1" min="1" max="99" />
+                                <button type="button" class="btn btn-outline-secondary" id="btnSumarCantManual">+</button>
+                                <span class="input-group-text">u.</span>
+                            </div>
+                        </div>
+                        <div class="col-lg-4 col-md-6 text-md-end pt-md-3">
+                            <button type="button" id="btnAgregarAlimentoManual" class="btn btn-primary btn-sm rounded-pill px-4 fw-semibold shadow-sm w-100 w-md-auto">
+                                <i class="bi bi-plus-lg me-1"></i> Agregar a la Receta
+                            </button>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Datos del Armador y Observaciones -->
@@ -332,13 +467,17 @@
     <partial name="_ValidationScriptsPartial" />
 
     <script>
-        // Catálogo de productos para selectores dinámicos de sustitutos
-        const catalogoProductos = [
-            @foreach (var prod in productosCatalogo)
-            {
-                <text>{ id: @prod.Id, nombre: "@Html.Raw(prod.Nombre.Replace("\"", "\\\""))" },</text>
-            }
-        ];
+        // Catálogo de productos serializado con JsonSerializer para garantizar compatibilidad cultural estricta (puntos decimales) y evitar SyntaxError
+        const catalogoProductos = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+            productosCatalogo.Select(prod => new {
+                id = prod.Id,
+                nombre = prod.Nombre,
+                codigoBarras = prod.CodigoBarras,
+                categoriaId = prod.CategoriaId,
+                categoriaNombre = prod.Categoria?.Nombre ?? "General",
+                stockDisponible = Convert.ToInt32(prod.Lotes?.Where(l => l.Estado == EstadoLote.Disponible && l.FechaVencimiento > DateTime.Today).Sum(l => l.CantidadDisponible) ?? 0)
+            })
+        ));
 
         document.addEventListener("DOMContentLoaded", function () {
             const comboFamilia = document.getElementById("comboFamilia");
@@ -358,18 +497,59 @@
             const alertaCompleto = document.getElementById("alertaCompleto");
             const alertaFaltantes = document.getElementById("alertaFaltantes");
 
-            // Función para vincular eventos a selectores de sustitución
-            function vincularSustitutos() {
-                document.querySelectorAll(".select-sustituto").forEach(select => {
-                    select.removeEventListener("change", manejarCambioSustituto);
-                    select.addEventListener("change", manejarCambioSustituto);
-                });
+            // Elementos de Métricas y Balance Bromatológico
+            const txtMetricaTotalUnidades = document.getElementById("txtMetricaTotalUnidades");
+            const contenedorBadgesCategorias = document.getElementById("contenedorBadgesCategorias");
+            const barCarbos = document.getElementById("barCarbos");
+            const barProte = document.getElementById("barProte");
+            const barConservas = document.getElementById("barConservas");
+            const barOtros = document.getElementById("barOtros");
+            const lblPctCarbos = document.getElementById("lblPctCarbos");
+            const lblPctProte = document.getElementById("lblPctProte");
+            const lblPctConservas = document.getElementById("lblPctConservas");
+            const lblPctOtros = document.getElementById("lblPctOtros");
+            const badgeSemaforoBalance = document.getElementById("badgeSemaforoBalance");
+            const btnAutoSustituirTodo = document.getElementById("btnAutoSustituirTodo");
+
+            const selectNuevoProducto = document.getElementById("selectNuevoProducto");
+            const inputNuevaCantidad = document.getElementById("inputNuevaCantidad");
+            const btnAgregarAlimentoManual = document.getElementById("btnAgregarAlimentoManual");
+            const btnSumarCantManual = document.getElementById("btnSumarCantManual");
+            const btnRestarCantManual = document.getElementById("btnRestarCantManual");
+            const btnConfirmarArmado = document.getElementById("btnConfirmarArmado");
+
+            // Generador de Select de Sustitutos con Agrupación Bromatológica (Paso 3)
+            function generarSelectSustitutoHtml(idx, currentProdId, catId, catNombre) {
+                let html = `<select class="form-select form-select-sm select-sustituto" data-index="${idx}" data-original-id="${currentProdId}" data-original-cat="${catId}">`;
+                html += '<option value="">-- Sin sustitución --</option>';
+
+                const mismaCat = catalogoProductos.filter(p => p.id !== currentProdId && p.categoriaId === catId);
+                const otraCat = catalogoProductos.filter(p => p.id !== currentProdId && p.categoriaId !== catId);
+
+                if (mismaCat.length > 0) {
+                    html += `<optgroup label="Misma Categoría: ${catNombre} (Recomendado)">`;
+                    mismaCat.forEach(p => {
+                        html += `<option value="${p.id}" data-nombre="${p.nombre}" data-cat="${p.categoriaNombre}" data-same-cat="true">Sustituir por: ${p.nombre} (Stock: ${Math.round(p.stockDisponible)} u.)</option>`;
+                    });
+                    html += '</optgroup>';
+                }
+
+                if (otraCat.length > 0) {
+                    html += `<optgroup label="Otras Categorías Nutricionales">`;
+                    otraCat.forEach(p => {
+                        html += `<option value="${p.id}" data-nombre="${p.nombre}" data-cat="${p.categoriaNombre}" data-same-cat="false">Sustituir por: ${p.nombre} [${p.categoriaNombre}] (Stock: ${Math.round(p.stockDisponible)} u.)</option>`;
+                    });
+                    html += '</optgroup>';
+                }
+
+                html += '</select>';
+                return html;
             }
 
+            // Manejador del cambio de sustituto
             function manejarCambioSustituto() {
                 const idx = this.getAttribute("data-index");
                 const origId = this.getAttribute("data-original-id");
-                const origNombre = this.getAttribute("data-original-nombre");
 
                 const prodIdInput = document.getElementById("prodId_" + idx);
                 const prodNombreInput = document.getElementById("prodNombre_" + idx);
@@ -377,27 +557,383 @@
                 const prodSustituidoIdInput = document.getElementById("prodSustituidoId_" + idx);
                 const displayNombre = document.getElementById("displayNombre_" + idx);
 
+                const prodOriginal = catalogoProductos.find(p => p.id === parseInt(origId));
+                const origNombre = prodOriginal ? prodOriginal.nombre : "Producto Original";
+
                 if (this.value) {
+                    const selectedOpt = this.options[this.selectedIndex];
                     const nuevoId = this.value;
-                    const nuevoNombre = this.options[this.selectedIndex].text.replace("Sustituir por: ", "");
+                    const nuevoNombre = selectedOpt.getAttribute("data-nombre") || selectedOpt.text;
+                    const esMismaCat = selectedOpt.getAttribute("data-same-cat") === "true";
 
                     prodIdInput.value = nuevoId;
                     prodNombreInput.value = nuevoNombre;
                     esSustitutoInput.value = "true";
                     prodSustituidoIdInput.value = origId;
 
-                    displayNombre.innerHTML = `${nuevoNombre} <span class="badge bg-warning text-dark ms-1">Sustituto de ${origNombre}</span>`;
+                    if (esMismaCat) {
+                        displayNombre.innerHTML = `${nuevoNombre} <span class="badge bg-success bg-opacity-10 text-success border border-success small ms-1"><i class="bi bi-shield-check me-1"></i>Sustituto Equilibrado (${origNombre})</span>`;
+                    } else {
+                        displayNombre.innerHTML = `${nuevoNombre} <span class="badge bg-warning bg-opacity-10 text-dark border border-warning small ms-1"><i class="bi bi-exclamation-triangle me-1"></i>Sustituto Otra Categoría (${origNombre})</span>`;
+                    }
                 } else {
                     prodIdInput.value = origId;
                     prodNombreInput.value = origNombre;
                     esSustitutoInput.value = "false";
                     prodSustituidoIdInput.value = "";
-
                     displayNombre.textContent = origNombre;
+                }
+
+                actualizarMetricasKit();
+            }
+
+            // Recálculo en tiempo real de Balance Bromatológico, Distribución y Unidades
+            function actualizarMetricasKit() {
+                const filas = cuerpoTablaPropuesta.querySelectorAll("tr");
+                let totalUnidades = 0;
+                let unidadesCarbos = 0;
+                let unidadesProte = 0;
+                let unidadesConservas = 0;
+                let unidadesOtros = 0;
+                let tieneFaltantesActivos = false;
+                const categoriasPresentes = new Set();
+
+                filas.forEach(fila => {
+                    const cantInput = fila.querySelector('input[name$=".Cantidad"]');
+                    const cant = cantInput ? (parseFloat(cantInput.value) || 0) : 0;
+                    totalUnidades += cant;
+
+                    const catInput = fila.querySelector('input[name$=".CategoriaNombre"]');
+                    const catNombre = (catInput && catInput.value) ? catInput.value : (fila.dataset.cat || "Varios");
+                    categoriasPresentes.add(catNombre);
+
+                    // Clasificación bromatológica por grupos
+                    const lowerCat = catNombre.toLowerCase();
+                    if (lowerCat.includes("grano") || lowerCat.includes("cereal") || lowerCat.includes("pasta") || lowerCat.includes("harina")) {
+                        unidadesCarbos += cant;
+                    } else if (lowerCat.includes("lácteo") || lowerCat.includes("lacteo") || lowerCat.includes("legumbre") || lowerCat.includes("atún") || lowerCat.includes("pescado")) {
+                        unidadesProte += cant;
+                    } else if (lowerCat.includes("conserva") || lowerCat.includes("enlatado") || lowerCat.includes("tomate") || lowerCat.includes("arveja") || lowerCat.includes("choclo")) {
+                        unidadesConservas += cant;
+                    } else {
+                        unidadesOtros += cant;
+                    }
+
+                    // Chequear si este ítem tiene faltante sin resolver
+                    const prodIdInput = fila.querySelector('input[name$=".ProductoId"]');
+                    if (prodIdInput) {
+                        const pId = parseInt(prodIdInput.value);
+                        const prodCatalogo = catalogoProductos.find(p => p.id === pId);
+                        const stockDisp = prodCatalogo ? prodCatalogo.stockDisponible : 0;
+                        if (stockDisp < cant) {
+                            tieneFaltantesActivos = true;
+                        }
+                    }
+                });
+
+                // 1. Unidades Totales
+                if (txtMetricaTotalUnidades) {
+                    txtMetricaTotalUnidades.textContent = Math.round(totalUnidades);
+                }
+
+                // 2. Badges de Categorías
+                if (contenedorBadgesCategorias) {
+                    contenedorBadgesCategorias.innerHTML = "";
+                    if (categoriasPresentes.size === 0) {
+                        contenedorBadgesCategorias.innerHTML = '<span class="text-muted small fst-italic">Sin alimentos en la receta</span>';
+                    } else {
+                        categoriasPresentes.forEach(cat => {
+                            const badge = document.createElement("span");
+                            badge.className = "badge bg-secondary bg-opacity-10 text-secondary border small rounded-pill px-2 py-1";
+                            badge.innerHTML = `<i class="bi bi-tag-fill me-1"></i>${cat}`;
+                            contenedorBadgesCategorias.appendChild(badge);
+                        });
+                    }
+                }
+
+                // 3. Distribución Bromatológica Porcentual
+                const pctCarbos = totalUnidades > 0 ? Math.round((unidadesCarbos / totalUnidades) * 100) : 0;
+                const pctProte = totalUnidades > 0 ? Math.round((unidadesProte / totalUnidades) * 100) : 0;
+                const pctConservas = totalUnidades > 0 ? Math.round((unidadesConservas / totalUnidades) * 100) : 0;
+                const pctOtros = totalUnidades > 0 ? Math.max(0, 100 - (pctCarbos + pctProte + pctConservas)) : 0;
+
+                if (barCarbos) barCarbos.style.width = pctCarbos + "%";
+                if (barProte) barProte.style.width = pctProte + "%";
+                if (barConservas) barConservas.style.width = pctConservas + "%";
+                if (barOtros) barOtros.style.width = pctOtros + "%";
+
+                if (lblPctCarbos) lblPctCarbos.textContent = pctCarbos + "%";
+                if (lblPctProte) lblPctProte.textContent = pctProte + "%";
+                if (lblPctConservas) lblPctConservas.textContent = pctConservas + "%";
+                if (lblPctOtros) lblPctOtros.textContent = pctOtros + "%";
+
+                // 4. Semáforo Bromatológico
+                if (badgeSemaforoBalance) {
+                    if (totalUnidades === 0) {
+                        badgeSemaforoBalance.innerHTML = '<span class="badge bg-secondary bg-opacity-10 text-secondary border rounded-pill px-3 py-1"><i class="bi bi-slash-circle me-1"></i>Sin alimentos</span>';
+                    } else if (unidadesProte === 0) {
+                        badgeSemaforoBalance.innerHTML = '<span class="badge bg-warning bg-opacity-10 text-dark border border-warning rounded-pill px-3 py-1"><i class="bi bi-exclamation-triangle me-1"></i>Bajo en proteínas/lácteos</span>';
+                    } else if (unidadesCarbos === 0) {
+                        badgeSemaforoBalance.innerHTML = '<span class="badge bg-danger bg-opacity-10 text-danger border border-danger rounded-pill px-3 py-1"><i class="bi bi-exclamation-octagon me-1"></i>Falta base de cereales</span>';
+                    } else {
+                        badgeSemaforoBalance.innerHTML = '<span class="badge bg-success bg-opacity-10 text-success border border-success rounded-pill px-3 py-1"><i class="bi bi-shield-check me-1"></i>Balance Bromatológico Óptimo</span>';
+                    }
+                }
+
+                // 5. Estado de Alerta de Faltantes
+                if (alertaFaltantes && alertaCompleto) {
+                    if (tieneFaltantesActivos) {
+                        alertaFaltantes.classList.remove("d-none");
+                        alertaCompleto.classList.add("d-none");
+                    } else if (filas.length > 0) {
+                        alertaCompleto.classList.remove("d-none");
+                        alertaFaltantes.classList.add("d-none");
+                    }
+                }
+
+                // 6. Validación de confirmación
+                if (btnConfirmarArmado) {
+                    if (filas.length === 0 || totalUnidades <= 0) {
+                        btnConfirmarArmado.disabled = true;
+                        btnConfirmarArmado.classList.add("opacity-50");
+                    } else {
+                        btnConfirmarArmado.disabled = false;
+                        btnConfirmarArmado.classList.remove("opacity-50");
+                    }
                 }
             }
 
-            vincularSustitutos();
+            // Vinculación unificada de eventos de tabla (Sustituciones y Quitar)
+            function vincularEventosTabla() {
+                document.querySelectorAll(".select-sustituto").forEach(select => {
+                    select.removeEventListener("change", manejarCambioSustituto);
+                    select.addEventListener("change", manejarCambioSustituto);
+                });
+
+                document.querySelectorAll(".btn-quitar-item").forEach(btn => {
+                    btn.onclick = function () {
+                        const tr = this.closest("tr");
+                        if (tr) {
+                            tr.remove();
+                            actualizarMetricasKit();
+                        }
+                    };
+                });
+            }
+
+            // Controles de cantidad manual (+ / -)
+            if (btnSumarCantManual) {
+                btnSumarCantManual.addEventListener("click", () => {
+                    inputNuevaCantidad.value = Math.min(99, (parseInt(inputNuevaCantidad.value) || 0) + 1);
+                });
+            }
+            if (btnRestarCantManual) {
+                btnRestarCantManual.addEventListener("click", () => {
+                    inputNuevaCantidad.value = Math.max(1, (parseInt(inputNuevaCantidad.value) || 2) - 1);
+                });
+            }
+
+            // Incorporar Alimento Manual al Kit (Paso 2)
+            if (btnAgregarAlimentoManual) {
+                btnAgregarAlimentoManual.addEventListener("click", function () {
+                    const prodIdStr = selectNuevoProducto.value;
+                    const cantidad = parseInt(inputNuevaCantidad.value) || 1;
+
+                    if (!prodIdStr) {
+                        alert("Por favor selecciona un alimento del listado.");
+                        selectNuevoProducto.focus();
+                        return;
+                    }
+
+                    if (cantidad <= 0) {
+                        alert("La cantidad a incluir debe ser mayor a cero.");
+                        inputNuevaCantidad.focus();
+                        return;
+                    }
+
+                    const prodId = parseInt(prodIdStr);
+                    const prod = catalogoProductos.find(p => p.id === prodId);
+                    if (!prod) return;
+
+                    // Verificar si ya existe en la tabla para sumar cantidad de forma prolija
+                    const filas = cuerpoTablaPropuesta.querySelectorAll("tr");
+                    let filaExistente = null;
+
+                    filas.forEach(f => {
+                        const inputProd = f.querySelector(`input[name$=".ProductoId"][value="${prodId}"]`);
+                        if (inputProd) filaExistente = f;
+                    });
+
+                    if (filaExistente) {
+                        const cantInput = filaExistente.querySelector('input[name$=".Cantidad"]');
+                        const displayCant = filaExistente.querySelector('td:nth-child(2)');
+                        if (cantInput) {
+                            const cantActual = parseFloat(cantInput.value) || 0;
+                            const nuevaCant = cantActual + cantidad;
+                            cantInput.value = nuevaCant;
+                            if (displayCant) displayCant.textContent = Math.round(nuevaCant);
+                        }
+
+                        // Resaltar visualmente la fila actualizada
+                        filaExistente.classList.add("table-warning");
+                        setTimeout(() => filaExistente.classList.remove("table-warning"), 800);
+
+                        selectNuevoProducto.value = "";
+                        inputNuevaCantidad.value = 1;
+                        actualizarMetricasKit();
+                        return;
+                    }
+
+                    // Si no existía, crear nueva fila con índice único compatible con ASP.NET Core Model Binding
+                    const customIndex = "m_" + Date.now();
+                    const tr = document.createElement("tr");
+                    tr.id = `fila_${customIndex}`;
+                    tr.dataset.cat = prod.categoriaNombre;
+
+                    const cubierto = prod.stockDisponible >= cantidad;
+                    const faltante = Math.max(0, cantidad - prod.stockDisponible);
+
+                    let badgeCobertura = "";
+                    if (cubierto) {
+                        badgeCobertura = `<span class="badge bg-success bg-opacity-10 text-success rounded-pill px-3 py-1">
+                            <i class="bi bi-check-all me-1"></i> 100% Cubierto
+                        </span>`;
+                    } else {
+                        badgeCobertura = `<span class="badge bg-danger bg-opacity-10 text-danger rounded-pill px-3 py-1">
+                            <i class="bi bi-exclamation-octagon me-1"></i> Falta ${Math.round(faltante)} u.
+                        </span>`;
+                    }
+
+                    const selectSustitutoHtml = generarSelectSustitutoHtml(customIndex, prod.id, prod.categoriaId, prod.categoriaNombre);
+
+                    tr.innerHTML = `
+                        <input type="hidden" name="Items.Index" value="${customIndex}" />
+                        <input type="hidden" name="Items[${customIndex}].ProductoId" id="prodId_${customIndex}" value="${prod.id}" />
+                        <input type="hidden" name="Items[${customIndex}].NombreProducto" id="prodNombre_${customIndex}" value="${prod.nombre}" />
+                        <input type="hidden" name="Items[${customIndex}].CodigoBarras" value="${prod.codigoBarras}" />
+                        <input type="hidden" name="Items[${customIndex}].CategoriaId" value="${prod.categoriaId}" />
+                        <input type="hidden" name="Items[${customIndex}].CategoriaNombre" id="prodCat_${customIndex}" value="${prod.categoriaNombre}" />
+                        <input type="hidden" name="Items[${customIndex}].Cantidad" id="prodCant_${customIndex}" value="${cantidad}" />
+                        <input type="hidden" name="Items[${customIndex}].EsSustituto" id="esSustituto_${customIndex}" value="false" />
+                        <input type="hidden" name="Items[${customIndex}].ProductoSustituidoId" id="prodSustituidoId_${customIndex}" value="" />
+
+                        <td class="ps-3">
+                            <div class="fw-bold text-dark" id="displayNombre_${customIndex}">${prod.nombre}</div>
+                            <div class="d-flex align-items-center gap-1 mt-1">
+                                <small class="text-muted font-mono">EAN: ${prod.codigoBarras}</small>
+                                <span class="badge bg-light text-secondary border small rounded-pill px-2">${prod.categoriaNombre}</span>
+                                <span class="badge bg-primary bg-opacity-10 text-primary small rounded-pill px-2">Agregado manual</span>
+                            </div>
+                        </td>
+                        <td class="text-center fw-bold fs-6 font-mono" id="displayCant_${customIndex}">
+                            ${cantidad}
+                        </td>
+                        <td class="text-center fw-bold ${cubierto ? 'text-success' : 'text-danger'} fs-6 font-mono">
+                            ${Math.round(prod.stockDisponible)}
+                        </td>
+                        <td>
+                            <span class="badge bg-light text-muted border font-mono small rounded-pill px-2 py-1">
+                                Asignación FEFO al confirmar
+                            </span>
+                        </td>
+                        <td>${badgeCobertura}</td>
+                        <td>
+                            <div class="input-group input-group-sm" style="max-width: 280px;">
+                                ${selectSustitutoHtml}
+                            </div>
+                        </td>
+                        <td class="text-center pe-3">
+                            <button type="button" class="btn btn-outline-danger btn-sm rounded-pill px-2 py-1 btn-quitar-item" title="Quitar este alimento del kit">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </td>
+                    `;
+
+                    cuerpoTablaPropuesta.appendChild(tr);
+
+                    // Limpiar formulario manual
+                    selectNuevoProducto.value = "";
+                    inputNuevaCantidad.value = 1;
+
+                    vincularEventosTabla();
+                    actualizarMetricasKit();
+                });
+            }
+
+            // Auto-Sustitución Inteligente en 1 Clic (Mejora 2)
+            if (btnAutoSustituirTodo) {
+                btnAutoSustituirTodo.addEventListener("click", function () {
+                    const filas = cuerpoTablaPropuesta.querySelectorAll("tr");
+                    let sustitucionesAplicadas = 0;
+
+                    filas.forEach(fila => {
+                        const selectSust = fila.querySelector(".select-sustituto");
+                        if (!selectSust) return;
+
+                        // Si ya tiene un sustituto seleccionado, no lo pisamos
+                        if (selectSust.value) return;
+
+                        const origId = parseInt(selectSust.getAttribute("data-original-id"));
+                        const origCat = parseInt(selectSust.getAttribute("data-original-cat"));
+                        const cantInput = fila.querySelector('input[name$=".Cantidad"]');
+                        const cant = cantInput ? (parseFloat(cantInput.value) || 1) : 1;
+
+                        const prodOriginal = catalogoProductos.find(p => p.id === origId);
+                        const stockActual = prodOriginal ? prodOriginal.stockDisponible : 0;
+
+                        // Si hay faltante en este producto:
+                        if (stockActual < cant) {
+                            // Buscar en las opciones del select
+                            // Prioridad 1: Misma Categoría con stock suficiente
+                            const optsMismaCat = Array.from(selectSust.querySelectorAll('optgroup[label*="Misma Categoría"] option'));
+                            let mejorOpcion = null;
+
+                            for (const opt of optsMismaCat) {
+                                const altProd = catalogoProductos.find(p => p.id === parseInt(opt.value));
+                                if (altProd && altProd.stockDisponible >= cant) {
+                                    mejorOpcion = opt;
+                                    break;
+                                }
+                            }
+
+                            // Prioridad 2: Misma Categoría con algún stock
+                            if (!mejorOpcion) {
+                                for (const opt of optsMismaCat) {
+                                    const altProd = catalogoProductos.find(p => p.id === parseInt(opt.value));
+                                    if (altProd && altProd.stockDisponible > 0) {
+                                        mejorOpcion = opt;
+                                        break;
+                                    }
+                                }
+                            }
+
+                            // Prioridad 3: Otras Categorías con stock suficiente
+                            if (!mejorOpcion) {
+                                const optsOtrasCat = Array.from(selectSust.querySelectorAll('optgroup[label*="Otras Categorías"] option'));
+                                for (const opt of optsOtrasCat) {
+                                    const altProd = catalogoProductos.find(p => p.id === parseInt(opt.value));
+                                    if (altProd && altProd.stockDisponible >= cant) {
+                                        mejorOpcion = opt;
+                                        break;
+                                    }
+                                }
+                            }
+
+                            if (mejorOpcion) {
+                                selectSust.value = mejorOpcion.value;
+                                selectSust.dispatchEvent(new Event("change"));
+                                sustitucionesAplicadas++;
+                            }
+                        }
+                    });
+
+                    if (sustitucionesAplicadas > 0) {
+                        actualizarMetricasKit();
+                    } else {
+                        alert("No se encontraron productos alternativos con existencias en depósito para resolver los faltantes.");
+                    }
+                });
+            }
 
             function actualizarWizard(paso) {
                 const icon1 = document.getElementById("wizardIcono1");
@@ -428,13 +964,24 @@
             }
 
             // Carga Reactiva Instantánea al seleccionar Familia o Kit
-            async function cargarPropuestaReactiva() {
+            async function cargarPropuestaReactiva(e) {
                 const famId = comboFamilia.value;
-                const kitId = comboKit.value;
+                let kitId = comboKit.value;
+
+                // Si se cambió la familia, limpiamos la selección manual de kit para que autocalcule el kit según el tamaño de la nueva familia
+                if (e && e.target === comboFamilia) {
+                    comboKit.value = "";
+                    kitId = "";
+                }
 
                 alertaErrorDinamica.classList.add("d-none");
 
                 if (!famId) {
+                    if (e && e.target === comboKit && comboKit.value) {
+                        alertaErrorDinamica.classList.remove("d-none");
+                        mensajeErrorDinamico.textContent = "Por favor selecciona primero una familia beneficiaria destinataria.";
+                        comboKit.value = "";
+                    }
                     cardResumenFamilia.classList.add("d-none");
                     contenedorPropuesta.classList.add("d-none");
                     placeholderSinFamilia.classList.remove("d-none");
@@ -446,12 +993,15 @@
                 spinnerCargando.classList.remove("d-none");
 
                 try {
-                    let url = `@Url.Action("ObtenerPropuestaJson", "Paquetes")?familiaId=${famId}`;
+                    let url = `@Url.Action("ObtenerPropuestaJson", "Paquetes")?familiaId=${encodeURIComponent(famId)}`;
                     if (kitId) {
-                        url += `&tipoPaqueteId=${kitId}`;
+                        url += `&tipoPaqueteId=${encodeURIComponent(kitId)}`;
                     }
 
                     const response = await fetch(url);
+                    if (!response.ok) {
+                        throw new Error("Respuesta no satisfactoria del servidor: " + response.status);
+                    }
                     const data = await response.json();
 
                     spinnerCargando.classList.add("d-none");
@@ -518,59 +1068,74 @@
                             </span>`;
                         }
 
-                        let opcionesSustitutos = '<option value="">-- Sin sustitución --</option>';
-                        catalogoProductos.forEach(p => {
-                            if (p.id !== item.productoId) {
-                                opcionesSustitutos += `<option value="${p.id}">Sustituir por: ${p.nombre}</option>`;
-                            }
-                        });
+                        const selectSustitutoHtml = generarSelectSustitutoHtml(i, item.productoId, item.categoriaId, item.categoriaNombre);
 
                         const tr = document.createElement("tr");
+                        tr.id = `fila_${i}`;
+                        tr.dataset.cat = item.categoriaNombre;
                         tr.innerHTML = `
                             <input type="hidden" name="Items.Index" value="${i}" />
                             <input type="hidden" name="Items[${i}].ProductoId" id="prodId_${i}" value="${item.productoId}" />
                             <input type="hidden" name="Items[${i}].NombreProducto" id="prodNombre_${i}" value="${item.nombreProducto}" />
                             <input type="hidden" name="Items[${i}].CodigoBarras" value="${item.codigoBarras}" />
-                            <input type="hidden" name="Items[${i}].Cantidad" value="${item.cantidadRequerida}" />
+                            <input type="hidden" name="Items[${i}].CategoriaId" value="${item.categoriaId}" />
+                            <input type="hidden" name="Items[${i}].CategoriaNombre" id="prodCat_${i}" value="${item.categoriaNombre}" />
+                            <input type="hidden" name="Items[${i}].Cantidad" id="prodCant_${i}" value="${item.cantidadRequerida}" />
                             <input type="hidden" name="Items[${i}].EsSustituto" id="esSustituto_${i}" value="false" />
                             <input type="hidden" name="Items[${i}].ProductoSustituidoId" id="prodSustituidoId_${i}" value="" />
 
-                            <td>
+                            <td class="ps-3">
                                 <div class="fw-bold text-dark" id="displayNombre_${i}">${item.nombreProducto}</div>
-                                <small class="text-muted font-mono">EAN: ${item.codigoBarras}</small>
+                                <div class="d-flex align-items-center gap-1 mt-1">
+                                    <small class="text-muted font-mono">EAN: ${item.codigoBarras}</small>
+                                    <span class="badge bg-light text-secondary border small rounded-pill px-2">${item.categoriaNombre}</span>
+                                </div>
                             </td>
-                            <td class="text-center fw-bold fs-6">
+                            <td class="text-center fw-bold fs-6 font-mono" id="displayCant_${i}">
                                 ${Math.round(item.cantidadRequerida)}
                             </td>
-                            <td class="text-center fw-bold ${item.cubiertoTotalmente ? 'text-success' : 'text-danger'} fs-6">
+                            <td class="text-center fw-bold ${item.cubiertoTotalmente ? 'text-success' : 'text-danger'} fs-6 font-mono">
                                 ${Math.round(item.cantidadDisponible)}
                             </td>
                             <td>${lotesHtml}</td>
                             <td>${badgeCobertura}</td>
                             <td>
                                 <div class="input-group input-group-sm" style="max-width: 280px;">
-                                    <select class="form-select select-sustituto" data-index="${i}" data-original-id="${item.productoId}" data-original-nombre="${item.nombreProducto}">
-                                        ${opcionesSustitutos}
-                                    </select>
+                                    ${selectSustitutoHtml}
                                 </div>
+                            </td>
+                            <td class="text-center pe-3">
+                                <button type="button" class="btn btn-outline-danger btn-sm rounded-pill px-2 py-1 btn-quitar-item" title="Quitar este alimento del kit">
+                                    <i class="bi bi-trash"></i>
+                                </button>
                             </td>
                         `;
                         cuerpoTablaPropuesta.appendChild(tr);
                     });
 
-                    vincularSustitutos();
+                    vincularEventosTabla();
+                    actualizarMetricasKit();
                     contenedorPropuesta.classList.remove("d-none");
                     placeholderSinFamilia.classList.add("d-none");
 
                 } catch (err) {
                     spinnerCargando.classList.add("d-none");
                     alertaErrorDinamica.classList.remove("d-none");
-                    mensajeErrorDinamico.textContent = "Ocurrió un error de red al consultar el kit para la familia.";
+                    mensajeErrorDinamico.textContent = "Ocurrió un error al consultar el kit para la familia: " + (err.message || err);
                 }
             }
 
-            comboFamilia.addEventListener("change", cargarPropuestaReactiva);
-            comboKit.addEventListener("change", cargarPropuestaReactiva);
+            comboFamilia.addEventListener("change", (e) => cargarPropuestaReactiva(e));
+            comboKit.addEventListener("change", (e) => cargarPropuestaReactiva(e));
+
+            // Si al cargar ya hay familia seleccionada en el combo pero no hay filas, disparar la propuesta
+            if (comboFamilia.value && cuerpoTablaPropuesta.children.length === 0) {
+                cargarPropuestaReactiva();
+            }
+
+            // Inicializar eventos de la tabla si ya había propuesta inicial renderizada en servidor
+            vincularEventosTabla();
+            actualizarMetricasKit();
         });
     </script>
 }
