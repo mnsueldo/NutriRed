@@ -1,4 +1,4 @@
-﻿@model NutriRed.Web.Models.ReportesIndexViewModel
+@model NutriRed.Web.Models.ReportesIndexViewModel
 @{
     ViewData["Title"] = "Módulo de Reportes";
 }
@@ -13,41 +13,151 @@
         transition: all 0.2s ease;
     }
 
-        .nav-tabs-custom .nav-link:hover {
-            color: #198754;
-            border-color: transparent;
-        }
-
-        .nav-tabs-custom .nav-link.active {
-            color: #198754;
-            background-color: transparent;
-            border-bottom: 3px solid #198754;
-        }
-
-    .filter-card {
-        background-color: #ffffff;
-        border: 1px solid rgba(0, 0, 0, 0.05) !important;
+    .nav-tabs-custom .nav-link:hover {
+        color: #198754;
+        border-color: transparent;
     }
 
-    .btn-export-excel {
-        background-color: #0d6efd;
+    .nav-tabs-custom .nav-link.active {
+        color: #198754;
+        background-color: transparent;
+        border-bottom: 3px solid #198754;
+    }
+
+    body.dark-mode .nav-tabs-custom .nav-link {
+        color: #94a3b8;
+    }
+
+    body.dark-mode .nav-tabs-custom .nav-link:hover,
+    body.dark-mode .nav-tabs-custom .nav-link.active {
+        color: #34d399;
+        border-bottom-color: #34d399;
+    }
+
+    body.high-contrast .nav-tabs-custom .nav-link {
         color: #ffffff;
     }
 
-        .btn-export-excel:hover {
-            background-color: #0b5ed7;
-            color: #ffffff;
-        }
+    body.high-contrast .nav-tabs-custom .nav-link.active {
+        color: #00ff66;
+        border-bottom: 3px solid #00ff66;
+    }
+
+    .filter-card {
+        background-color: #ffffff;
+        border: 1px solid rgba(0, 0, 0, 0.08);
+    }
+
+    body.dark-mode .filter-card {
+        background-color: #1e293b !important;
+        border: 1px solid #334155 !important;
+        color: #f8fafc !important;
+    }
+
+    body.high-contrast .filter-card {
+        background-color: #000000 !important;
+        border: 2px solid #ffffff !important;
+        color: #ffffff !important;
+    }
 
     .btn-export-pdf {
         background-color: #6f42c1;
         color: #ffffff;
     }
 
-        .btn-export-pdf:hover {
-            background-color: #5c35a5;
-            color: #ffffff;
-        }
+    .btn-export-pdf:hover {
+        background-color: #5c35a5;
+        color: #ffffff;
+    }
+
+    body.dark-mode .table-responsive {
+        border-color: #334155 !important;
+    }
+
+    body.high-contrast .table-responsive {
+        border-color: #ffffff !important;
+    }
+
+    /* Badges semánticos por estado FEFO */
+    .badge-fefo-optimo {
+        background-color: rgba(25, 135, 84, 0.15);
+        color: #198754;
+        border: 1px solid rgba(25, 135, 84, 0.3);
+    }
+    body.dark-mode .badge-fefo-optimo {
+        background-color: rgba(52, 211, 153, 0.2) !important;
+        color: #34d399 !important;
+        border-color: #34d399 !important;
+    }
+    body.high-contrast .badge-fefo-optimo {
+        background-color: #000000 !important;
+        color: #00ff66 !important;
+        border: 2px solid #00ff66 !important;
+    }
+
+    .badge-fefo-atencion {
+        background-color: rgba(255, 193, 7, 0.15);
+        color: #997404;
+        border: 1px solid rgba(255, 193, 7, 0.4);
+    }
+    body.dark-mode .badge-fefo-atencion {
+        background-color: rgba(251, 191, 36, 0.2) !important;
+        color: #fbbf24 !important;
+        border-color: #fbbf24 !important;
+    }
+    body.high-contrast .badge-fefo-atencion {
+        background-color: #000000 !important;
+        color: #ffff00 !important;
+        border: 2px solid #ffff00 !important;
+    }
+
+    .badge-fefo-urgente {
+        background-color: rgba(253, 126, 20, 0.15);
+        color: #d65b00;
+        border: 1px solid rgba(253, 126, 20, 0.4);
+    }
+    body.dark-mode .badge-fefo-urgente {
+        background-color: rgba(251, 146, 60, 0.2) !important;
+        color: #fb923c !important;
+        border-color: #fb923c !important;
+    }
+    body.high-contrast .badge-fefo-urgente {
+        background-color: #000000 !important;
+        color: #ff9900 !important;
+        border: 2px solid #ff9900 !important;
+    }
+
+    .badge-fefo-vencido {
+        background-color: rgba(220, 53, 69, 0.15);
+        color: #dc3545;
+        border: 1px solid rgba(220, 53, 69, 0.4);
+    }
+    body.dark-mode .badge-fefo-vencido {
+        background-color: rgba(248, 113, 113, 0.2) !important;
+        color: #f87171 !important;
+        border-color: #f87171 !important;
+    }
+    body.high-contrast .badge-fefo-vencido {
+        background-color: #000000 !important;
+        color: #ff4d4d !important;
+        border: 2px solid #ff4d4d !important;
+    }
+
+    .badge-fefo-sinstock {
+        background-color: rgba(108, 117, 125, 0.15);
+        color: #6c757d;
+        border: 1px solid rgba(108, 117, 125, 0.3);
+    }
+    body.dark-mode .badge-fefo-sinstock {
+        background-color: rgba(148, 163, 184, 0.2) !important;
+        color: #94a3b8 !important;
+        border-color: #64748b !important;
+    }
+    body.high-contrast .badge-fefo-sinstock {
+        background-color: #000000 !important;
+        color: #ffffff !important;
+        border: 2px solid #ffffff !important;
+    }
 </style>
 
 <!-- Encabezado de la Página -->
@@ -101,11 +211,11 @@
         {
             <div class="col-12 col-md-3 col-lg-3">
                 <label class="form-label small fw-semibold text-secondary mb-1">Buscar alimento o código</label>
-                <input type="text" name="busquedaInventario" value="@Model.BusquedaInventario" class="form-control rounded-3 bg-light" placeholder="Nombre o EAN..." />
+                <input type="text" name="busquedaInventario" value="@Model.BusquedaInventario" class="form-control rounded-3" placeholder="Nombre o EAN..." />
             </div>
             <div class="col-12 col-md-3 col-lg-3">
                 <label class="form-label small fw-semibold text-secondary mb-1">Categoría</label>
-                <select name="categoriaId" class="form-select rounded-3 bg-light">
+                <select name="categoriaId" class="form-select rounded-3">
                     <option value="">Todas las categorías</option>
                     @foreach (var cat in Model.Categorias)
                     {
@@ -115,7 +225,7 @@
             </div>
             <div class="col-12 col-md-3 col-lg-3">
                 <label class="form-label small fw-semibold text-secondary mb-1">Estado Stock</label>
-                <select name="estadoStock" class="form-select rounded-3 bg-light">
+                <select name="estadoStock" class="form-select rounded-3">
                     <option value="">Todos</option>
                     <option value="Con stock suficiente" selected="@(Model.EstadoStock == "Con stock suficiente")">Con stock suficiente</option>
                     <option value="Bajo stock mínimo" selected="@(Model.EstadoStock == "Bajo stock mínimo")">Bajo stock mínimo</option>
@@ -124,7 +234,7 @@
             </div>
             <div class="col-12 col-md-3 col-lg-3">
                 <label class="form-label small fw-semibold text-secondary mb-1">Semáforo de Vencimiento</label>
-                <select name="semaforoFefo" class="form-select rounded-3 bg-light">
+                <select name="semaforoFefo" class="form-select rounded-3">
                     <option value="">Todos los estados FEFO</option>
                     <option value="Óptimo (> 15 días)" selected="@(Model.SemaforoFefo == "Óptimo (> 15 días)")">Óptimo (&gt; 15 días)</option>
                     <option value="Atención (<= 15 días)" selected="@(Model.SemaforoFefo == "Atención (<= 15 días)")">Atención (&le; 15 días)</option>
@@ -137,18 +247,18 @@
         {
             <div class="col-12 col-md-3 col-lg-3">
                 <label class="form-label small fw-semibold text-secondary mb-1">Fecha Desde</label>
-                <input type="date" name="fechaDesde" value="@(Model.FechaDesde?.ToString("yyyy-MM-dd"))" class="form-control rounded-3 bg-light" />
+                <input type="date" name="fechaDesde" value="@(Model.FechaDesde?.ToString("yyyy-MM-dd"))" class="form-control rounded-3" />
             </div>
             <div class="col-12 col-md-3 col-lg-3">
                 <label class="form-label small fw-semibold text-secondary mb-1">Fecha Hasta</label>
-                <input type="date" name="fechaHasta" value="@(Model.FechaHasta?.ToString("yyyy-MM-dd"))" class="form-control rounded-3 bg-light" />
+                <input type="date" name="fechaHasta" value="@(Model.FechaHasta?.ToString("yyyy-MM-dd"))" class="form-control rounded-3" />
             </div>
 
             @if (Model.TabActiva == "donaciones")
             {
                 <div class="col-12 col-md-3 col-lg-3">
                     <label class="form-label small fw-semibold text-secondary mb-1">Donante</label>
-                    <select name="donanteId" class="form-select rounded-3 bg-light">
+                    <select name="donanteId" class="form-select rounded-3">
                         <option value="">Todos los Donantes</option>
                         @foreach (var d in Model.Donantes)
                         {
@@ -161,7 +271,7 @@
             {
                 <div class="col-12 col-md-3 col-lg-3">
                     <label class="form-label small fw-semibold text-secondary mb-1">Tipo de Kit</label>
-                    <select name="tipoPaqueteId" class="form-select rounded-3 bg-light">
+                    <select name="tipoPaqueteId" class="form-select rounded-3">
                         <option value="">Todos los Kits</option>
                         @foreach (var t in Model.TiposPaquete)
                         {
@@ -174,7 +284,7 @@
             {
                 <div class="col-12 col-md-4 col-lg-4">
                     <label class="form-label small fw-semibold text-secondary mb-1">Búsqueda avanzada</label>
-                    <input type="text" name="busqueda" value="@Model.Busqueda" class="form-control rounded-3 bg-light" placeholder="Apellido, DNI o PKG..." />
+                    <input type="text" name="busqueda" value="@Model.Busqueda" class="form-control rounded-3" placeholder="Apellido, DNI o PKG..." />
                 </div>
             }
         }
@@ -190,10 +300,10 @@
 <!-- Tarjetas de Impacto / KPIs Superiores -->
 <div class="row g-3 mb-4">
     <div class="col-12 col-md-4">
-        <div class="card border-0 shadow-sm rounded-4 p-3 bg-white">
+        <div class="card border-0 shadow-sm rounded-4 p-3 filter-card">
             <div class="d-flex align-items-center gap-3">
-                <div class="rounded-circle bg-success bg-opacity-10 p-3 text-success d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
-                    <i class="bi bi-journal-check fs-5"></i>
+                <div class="rounded-circle bg-success bg-opacity-10 p-3 text-success d-flex align-items-center justify-content-center flex-shrink-0" style="width: 48px; height: 48px;">
+                    <i class="bi bi-funnel-fill fs-5"></i>
                 </div>
                 <div>
                     <span class="text-muted small fw-semibold text-uppercase d-block">Registros Filtrados</span>
@@ -203,28 +313,71 @@
         </div>
     </div>
     <div class="col-12 col-md-4">
-        <div class="card border-0 shadow-sm rounded-4 p-3 bg-white">
+        <div class="card border-0 shadow-sm rounded-4 p-3 filter-card">
             <div class="d-flex align-items-center gap-3">
-                <div class="rounded-circle bg-primary bg-opacity-10 p-3 text-primary d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
+                <div class="rounded-circle bg-primary bg-opacity-10 p-3 text-primary d-flex align-items-center justify-content-center flex-shrink-0" style="width: 48px; height: 48px;">
                     <i class="bi bi-layers fs-5"></i>
                 </div>
                 <div>
-                    <span class="text-muted small fw-semibold text-uppercase d-block">Página Actual</span>
-                    <span class="fs-4 fw-bold text-dark">@Model.PaginaActual de @(Model.TotalPaginas > 0 ? Model.TotalPaginas : 1)</span>
+                    <span class="text-muted small fw-semibold text-uppercase d-block">Paginación</span>
+                    <span class="fs-4 fw-bold text-dark">Página @Model.PaginaActual de @(Model.TotalPaginas > 0 ? Model.TotalPaginas : 1)</span>
                 </div>
             </div>
         </div>
     </div>
     <div class="col-12 col-md-4">
-        <div class="card border-0 shadow-sm rounded-4 p-3 bg-white">
+        <div class="card border-0 shadow-sm rounded-4 p-3 filter-card">
             <div class="d-flex align-items-center gap-3">
-                <div class="rounded-circle bg-warning bg-opacity-10 p-3 text-warning-emphasis d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
-                    <i class="bi bi-shield-check fs-5 text-warning"></i>
-                </div>
-                <div>
-                    <span class="text-muted small fw-semibold text-uppercase d-block">Estado del Módulo</span>
-                    <span class="fs-6 fw-bold text-success">Producción Activa</span>
-                </div>
+                @if (Model.TabActiva == "inventario")
+                {
+                    <div class="rounded-circle bg-info bg-opacity-10 p-3 text-info d-flex align-items-center justify-content-center flex-shrink-0" style="width: 48px; height: 48px;">
+                        <i class="bi bi-box-seam-fill fs-5"></i>
+                    </div>
+                    <div>
+                        <span class="text-muted small fw-semibold text-uppercase d-block">Stock en Página</span>
+                        <span class="fs-4 fw-bold text-dark">@Model.ReporteInventario.Sum(i => i.StockDisponible).ToString("N1") <small class="fs-6 fw-normal text-muted">kg/u</small></span>
+                    </div>
+                }
+                else if (Model.TabActiva == "donaciones")
+                {
+                    <div class="rounded-circle bg-primary bg-opacity-10 p-3 text-primary d-flex align-items-center justify-content-center flex-shrink-0" style="width: 48px; height: 48px;">
+                        <i class="bi bi-gift-fill fs-5"></i>
+                    </div>
+                    <div>
+                        <span class="text-muted small fw-semibold text-uppercase d-block">Volumen en Página</span>
+                        <span class="fs-4 fw-bold text-dark">@Model.ReporteDonaciones.Sum(d => d.CantidadTotal).ToString("N1") <small class="fs-6 fw-normal text-muted">kg/u</small></span>
+                    </div>
+                }
+                else if (Model.TabActiva == "entregas")
+                {
+                    <div class="rounded-circle bg-success bg-opacity-10 p-3 text-success d-flex align-items-center justify-content-center flex-shrink-0" style="width: 48px; height: 48px;">
+                        <i class="bi bi-truck fs-5"></i>
+                    </div>
+                    <div>
+                        <span class="text-muted small fw-semibold text-uppercase d-block">Alimentos en Página</span>
+                        <span class="fs-4 fw-bold text-dark">@Model.ReporteEntregas.Sum(e => e.TotalAlimentos) <small class="fs-6 fw-normal text-muted">ítems</small></span>
+                    </div>
+                }
+                else if (Model.TabActiva == "familias")
+                {
+                    <div class="rounded-circle bg-warning bg-opacity-10 p-3 text-warning-emphasis d-flex align-items-center justify-content-center flex-shrink-0" style="width: 48px; height: 48px;">
+                        <i class="bi bi-people-fill fs-5 text-warning"></i>
+                    </div>
+                    <div>
+                        <span class="text-muted small fw-semibold text-uppercase d-block">Personas en Página</span>
+                        <span class="fs-4 fw-bold text-dark">@Model.ReporteFamilias.Sum(f => f.Integrantes) <small class="fs-6 fw-normal text-muted">pers.</small></span>
+                    </div>
+                }
+                else
+                {
+                    <div class="rounded-circle bg-secondary bg-opacity-10 p-3 text-secondary d-flex align-items-center justify-content-center flex-shrink-0" style="width: 48px; height: 48px;">
+                        <i class="bi bi-diagram-3-fill fs-5"></i>
+                    </div>
+                    <div>
+                        <span class="text-muted small fw-semibold text-uppercase d-block">Trazas en Página</span>
+                        <span class="fs-4 fw-bold text-dark">@Model.ReporteTrazabilidad.Count <small class="fs-6 fw-normal text-muted">filas</small></span>
+                    </div>
+                }
             </div>
         </div>
     </div>
@@ -255,6 +408,15 @@
                             <tbody>
                                 @foreach (var item in Model.ReporteInventario)
                                 {
+                                    string badgeFefoClass = item.Estado switch
+                                    {
+                                        var s when s.Contains("Óptimo") || s.Contains("Optimo") => "badge-fefo-optimo",
+                                        var s when s.Contains("Atención") || s.Contains("Atencion") => "badge-fefo-atencion",
+                                        var s when s.Contains("Urgente") => "badge-fefo-urgente",
+                                        var s when s.Contains("Crítico") || s.Contains("Critico") || s.Contains("Vencido") => "badge-fefo-vencido",
+                                        _ => "badge-fefo-sinstock"
+                                    };
+
                                     <tr>
                                         <td class="fw-medium">
                                             <div>@item.Producto</div>
@@ -269,7 +431,7 @@
                                         </td>
                                         <td><small>@(item.FechaIngreso != DateTime.MinValue ? item.FechaIngreso.ToString("dd/MM/yyyy") : "-")</small></td>
                                         <td class="fw-bold">@item.StockDisponible.ToString("G29") <small class="text-muted fw-normal">@item.UnidadMedida</small></td>
-                                        <td><span class="badge bg-success-subtle text-success border px-2.5 py-1.5 rounded-pill">@item.Estado</span></td>
+                                        <td><span class="badge @badgeFefoClass px-2.5 py-1.5 rounded-pill">@item.Estado</span></td>
                                     </tr>
                                 }
                             </tbody>
@@ -298,7 +460,7 @@
                                             <div class="fw-medium text-dark">@item.Donante</div>
                                             <small class="text-muted font-monospace">Doc: @item.Documento</small>
                                         </td>
-                                        <td class="text-center"><span class="badge bg-light text-dark border">@item.CantidadItems ítems</span></td>
+                                        <td class="text-center"><span class="badge bg-secondary-subtle text-body border px-2.5 py-1 rounded-pill">@item.CantidadItems ítems</span></td>
                                         <td class="text-center fw-bold font-monospace">@item.CantidadTotal.ToString("G29")</td>
                                         <td class="text-end pe-4">
                                             <a asp-controller="Donaciones" asp-action="Comprobante" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary rounded-pill px-2.5 py-1 fw-semibold shadow-sm">
@@ -332,9 +494,9 @@
                                             <div class="fw-medium text-dark">@item.Familia</div>
                                             <small class="text-muted">DNI: @item.DniTitular</small>
                                         </td>
-                                        <td><span class="badge bg-light text-dark border">@item.TipoKit</span></td>
+                                        <td><span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2.5 py-1 rounded-pill">@item.TipoKit</span></td>
                                         <td class="text-end pe-4">
-                                            <a asp-controller="Despacho" asp-action="Comprobante" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary rounded-pill px-2.5 py-1 fw-semibold shadow-sm">
+                                            <a asp-controller="Entregas" asp-action="Comprobante" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary rounded-pill px-2.5 py-1 fw-semibold shadow-sm">
                                                 <i class="bi bi-receipt me-1"></i> Comprobante
                                             </a>
                                         </td>
@@ -353,6 +515,7 @@
                                     <th>Integrantes</th>
                                     <th>Kits Recibidos</th>
                                     <th>Última Entrega</th>
+                                    <th>Estado</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -361,9 +524,10 @@
                                     <tr>
                                         <td class="fw-medium">@item.Familia</td>
                                         <td class="font-monospace small">@item.DniTitular</td>
-                                        <td><span class="badge bg-light text-dark border">@item.Integrantes pers.</span></td>
+                                        <td><span class="badge bg-secondary-subtle text-body border px-2.5 py-1 rounded-pill">@item.Integrantes pers.</span></td>
                                         <td class="fw-bold text-success">@item.TotalKitsRecibidos</td>
                                         <td class="small">@(item.UltimaEntrega.HasValue? item.UltimaEntrega.Value.ToString("dd/MM/yyyy") : "Sin entregas")</td>
+                                        <td><span class="badge bg-success-subtle text-success border border-success-subtle px-2.5 py-1 rounded-pill">@item.Estado</span></td>
                                     </tr>
                                 }
                             </tbody>
@@ -387,7 +551,7 @@
                                     <tr>
                                         <td class="fw-bold text-primary">@item.CodigoPaquete</td>
                                         <td class="fw-medium">@item.Alimento</td>
-                                        <td><span class="badge bg-secondary font-monospace">@item.NumeroLote</span></td>
+                                        <td><span class="badge bg-secondary-subtle text-body font-monospace border px-2.5 py-1 rounded-pill">@item.NumeroLote</span></td>
                                         <td>@item.FamiliaBeneficiaria</td>
                                         <td class="small">@item.FechaEntrega.ToString("dd/MM/yyyy")</td>
                                     </tr>
@@ -412,7 +576,13 @@
                                asp-route-pagina="@(Model.PaginaActual - 1)"
                                asp-route-fechaDesde="@(Model.FechaDesde?.ToString("yyyy-MM-dd"))"
                                asp-route-fechaHasta="@(Model.FechaHasta?.ToString("yyyy-MM-dd"))"
+                               asp-route-categoriaId="@Model.CategoriaId"
+                               asp-route-busquedaInventario="@Model.BusquedaInventario"
+                               asp-route-estadoStock="@Model.EstadoStock"
+                               asp-route-semaforoFefo="@Model.SemaforoFefo"
                                asp-route-donanteId="@Model.DonanteId"
+                               asp-route-tipoPaqueteId="@Model.TipoPaqueteId"
+                               asp-route-voluntarioId="@Model.VoluntarioId"
                                asp-route-busqueda="@Model.Busqueda">Anterior</a>
                         </li>
                         @for (int i = 1; i <= Model.TotalPaginas; i++)
@@ -423,7 +593,13 @@
                                    asp-route-pagina="@i"
                                    asp-route-fechaDesde="@(Model.FechaDesde?.ToString("yyyy-MM-dd"))"
                                    asp-route-fechaHasta="@(Model.FechaHasta?.ToString("yyyy-MM-dd"))"
+                                   asp-route-categoriaId="@Model.CategoriaId"
+                                   asp-route-busquedaInventario="@Model.BusquedaInventario"
+                                   asp-route-estadoStock="@Model.EstadoStock"
+                                   asp-route-semaforoFefo="@Model.SemaforoFefo"
                                    asp-route-donanteId="@Model.DonanteId"
+                                   asp-route-tipoPaqueteId="@Model.TipoPaqueteId"
+                                   asp-route-voluntarioId="@Model.VoluntarioId"
                                    asp-route-busqueda="@Model.Busqueda">@i</a>
                             </li>
                         }
@@ -433,7 +609,13 @@
                                asp-route-pagina="@(Model.PaginaActual + 1)"
                                asp-route-fechaDesde="@(Model.FechaDesde?.ToString("yyyy-MM-dd"))"
                                asp-route-fechaHasta="@(Model.FechaHasta?.ToString("yyyy-MM-dd"))"
+                               asp-route-categoriaId="@Model.CategoriaId"
+                               asp-route-busquedaInventario="@Model.BusquedaInventario"
+                               asp-route-estadoStock="@Model.EstadoStock"
+                               asp-route-semaforoFefo="@Model.SemaforoFefo"
                                asp-route-donanteId="@Model.DonanteId"
+                               asp-route-tipoPaqueteId="@Model.TipoPaqueteId"
+                               asp-route-voluntarioId="@Model.VoluntarioId"
                                asp-route-busqueda="@Model.Busqueda">Siguiente</a>
                         </li>
                     </ul>
@@ -453,13 +635,31 @@
 
                 <div class="d-grid gap-3">
                     <a asp-action="Exportar" asp-route-formato="csv" asp-route-tab="@Model.TabActiva"
-                       asp-route-fechaDesde="@(Model.FechaDesde?.ToString("yyyy-MM-dd"))" asp-route-fechaHasta="@(Model.FechaHasta?.ToString("yyyy-MM-dd"))" asp-route-busqueda="@Model.Busqueda"
+                       asp-route-fechaDesde="@(Model.FechaDesde?.ToString("yyyy-MM-dd"))" 
+                       asp-route-fechaHasta="@(Model.FechaHasta?.ToString("yyyy-MM-dd"))"
+                       asp-route-categoriaId="@Model.CategoriaId"
+                       asp-route-busquedaInventario="@Model.BusquedaInventario"
+                       asp-route-estadoStock="@Model.EstadoStock"
+                       asp-route-semaforoFefo="@Model.SemaforoFefo"
+                       asp-route-donanteId="@Model.DonanteId"
+                       asp-route-tipoPaqueteId="@Model.TipoPaqueteId"
+                       asp-route-voluntarioId="@Model.VoluntarioId"
+                       asp-route-busqueda="@Model.Busqueda"
                        class="btn btn-success rounded-3 fw-semibold py-2.5 d-flex align-items-center justify-content-center gap-2 shadow-sm text-decoration-none">
                         <i class="bi bi-file-earmark-spreadsheet-fill fs-5"></i>Descargar CSV
                     </a>
 
                     <a asp-action="Exportar" asp-route-formato="pdf" asp-route-tab="@Model.TabActiva"
-                       asp-route-fechaDesde="@(Model.FechaDesde?.ToString("yyyy-MM-dd"))" asp-route-fechaHasta="@(Model.FechaHasta?.ToString("yyyy-MM-dd"))" asp-route-busqueda="@Model.Busqueda"
+                       asp-route-fechaDesde="@(Model.FechaDesde?.ToString("yyyy-MM-dd"))" 
+                       asp-route-fechaHasta="@(Model.FechaHasta?.ToString("yyyy-MM-dd"))"
+                       asp-route-categoriaId="@Model.CategoriaId"
+                       asp-route-busquedaInventario="@Model.BusquedaInventario"
+                       asp-route-estadoStock="@Model.EstadoStock"
+                       asp-route-semaforoFefo="@Model.SemaforoFefo"
+                       asp-route-donanteId="@Model.DonanteId"
+                       asp-route-tipoPaqueteId="@Model.TipoPaqueteId"
+                       asp-route-voluntarioId="@Model.VoluntarioId"
+                       asp-route-busqueda="@Model.Busqueda"
                        class="btn btn-export-pdf rounded-3 fw-semibold py-2.5 d-flex align-items-center justify-content-center gap-2 shadow-sm text-decoration-none">
                         <i class="bi bi-file-earmark-pdf-fill fs-5"></i>Descargar PDF
                     </a>

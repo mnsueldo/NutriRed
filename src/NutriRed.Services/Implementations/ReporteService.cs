@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using NutriRed.Data;
 using NutriRed.Domain.Entities;
 using NutriRed.Services.DTOs;
@@ -174,7 +174,7 @@ public class ReporteService : IReporteService
 
         return entregas.Select(e => new ReporteEntregaItemDto
         {
-            Id = e.PaqueteId,
+            Id = e.Id,
             CodigoPaquete = e.Paquete != null ? e.Paquete.CodigoSeguimiento : "N/A",
             TipoKit = e.Paquete != null && e.Paquete.TipoPaquete != null ? e.Paquete.TipoPaquete.Nombre : "Familiar",
             FechaEntrega = e.FechaHoraEntrega,

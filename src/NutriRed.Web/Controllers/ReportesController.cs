@@ -185,9 +185,37 @@ namespace NutriRed.Web.Controllers
             {
                 // 1. Obtener los datos de forma asincrónica ANTES de construir el PDF
                 List<ReporteInventarioItemDto> datosInventario = new();
+                List<ReporteDonacionItemDto> datosDonaciones = new();
+                List<ReporteEntregaItemDto> datosEntregas = new();
+                List<ReporteFamiliaItemDto> datosFamilias = new();
+                List<ReporteTrazabilidadItemDto> datosTrazabilidad = new();
+
+                string tabTitulo = tab.ToUpper();
+
                 if (tab.Equals("inventario", StringComparison.OrdinalIgnoreCase))
                 {
+                    tabTitulo = "INVENTARIO Y LOTES";
                     datosInventario = await _reporteService.ObtenerReporteInventarioAsync(categoriaId, busquedaInventario, estadoStock, semaforoFefo);
+                }
+                else if (tab.Equals("donaciones", StringComparison.OrdinalIgnoreCase))
+                {
+                    tabTitulo = "DONACIONES Y RECEPCIONES";
+                    datosDonaciones = await _reporteService.ObtenerReporteDonacionesAsync(fechaDesde, fechaHasta, donanteId);
+                }
+                else if (tab.Equals("entregas", StringComparison.OrdinalIgnoreCase))
+                {
+                    tabTitulo = "ENTREGAS Y DESPACHOS";
+                    datosEntregas = await _reporteService.ObtenerReporteEntregasAsync(fechaDesde, fechaHasta, tipoPaqueteId, voluntarioId);
+                }
+                else if (tab.Equals("familias", StringComparison.OrdinalIgnoreCase))
+                {
+                    tabTitulo = "FAMILIAS BENEFICIARIAS";
+                    datosFamilias = await _reporteService.ObtenerReporteFamiliasAsync(fechaDesde, fechaHasta, busqueda);
+                }
+                else if (tab.Equals("trazabilidad", StringComparison.OrdinalIgnoreCase))
+                {
+                    tabTitulo = "TRAZABILIDAD INTEGRAL";
+                    datosTrazabilidad = await _reporteService.ObtenerReporteTrazabilidadAsync(fechaDesde, fechaHasta, busqueda);
                 }
 
                 // 2. Generación de PDF profesional y estructurado con QuestPDF
@@ -198,7 +226,7 @@ namespace NutriRed.Web.Controllers
                         page.Size(QuestPDF.Helpers.PageSizes.A4.Landscape());
                         page.Margin(30);
                         page.PageColor(QuestPDF.Helpers.Colors.White);
-                        page.DefaultTextStyle(x => x.FontSize(10).FontColor(QuestPDF.Helpers.Colors.Grey.Darken3));
+                        page.DefaultTextStyle(x => x.FontSize(9).FontColor(QuestPDF.Helpers.Colors.Grey.Darken3));
 
                         // Encabezado del PDF
                         page.Header().Row(row =>
@@ -206,12 +234,12 @@ namespace NutriRed.Web.Controllers
                             row.RelativeItem().Column(col =>
                             {
                                 col.Item().Text("NutriRed - Banco de Alimentos").Bold().FontSize(18).FontColor("#198754");
-                                col.Item().Text($"Reporte Consolidado de {tab.ToUpper()}").Medium().FontSize(12).FontColor(QuestPDF.Helpers.Colors.Grey.Medium);
+                                col.Item().Text($"Reporte Consolidado de {tabTitulo}").Medium().FontSize(12).FontColor(QuestPDF.Helpers.Colors.Grey.Medium);
                             });
-                            row.ConstantItem(150).AlignRight().Column(col =>
+                            row.ConstantItem(180).AlignRight().Column(col =>
                             {
-                                col.Item().Text($"Fecha: {DateTime.Now:dd/MM/yyyy HH:mm}").FontSize(9).FontColor(QuestPDF.Helpers.Colors.Grey.Medium);
-                                col.Item().Text("Sistema de Trazabilidad").FontSize(9).FontColor(QuestPDF.Helpers.Colors.Grey.Medium);
+                                col.Item().Text($"Fecha de emisión: {DateTime.Now:dd/MM/yyyy HH:mm}").FontSize(9).FontColor(QuestPDF.Helpers.Colors.Grey.Medium);
+                                col.Item().Text("Sistema de Gestión y Trazabilidad").FontSize(9).FontColor(QuestPDF.Helpers.Colors.Grey.Medium);
                             });
                         });
 
@@ -224,15 +252,14 @@ namespace NutriRed.Web.Controllers
                                 {
                                     table.ColumnsDefinition(columns =>
                                     {
-                                        columns.RelativeColumn(3); // Producto
-                                        columns.RelativeColumn(1.5f); // Categoría
-                                        columns.RelativeColumn(1.5f); // Lote
-                                        columns.RelativeColumn(1.2f); // Vencimiento
-                                        columns.RelativeColumn(1f); // Stock
-                                        columns.RelativeColumn(1.5f); // Estado
+                                        columns.RelativeColumn(3f);
+                                        columns.RelativeColumn(1.8f);
+                                        columns.RelativeColumn(1.6f);
+                                        columns.RelativeColumn(1.4f);
+                                        columns.RelativeColumn(1.4f);
+                                        columns.RelativeColumn(1.8f);
                                     });
 
-                                    // Cabecera de la Tabla
                                     table.Header(header =>
                                     {
                                         header.Cell().Background("#198754").Padding(5).Text("Producto / EAN").Bold().FontColor(QuestPDF.Helpers.Colors.White);
@@ -243,21 +270,184 @@ namespace NutriRed.Web.Controllers
                                         header.Cell().Background("#198754").Padding(5).Text("Estado").Bold().FontColor(QuestPDF.Helpers.Colors.White);
                                     });
 
-                                    // Filas de Datos
                                     foreach (var d in datosInventario)
                                     {
                                         table.Cell().BorderBottom(1).BorderColor(QuestPDF.Helpers.Colors.Grey.Lighten2).Padding(5).Text(d.Producto);
                                         table.Cell().BorderBottom(1).BorderColor(QuestPDF.Helpers.Colors.Grey.Lighten2).Padding(5).Text(d.Categoria);
                                         table.Cell().BorderBottom(1).BorderColor(QuestPDF.Helpers.Colors.Grey.Lighten2).Padding(5).Text(d.NumeroLote);
                                         table.Cell().BorderBottom(1).BorderColor(QuestPDF.Helpers.Colors.Grey.Lighten2).Padding(5).Text(d.FechaVencimiento != DateTime.MinValue ? d.FechaVencimiento.ToString("dd/MM/yyyy") : "-");
-                                        table.Cell().BorderBottom(1).BorderColor(QuestPDF.Helpers.Colors.Grey.Lighten2).Padding(5).Text($"{d.StockDisponible} {d.UnidadMedida}");
+                                        table.Cell().BorderBottom(1).BorderColor(QuestPDF.Helpers.Colors.Grey.Lighten2).Padding(5).Text($"{d.StockDisponible:N1} {d.UnidadMedida}");
                                         table.Cell().BorderBottom(1).BorderColor(QuestPDF.Helpers.Colors.Grey.Lighten2).Padding(5).Text(d.Estado);
                                     }
                                 });
+
+                                col.Item().PaddingTop(10).AlignRight().Text($"Total ítems listados: {datosInventario.Count}").Bold();
                             }
-                            else
+                            else if (tab.Equals("donaciones", StringComparison.OrdinalIgnoreCase))
                             {
-                                col.Item().Text(sb.ToString()).FontSize(9);
+                                col.Item().Table(table =>
+                                {
+                                    table.ColumnsDefinition(columns =>
+                                    {
+                                        columns.RelativeColumn(1.8f);
+                                        columns.RelativeColumn(1.6f);
+                                        columns.RelativeColumn(3f);
+                                        columns.RelativeColumn(1.4f);
+                                        columns.RelativeColumn(1.1f);
+                                        columns.RelativeColumn(1.3f);
+                                        columns.RelativeColumn(1.8f);
+                                    });
+
+                                    table.Header(header =>
+                                    {
+                                        header.Cell().Background("#198754").Padding(5).Text("Comprobante").Bold().FontColor(QuestPDF.Helpers.Colors.White);
+                                        header.Cell().Background("#198754").Padding(5).Text("Fecha").Bold().FontColor(QuestPDF.Helpers.Colors.White);
+                                        header.Cell().Background("#198754").Padding(5).Text("Donante / Doc").Bold().FontColor(QuestPDF.Helpers.Colors.White);
+                                        header.Cell().Background("#198754").Padding(5).Text("Tipo").Bold().FontColor(QuestPDF.Helpers.Colors.White);
+                                        header.Cell().Background("#198754").Padding(5).Text("Ítems").Bold().FontColor(QuestPDF.Helpers.Colors.White);
+                                        header.Cell().Background("#198754").Padding(5).Text("Total Vol.").Bold().FontColor(QuestPDF.Helpers.Colors.White);
+                                        header.Cell().Background("#198754").Padding(5).Text("Receptor").Bold().FontColor(QuestPDF.Helpers.Colors.White);
+                                    });
+
+                                    foreach (var d in datosDonaciones)
+                                    {
+                                        table.Cell().BorderBottom(1).BorderColor(QuestPDF.Helpers.Colors.Grey.Lighten2).Padding(5).Text(d.Comprobante);
+                                        table.Cell().BorderBottom(1).BorderColor(QuestPDF.Helpers.Colors.Grey.Lighten2).Padding(5).Text(d.FechaHora.ToString("dd/MM/yyyy HH:mm"));
+                                        table.Cell().BorderBottom(1).BorderColor(QuestPDF.Helpers.Colors.Grey.Lighten2).Padding(5).Text($"{d.Donante} ({d.Documento})");
+                                        table.Cell().BorderBottom(1).BorderColor(QuestPDF.Helpers.Colors.Grey.Lighten2).Padding(5).Text(d.TipoDonante);
+                                        table.Cell().BorderBottom(1).BorderColor(QuestPDF.Helpers.Colors.Grey.Lighten2).Padding(5).Text(d.CantidadItems.ToString());
+                                        table.Cell().BorderBottom(1).BorderColor(QuestPDF.Helpers.Colors.Grey.Lighten2).Padding(5).Text(d.CantidadTotal.ToString("N1"));
+                                        table.Cell().BorderBottom(1).BorderColor(QuestPDF.Helpers.Colors.Grey.Lighten2).Padding(5).Text(d.Receptor);
+                                    }
+                                });
+
+                                col.Item().PaddingTop(10).Row(r =>
+                                {
+                                    r.RelativeItem().Text($"Donaciones registradas: {datosDonaciones.Count}").Bold();
+                                    r.RelativeItem().AlignRight().Text($"Volumen total recibido: {datosDonaciones.Sum(d => d.CantidadTotal):N1}").Bold();
+                                });
+                            }
+                            else if (tab.Equals("entregas", StringComparison.OrdinalIgnoreCase))
+                            {
+                                col.Item().Table(table =>
+                                {
+                                    table.ColumnsDefinition(columns =>
+                                    {
+                                        columns.RelativeColumn(2f);
+                                        columns.RelativeColumn(1.8f);
+                                        columns.RelativeColumn(2.6f);
+                                        columns.RelativeColumn(1.4f);
+                                        columns.RelativeColumn(1.6f);
+                                        columns.RelativeColumn(1.1f);
+                                        columns.RelativeColumn(1.8f);
+                                    });
+
+                                    table.Header(header =>
+                                    {
+                                        header.Cell().Background("#198754").Padding(5).Text("Código PKG").Bold().FontColor(QuestPDF.Helpers.Colors.White);
+                                        header.Cell().Background("#198754").Padding(5).Text("Fecha Entrega").Bold().FontColor(QuestPDF.Helpers.Colors.White);
+                                        header.Cell().Background("#198754").Padding(5).Text("Familia").Bold().FontColor(QuestPDF.Helpers.Colors.White);
+                                        header.Cell().Background("#198754").Padding(5).Text("DNI Titular").Bold().FontColor(QuestPDF.Helpers.Colors.White);
+                                        header.Cell().Background("#198754").Padding(5).Text("Tipo Kit").Bold().FontColor(QuestPDF.Helpers.Colors.White);
+                                        header.Cell().Background("#198754").Padding(5).Text("Alimentos").Bold().FontColor(QuestPDF.Helpers.Colors.White);
+                                        header.Cell().Background("#198754").Padding(5).Text("Despachado Por").Bold().FontColor(QuestPDF.Helpers.Colors.White);
+                                    });
+
+                                    foreach (var d in datosEntregas)
+                                    {
+                                        table.Cell().BorderBottom(1).BorderColor(QuestPDF.Helpers.Colors.Grey.Lighten2).Padding(5).Text(d.CodigoPaquete);
+                                        table.Cell().BorderBottom(1).BorderColor(QuestPDF.Helpers.Colors.Grey.Lighten2).Padding(5).Text(d.FechaEntrega.ToString("dd/MM/yyyy HH:mm"));
+                                        table.Cell().BorderBottom(1).BorderColor(QuestPDF.Helpers.Colors.Grey.Lighten2).Padding(5).Text(d.Familia);
+                                        table.Cell().BorderBottom(1).BorderColor(QuestPDF.Helpers.Colors.Grey.Lighten2).Padding(5).Text(d.DniTitular);
+                                        table.Cell().BorderBottom(1).BorderColor(QuestPDF.Helpers.Colors.Grey.Lighten2).Padding(5).Text(d.TipoKit);
+                                        table.Cell().BorderBottom(1).BorderColor(QuestPDF.Helpers.Colors.Grey.Lighten2).Padding(5).Text(d.TotalAlimentos.ToString());
+                                        table.Cell().BorderBottom(1).BorderColor(QuestPDF.Helpers.Colors.Grey.Lighten2).Padding(5).Text(d.Voluntario);
+                                    }
+                                });
+
+                                col.Item().PaddingTop(10).Row(r =>
+                                {
+                                    r.RelativeItem().Text($"Entregas efectuadas: {datosEntregas.Count}").Bold();
+                                    r.RelativeItem().AlignRight().Text($"Total alimentos distribuidos: {datosEntregas.Sum(e => e.TotalAlimentos)}").Bold();
+                                });
+                            }
+                            else if (tab.Equals("familias", StringComparison.OrdinalIgnoreCase))
+                            {
+                                col.Item().Table(table =>
+                                {
+                                    table.ColumnsDefinition(columns =>
+                                    {
+                                        columns.RelativeColumn(2.6f);
+                                        columns.RelativeColumn(1.4f);
+                                        columns.RelativeColumn(3f);
+                                        columns.RelativeColumn(1.2f);
+                                        columns.RelativeColumn(1.4f);
+                                        columns.RelativeColumn(1.6f);
+                                        columns.RelativeColumn(1.1f);
+                                    });
+
+                                    table.Header(header =>
+                                    {
+                                        header.Cell().Background("#198754").Padding(5).Text("Familia").Bold().FontColor(QuestPDF.Helpers.Colors.White);
+                                        header.Cell().Background("#198754").Padding(5).Text("DNI Titular").Bold().FontColor(QuestPDF.Helpers.Colors.White);
+                                        header.Cell().Background("#198754").Padding(5).Text("Dirección").Bold().FontColor(QuestPDF.Helpers.Colors.White);
+                                        header.Cell().Background("#198754").Padding(5).Text("Integrantes").Bold().FontColor(QuestPDF.Helpers.Colors.White);
+                                        header.Cell().Background("#198754").Padding(5).Text("Kits Recibidos").Bold().FontColor(QuestPDF.Helpers.Colors.White);
+                                        header.Cell().Background("#198754").Padding(5).Text("Última Entrega").Bold().FontColor(QuestPDF.Helpers.Colors.White);
+                                        header.Cell().Background("#198754").Padding(5).Text("Estado").Bold().FontColor(QuestPDF.Helpers.Colors.White);
+                                    });
+
+                                    foreach (var d in datosFamilias)
+                                    {
+                                        table.Cell().BorderBottom(1).BorderColor(QuestPDF.Helpers.Colors.Grey.Lighten2).Padding(5).Text(d.Familia);
+                                        table.Cell().BorderBottom(1).BorderColor(QuestPDF.Helpers.Colors.Grey.Lighten2).Padding(5).Text(d.DniTitular);
+                                        table.Cell().BorderBottom(1).BorderColor(QuestPDF.Helpers.Colors.Grey.Lighten2).Padding(5).Text(d.Direccion);
+                                        table.Cell().BorderBottom(1).BorderColor(QuestPDF.Helpers.Colors.Grey.Lighten2).Padding(5).Text(d.Integrantes.ToString());
+                                        table.Cell().BorderBottom(1).BorderColor(QuestPDF.Helpers.Colors.Grey.Lighten2).Padding(5).Text(d.TotalKitsRecibidos.ToString());
+                                        table.Cell().BorderBottom(1).BorderColor(QuestPDF.Helpers.Colors.Grey.Lighten2).Padding(5).Text(d.UltimaEntrega.HasValue ? d.UltimaEntrega.Value.ToString("dd/MM/yyyy") : "-");
+                                        table.Cell().BorderBottom(1).BorderColor(QuestPDF.Helpers.Colors.Grey.Lighten2).Padding(5).Text(d.Estado);
+                                    }
+                                });
+
+                                col.Item().PaddingTop(10).Row(r =>
+                                {
+                                    r.RelativeItem().Text($"Familias listadas: {datosFamilias.Count}").Bold();
+                                    r.RelativeItem().AlignRight().Text($"Personas alcanzadas: {datosFamilias.Sum(f => f.Integrantes)}").Bold();
+                                });
+                            }
+                            else if (tab.Equals("trazabilidad", StringComparison.OrdinalIgnoreCase))
+                            {
+                                col.Item().Table(table =>
+                                {
+                                    table.ColumnsDefinition(columns =>
+                                    {
+                                        columns.RelativeColumn(2.2f);
+                                        columns.RelativeColumn(2.8f);
+                                        columns.RelativeColumn(1.8f);
+                                        columns.RelativeColumn(2.8f);
+                                        columns.RelativeColumn(1.6f);
+                                    });
+
+                                    table.Header(header =>
+                                    {
+                                        header.Cell().Background("#198754").Padding(5).Text("Código Paquete").Bold().FontColor(QuestPDF.Helpers.Colors.White);
+                                        header.Cell().Background("#198754").Padding(5).Text("Alimento").Bold().FontColor(QuestPDF.Helpers.Colors.White);
+                                        header.Cell().Background("#198754").Padding(5).Text("N° Lote").Bold().FontColor(QuestPDF.Helpers.Colors.White);
+                                        header.Cell().Background("#198754").Padding(5).Text("Familia Receptora").Bold().FontColor(QuestPDF.Helpers.Colors.White);
+                                        header.Cell().Background("#198754").Padding(5).Text("Fecha Entrega").Bold().FontColor(QuestPDF.Helpers.Colors.White);
+                                    });
+
+                                    foreach (var d in datosTrazabilidad)
+                                    {
+                                        table.Cell().BorderBottom(1).BorderColor(QuestPDF.Helpers.Colors.Grey.Lighten2).Padding(5).Text(d.CodigoPaquete);
+                                        table.Cell().BorderBottom(1).BorderColor(QuestPDF.Helpers.Colors.Grey.Lighten2).Padding(5).Text(d.Alimento);
+                                        table.Cell().BorderBottom(1).BorderColor(QuestPDF.Helpers.Colors.Grey.Lighten2).Padding(5).Text(d.NumeroLote);
+                                        table.Cell().BorderBottom(1).BorderColor(QuestPDF.Helpers.Colors.Grey.Lighten2).Padding(5).Text(d.FamiliaBeneficiaria);
+                                        table.Cell().BorderBottom(1).BorderColor(QuestPDF.Helpers.Colors.Grey.Lighten2).Padding(5).Text(d.FechaEntrega.ToString("dd/MM/yyyy"));
+                                    }
+                                });
+
+                                col.Item().PaddingTop(10).AlignRight().Text($"Total trazas emitidas: {datosTrazabilidad.Count}").Bold();
                             }
                         });
 
