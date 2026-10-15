@@ -52,13 +52,11 @@ public class ReporteService : IReporteService
         {
             var lotesDisponibles = p.Lotes.Where(l => l.CantidadDisponible > 0).ToList();
 
-            // CASO 1: El producto NO tiene lotes activos (Agotado / Sin stock)
             if (!lotesDisponibles.Any())
             {
                 string situacionStockAgotado = "Agotado / Sin stock";
                 string estadoFefoAgotado = "Sin Stock";
 
-                // Aplicar filtros si el usuario los seleccionó
                 if (!string.IsNullOrEmpty(estadoStock) && !situacionStockAgotado.Equals(estadoStock, StringComparison.OrdinalIgnoreCase))
                     continue;
 
@@ -82,33 +80,19 @@ public class ReporteService : IReporteService
                 continue;
             }
 
-            // CASO 2: El producto tiene lotes con stock
             foreach (var l in lotesDisponibles)
             {
                 int diasRestantes = (l.FechaVencimiento - hoy).Days;
 
                 string estadoFefo = "Óptimo (> 15 días)";
-                if (diasRestantes <= 0)
-                {
-                    estadoFefo = "Crítico / Vencido";
-                }
-                else if (diasRestantes <= 5)
-                {
-                    estadoFefo = "Urgente (<= 5 días)";
-                }
-                else if (diasRestantes <= 15)
-                {
-                    estadoFefo = "Atención (<= 15 días)";
-                }
+                if (diasRestantes <= 0) estadoFefo = "Crítico / Vencido";
+                else if (diasRestantes <= 5) estadoFefo = "Urgente (<= 5 días)";
+                else if (diasRestantes <= 15) estadoFefo = "Atención (<= 15 días)";
 
                 if (!string.IsNullOrEmpty(semaforoFefo) && !estadoFefo.Equals(semaforoFefo, StringComparison.OrdinalIgnoreCase))
                     continue;
 
-                string situacionStock = "Con stock suficiente";
-                if (l.CantidadDisponible <= p.StockMinimo)
-                {
-                    situacionStock = "Bajo stock mínimo";
-                }
+                string situacionStock = l.CantidadDisponible <= p.StockMinimo ? "Bajo stock mínimo" : "Con stock suficiente";
 
                 if (!string.IsNullOrEmpty(estadoStock) && !situacionStock.Equals(estadoStock, StringComparison.OrdinalIgnoreCase))
                     continue;
@@ -157,8 +141,8 @@ public class ReporteService : IReporteService
             Comprobante = d.CodigoComprobante ?? $"DON-{d.Id:D5}",
             FechaHora = d.FechaHora,
             Donante = d.Donante != null ? d.Donante.NombreRazonSocial : "Donante Anónimo",
-            Documento = d.Donante != null ? (d.Donante.NumeroDocumento ?? "N/A") : "N/A", // CORREGIDO: Usar NumeroDocumento
-            TipoDonante = d.Donante != null ? d.Donante.Tipo.ToString() : "Individuo",     // CORREGIDO: Obtener el tipo desde d.Donante.Tipo
+            Documento = d.Donante != null ? (d.Donante.NumeroDocumento ?? "N/A") : "N/A",
+            TipoDonante = d.Donante != null ? d.Donante.Tipo.ToString() : "Individuo",
             CantidadItems = d.Detalles?.Count ?? 0,
             CantidadTotal = d.Detalles?.Sum(dt => dt.Cantidad) ?? 0,
             Receptor = d.VoluntarioReceptorId ?? "Sistema"
@@ -181,27 +165,27 @@ public class ReporteService : IReporteService
             query = query.Where(e => e.FechaHoraEntrega <= hasta.Value.AddDays(1).AddTicks(-1));
 
         if (tipoPaqueteId.HasValue)
-            query = query.Where(e => e.Paquete.TipoPaqueteId == tipoPaqueteId.Value);
+            query = query.Where(e => e.Paquete != null && e.Paquete.TipoPaqueteId == tipoPaqueteId.Value);
 
         if (!string.IsNullOrEmpty(voluntarioId))
             query = query.Where(e => e.VoluntarioDespachoId == voluntarioId);
 
-        return await query
-            .OrderByDescending(e => e.FechaHoraEntrega)
-            .Select(e => new ReporteEntregaItemDto
-            {
-                CodigoPaquete = e.Paquete != null ? e.Paquete.CodigoSeguimiento : "N/A",
-                TipoKit = e.Paquete != null && e.Paquete.TipoPaquete != null ? e.Paquete.TipoPaquete.Nombre : "Familiar",
-                FechaEntrega = e.FechaHoraEntrega,
-                Familia = e.Paquete != null && e.Paquete.FamiliaBeneficiaria != null ? $"{e.Paquete.FamiliaBeneficiaria.ApellidoTitular}, {e.Paquete.FamiliaBeneficiaria.NombreTitular}" : "N/A",
-                DniTitular = e.Paquete != null && e.Paquete.FamiliaBeneficiaria != null ? e.Paquete.FamiliaBeneficiaria.DniTitular : "N/A",
-                Voluntario = e.VoluntarioDespachoId ?? "Voluntario General",
-                TotalAlimentos = e.Paquete != null ? e.Paquete.Detalles.Count : 0
-            })
-            .ToListAsync();
+        var entregas = await query.OrderByDescending(e => e.FechaHoraEntrega).ToListAsync();
+
+        return entregas.Select(e => new ReporteEntregaItemDto
+        {
+            Id = e.PaqueteId,
+            CodigoPaquete = e.Paquete != null ? e.Paquete.CodigoSeguimiento : "N/A",
+            TipoKit = e.Paquete != null && e.Paquete.TipoPaquete != null ? e.Paquete.TipoPaquete.Nombre : "Familiar",
+            FechaEntrega = e.FechaHoraEntrega,
+            Familia = e.Paquete != null && e.Paquete.FamiliaBeneficiaria != null ? $"{e.Paquete.FamiliaBeneficiaria.ApellidoTitular}, {e.Paquete.FamiliaBeneficiaria.NombreTitular}" : "N/A",
+            DniTitular = e.Paquete != null && e.Paquete.FamiliaBeneficiaria != null ? e.Paquete.FamiliaBeneficiaria.DniTitular : "N/A",
+            Voluntario = e.VoluntarioDespachoId ?? "Voluntario General",
+            TotalAlimentos = e.Paquete != null ? e.Paquete.Detalles.Count : 0
+        }).ToList();
     }
 
-    public async Task<List<ReporteFamiliaItemDto>> ObtenerReporteFamiliasAsync(string? busqueda)
+    public async Task<List<ReporteFamiliaItemDto>> ObtenerReporteFamiliasAsync(DateTime? desde, DateTime? hasta, string? busqueda)
     {
         var query = _context.FamiliasBeneficiarias
             .AsNoTracking()
@@ -220,13 +204,20 @@ public class ReporteService : IReporteService
         var familias = await query.ToListAsync();
         var familiaIds = familias.Select(f => f.Id).ToList();
 
-        // CORRECCIÓN: Incluir la relación anidada FamiliaBeneficiaria y validar nulos
-        var entregas = await _context.Entregas
+        var entregaQuery = _context.Entregas
             .AsNoTracking()
             .Include(e => e.Paquete)
                 .ThenInclude(p => p.FamiliaBeneficiaria)
             .Where(e => e.Paquete != null && e.Paquete.FamiliaBeneficiaria != null && familiaIds.Contains(e.Paquete.FamiliaBeneficiaria.Id))
-            .ToListAsync();
+            .AsQueryable();
+
+        if (desde.HasValue)
+            entregaQuery = entregaQuery.Where(e => e.FechaHoraEntrega >= desde.Value);
+
+        if (hasta.HasValue)
+            entregaQuery = entregaQuery.Where(e => e.FechaHoraEntrega <= hasta.Value.AddDays(1).AddTicks(-1));
+
+        var entregas = await entregaQuery.ToListAsync();
 
         var entregasPorFamilia = entregas
             .Where(e => e.Paquete?.FamiliaBeneficiaria != null)
@@ -268,7 +259,16 @@ public class ReporteService : IReporteService
         if (hasta.HasValue)
             query = query.Where(e => e.FechaHoraEntrega <= hasta.Value.AddDays(1).AddTicks(-1));
 
-        var entregas = await query.Take(50).ToListAsync();
+        if (!string.IsNullOrWhiteSpace(busqueda))
+        {
+            var term = busqueda.Trim().ToLower();
+            query = query.Where(e =>
+                (e.Paquete != null && e.Paquete.CodigoSeguimiento != null && EF.Functions.Like(e.Paquete.CodigoSeguimiento.ToLower(), $"%{term}%")) ||
+                (e.Paquete != null && e.Paquete.FamiliaBeneficiaria != null && (EF.Functions.Like(e.Paquete.FamiliaBeneficiaria.ApellidoTitular.ToLower(), $"%{term}%") || EF.Functions.Like(e.Paquete.FamiliaBeneficiaria.DniTitular, $"%{term}%")))
+            );
+        }
+
+        var entregas = await query.ToListAsync();
         var resultado = new List<ReporteTrazabilidadItemDto>();
 
         foreach (var e in entregas)
