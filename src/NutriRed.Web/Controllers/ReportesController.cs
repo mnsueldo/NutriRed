@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -15,7 +15,7 @@ using QuestPDF.Helpers;
 
 namespace NutriRed.Web.Controllers
 {
-    [Authorize]
+    [Authorize(Roles = "Administrador")]
     public class ReportesController : Controller
     {
         private readonly NutriRedDbContext _context;
