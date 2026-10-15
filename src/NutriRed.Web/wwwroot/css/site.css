@@ -60,6 +60,10 @@ main {
   font-family: var(--font-family-mono) !important;
 }
 
+.bg-emerald-light {
+  background-color: var(--nr-emerald-light) !important;
+}
+
 /* --- Barra de Navegación Principal --- */
 .navbar-nutrired {
   background-color: var(--nr-surface);
@@ -99,6 +103,41 @@ main {
 .navbar-nutrired .nav-link.active {
   color: var(--nr-emerald-primary);
   background-color: var(--nr-emerald-light);
+}
+
+/* --- Menús Desplegables del Navbar & UI General --- */
+.dropdown-menu {
+  border: 1px solid var(--nr-border-subtle);
+  border-radius: 12px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
+  padding: 0.5rem;
+}
+
+.dropdown-item {
+  color: var(--nr-ink);
+  font-weight: 500;
+  padding: 0.6rem 1rem;
+  border-radius: 8px;
+  transition: all 0.15s ease-in-out;
+  display: flex;
+  align-items: center;
+}
+
+.dropdown-item:hover,
+.dropdown-item:focus {
+  background-color: var(--nr-emerald-light);
+  color: var(--nr-emerald-primary);
+}
+
+.dropdown-item:hover i,
+.dropdown-item:focus i {
+  transform: scale(1.12);
+  transition: transform 0.15s ease;
+}
+
+.dropdown-divider {
+  border-top-color: var(--nr-border-subtle);
+  margin: 0.4rem 0;
 }
 
 /* --- Botones Personalizados --- */
@@ -249,28 +288,83 @@ body.high-contrast {
 }
 
 body.high-contrast .navbar-nutrired,
+body.high-contrast .card,
 body.high-contrast .card-nr,
+body.high-contrast .card[style*="linear-gradient"],
+body.high-contrast .card-header,
+body.high-contrast .card-body,
+body.high-contrast .card-footer,
+body.high-contrast .filter-card,
+body.high-contrast .kpi-card,
+body.high-contrast .delivery-card,
 body.high-contrast .footer-nutrired,
 body.high-contrast .modal-content,
-body.high-contrast .dropdown-menu {
+body.high-contrast .modal-header,
+body.high-contrast .modal-body,
+body.high-contrast .modal-footer,
+body.high-contrast .dropdown-menu,
+body.high-contrast .bg-white,
+body.high-contrast .bg-light,
+body.high-contrast .bg-body,
+body.high-contrast .bg-body-tertiary,
+body.high-contrast .bg-body-secondary {
   background-color: #000000 !important;
   color: #ffffff !important;
   border: 2px solid #ffffff !important;
   box-shadow: none !important;
 }
 
-body.high-contrast .navbar-brand,
-body.high-contrast .nav-link,
+/* Tipografía y textos de alto contraste */
 body.high-contrast h1, 
 body.high-contrast h2, 
 body.high-contrast h3, 
 body.high-contrast h4, 
 body.high-contrast h5, 
+body.high-contrast h6, 
 body.high-contrast p,
 body.high-contrast td,
 body.high-contrast th,
 body.high-contrast label,
-body.high-contrast span {
+body.high-contrast span,
+body.high-contrast small,
+body.high-contrast strong,
+body.high-contrast .text-dark,
+body.high-contrast .text-secondary,
+body.high-contrast .text-muted,
+body.high-contrast .text-body,
+body.high-contrast .text-body-secondary {
+  color: #ffffff !important;
+}
+
+body.high-contrast .text-success {
+  color: #00ff66 !important;
+}
+
+body.high-contrast .text-primary {
+  color: #00ccff !important;
+}
+
+body.high-contrast .text-info {
+  color: #00ccff !important;
+}
+
+body.high-contrast .text-warning {
+  color: #ffff00 !important;
+}
+
+body.high-contrast .text-danger {
+  color: #ff4d4d !important;
+}
+
+body.high-contrast .border-dark {
+  border-color: #ffffff !important;
+}
+
+body.high-contrast .navbar-brand {
+  color: #ffff00 !important;
+}
+
+body.high-contrast .nav-link {
   color: #ffffff !important;
 }
 
@@ -281,31 +375,90 @@ body.high-contrast .nav-link.active {
   font-weight: 700 !important;
 }
 
-body.high-contrast .btn-emerald {
-  background-color: #ffff00 !important;
-  color: #000000 !important;
-  border: 2px solid #ffffff !important;
-  font-weight: 800 !important;
-}
-
-body.high-contrast .btn-outline-emerald,
-body.high-contrast .btn-outline-secondary,
-body.high-contrast .btn-outline-primary {
-  border: 2px solid #ffffff !important;
-  color: #ffffff !important;
+/* Tablas Completas en Alto Contraste (elimina fondos claros de celdas) */
+body.high-contrast table,
+body.high-contrast .table {
+  --bs-table-bg: #000000 !important;
+  --bs-table-color: #ffffff !important;
   background-color: #000000 !important;
+  color: #ffffff !important;
+  border-color: #ffffff !important;
 }
 
-body.high-contrast .btn-outline-emerald:hover,
-body.high-contrast .btn-outline-secondary:hover {
-  background-color: #ffffff !important;
-  color: #000000 !important;
+body.high-contrast .table > :not(caption) > * > * {
+  background-color: #000000 !important;
+  color: #ffffff !important;
+  border-bottom: 1px solid #ffffff !important;
+  box-shadow: none !important;
 }
 
-body.high-contrast .code-tag {
+body.high-contrast .table thead,
+body.high-contrast .table thead th,
+body.high-contrast .table-light,
+body.high-contrast .table-light th,
+body.high-contrast .table-light td {
+  background-color: #121212 !important;
+  color: #ffff00 !important;
+  border-color: #ffffff !important;
+  border-bottom: 2px solid #ffffff !important;
+}
+
+body.high-contrast .table-hover > tbody > tr:hover > * {
   background-color: #1a1a1a !important;
   color: #ffff00 !important;
-  border: 1px solid #ffff00 !important;
+}
+
+/* Formularios en Alto Contraste */
+body.high-contrast .form-control,
+body.high-contrast .form-select,
+body.high-contrast .input-group-text {
+  background-color: #000000 !important;
+  color: #ffffff !important;
+  border: 2px solid #ffffff !important;
+}
+
+body.high-contrast .form-control:focus,
+body.high-contrast .form-select:focus {
+  border-color: #ffff00 !important;
+  outline: 2px solid #ffff00 !important;
+  box-shadow: none !important;
+}
+
+body.high-contrast .form-control::placeholder {
+  color: #ffff00 !important;
+  opacity: 0.8 !important;
+}
+
+/* Badges e Indicadores */
+body.high-contrast .badge {
+  background-color: #000000 !important;
+  color: #ffffff !important;
+  border: 2px solid #ffffff !important;
+  font-weight: 700 !important;
+}
+
+body.high-contrast .badge.bg-warning,
+body.high-contrast .badge.bg-warning-subtle {
+  border-color: #ffff00 !important;
+  color: #ffff00 !important;
+}
+
+body.high-contrast .badge.bg-danger,
+body.high-contrast .badge.bg-danger-subtle {
+  border-color: #ff4d4d !important;
+  color: #ff4d4d !important;
+}
+
+body.high-contrast .badge.bg-success,
+body.high-contrast .badge.bg-success-subtle {
+  border-color: #00ff66 !important;
+  color: #00ff66 !important;
+}
+
+body.high-contrast .badge.bg-primary,
+body.high-contrast .badge.bg-primary-subtle {
+  border-color: #00ccff !important;
+  color: #00ccff !important;
 }
 
 body.high-contrast .badge-fefo-optimo,
@@ -329,32 +482,1214 @@ body.high-contrast .badge-fefo-urgente {
   color: #ffff00 !important;
 }
 
-body.high-contrast .table-nr thead th {
-  background-color: #121212 !important;
+/* Botones en Alto Contraste */
+body.high-contrast .btn {
+  border: 2px solid #ffffff !important;
+  font-weight: 700 !important;
+}
+
+body.high-contrast .btn-emerald,
+body.high-contrast .btn-primary,
+body.high-contrast .btn-success {
+  background-color: #ffff00 !important;
+  color: #000000 !important;
+  border-color: #ffffff !important;
+}
+
+body.high-contrast .btn-warning {
+  background-color: #ffff00 !important;
+  color: #000000 !important;
+  border-color: #ffffff !important;
+}
+
+body.high-contrast .btn-warning * {
+  color: #000000 !important;
+}
+
+body.high-contrast .btn-danger {
+  background-color: #ff4d4d !important;
+  color: #000000 !important;
+  border-color: #ffffff !important;
+}
+
+body.high-contrast .btn-outline-emerald,
+body.high-contrast .btn-outline-secondary,
+body.high-contrast .btn-outline-primary,
+body.high-contrast .btn-light {
+  border: 2px solid #ffffff !important;
+  color: #ffffff !important;
+  background-color: #000000 !important;
+}
+
+body.high-contrast .btn-outline-emerald:hover,
+body.high-contrast .btn-outline-secondary:hover,
+body.high-contrast .btn-light:hover {
+  background-color: #ffffff !important;
+  color: #000000 !important;
+}
+
+body.high-contrast .code-tag {
+  background-color: #1a1a1a !important;
   color: #ffff00 !important;
-  border-bottom: 2px solid #ffffff !important;
+  border: 1px solid #ffff00 !important;
 }
 
-body.high-contrast .table-nr tbody td {
-  border-bottom: 1px solid #ffffff !important;
+body.high-contrast .code-tag *,
+body.high-contrast .code-tag.text-dark,
+body.high-contrast .code-tag i {
+  color: #ffff00 !important;
 }
 
-body.high-contrast .form-control,
-body.high-contrast .form-select {
+body.high-contrast .badge.bg-secondary-subtle,
+body.high-contrast .badge.bg-secondary,
+body.high-contrast .bg-secondary-subtle {
   background-color: #000000 !important;
   color: #ffffff !important;
   border: 2px solid #ffffff !important;
 }
 
-body.high-contrast .form-control:focus,
-body.high-contrast .form-select:focus {
-  border-color: #ffff00 !important;
-  outline: 2px solid #ffff00 !important;
-  box-shadow: none !important;
+body.high-contrast .badge.bg-secondary-subtle.text-secondary,
+body.high-contrast .badge.bg-secondary-subtle * {
+  color: #ffffff !important;
 }
 
 body.high-contrast .alert {
-  background-color: #121212 !important;
+  background-color: #000000 !important;
   color: #ffffff !important;
   border: 2px solid #ffffff !important;
+}
+
+body.high-contrast .alert-warning {
+  border-color: #ffff00 !important;
+  color: #ffff00 !important;
+}
+
+body.high-contrast .alert-danger {
+  border-color: #ff4d4d !important;
+  color: #ff4d4d !important;
+}
+
+body.high-contrast .alert-success {
+  border-color: #00ff66 !important;
+  color: #00ff66 !important;
+}
+
+body.high-contrast .offcanvas,
+body.high-contrast .offcanvas-header {
+  background-color: #000000 !important;
+  color: #ffffff !important;
+  border-left: 2px solid #ffffff !important;
+}
+
+body.high-contrast .page-link {
+  background-color: #000000 !important;
+  color: #ffffff !important;
+  border: 2px solid #ffffff !important;
+}
+
+body.high-contrast .page-item.active .page-link {
+  background-color: #ffff00 !important;
+  color: #000000 !important;
+  border-color: #ffff00 !important;
+  font-weight: 800 !important;
+}
+
+/* ==========================================================================
+   Enlace Accesible de Salto (Skip Link - WCAG 2.1)
+   ========================================================================== */
+.skip-link {
+  position: absolute;
+  top: -70px;
+  left: 1.5rem;
+  background-color: var(--nr-emerald-primary);
+  color: #ffffff !important;
+  padding: 0.75rem 1.5rem;
+  font-weight: 700;
+  border-radius: 0 0 10px 10px;
+  z-index: 10000;
+  text-decoration: none;
+  transition: top 0.2s ease-in-out;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+}
+
+.skip-link:focus {
+  top: 0;
+  outline: 3px solid #ffff00;
+  outline-offset: 2px;
+  color: #ffffff !important;
+}
+
+/* ==========================================================================
+   Escala Tipográfica Accesible (Zoom sin deformación)
+   ========================================================================== */
+html.font-size-sm { font-size: 87.5%; }  /* 14px */
+html.font-size-md { font-size: 100%; }   /* 16px (estándar) */
+html.font-size-lg { font-size: 112.5%; } /* 18px */
+html.font-size-xl { font-size: 125%; }   /* 20px */
+
+/* ==========================================================================
+   Tipografía Especial para Dislexia (OpenDyslexic)
+   ========================================================================== */
+@import url('https://fonts.cdnfonts.com/css/opendyslexic');
+
+body.dyslexia-font,
+body.dyslexia-font * {
+  font-family: 'OpenDyslexic', 'Comic Sans MS', sans-serif !important;
+  letter-spacing: 0.03em !important;
+  word-spacing: 0.06em !important;
+  line-height: 1.65 !important;
+}
+
+/* ==========================================================================
+   Resaltado de Elementos Interactivos y Enlaces
+   ========================================================================== */
+body.highlight-links a:not(.btn):not(.navbar-brand) {
+  text-decoration: underline !important;
+  text-decoration-thickness: 2px !important;
+  text-underline-offset: 3px !important;
+  font-weight: 600 !important;
+}
+
+/* ==========================================================================
+   Pausar Movimiento y Animaciones (Sensibilidad Vestibular)
+   ========================================================================== */
+body.reduced-motion *,
+body.reduced-motion *::before,
+body.reduced-motion *::after {
+  animation-duration: 0.001s !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001s !important;
+  scroll-behavior: auto !important;
+}
+
+/* ==========================================================================
+   Aro de Foco Reforzado (Navegación por Teclado :focus-visible)
+   ========================================================================== */
+:focus-visible {
+  outline: 3px solid var(--nr-emerald-primary) !important;
+  outline-offset: 2px !important;
+}
+
+body.dark-mode :focus-visible {
+  outline: 3px solid #34d399 !important;
+  outline-offset: 2px !important;
+}
+
+body.high-contrast :focus-visible {
+  outline: 3px solid #ffff00 !important;
+  outline-offset: 3px !important;
+}
+
+/* ==========================================================================
+   Modo Oscuro Amigable (Dark Mode A11y - Slate Profundo)
+   ========================================================================== */
+body.dark-mode {
+  background-color: #0b1120 !important;
+  color: #f1f5f9 !important;
+}
+
+body.dark-mode .navbar-nutrired {
+  background-color: #111827 !important;
+  border-bottom-color: #1f2937 !important;
+}
+
+body.dark-mode .navbar-nutrired .navbar-brand,
+body.dark-mode .navbar-nutrired .nav-link {
+  color: #f3f4f6 !important;
+}
+
+body.dark-mode .navbar-nutrired .nav-link:hover,
+body.dark-mode .navbar-nutrired .nav-link.active {
+  color: #34d399 !important;
+  background-color: rgba(52, 211, 153, 0.1) !important;
+}
+
+/* Tarjetas, Contenedores y Modales en Modo Oscuro */
+body.dark-mode .card,
+body.dark-mode .card-nr,
+body.dark-mode .card[style*="linear-gradient"],
+body.dark-mode .card-header,
+body.dark-mode .card-body,
+body.dark-mode .card-footer,
+body.dark-mode .filter-card,
+body.dark-mode .kpi-card,
+body.dark-mode .delivery-card,
+body.dark-mode .modal-content,
+body.dark-mode .modal-header,
+body.dark-mode .modal-body,
+body.dark-mode .modal-footer,
+body.dark-mode .dropdown-menu,
+body.dark-mode .offcanvas,
+body.dark-mode .offcanvas-header,
+body.dark-mode .bg-white,
+body.dark-mode .bg-light,
+body.dark-mode .bg-body,
+body.dark-mode .bg-body-tertiary,
+body.dark-mode .bg-body-secondary {
+  background-color: #1e293b !important;
+  color: #f8fafc !important;
+  border-color: #334155 !important;
+}
+
+body.dark-mode .card[style*="linear-gradient"] {
+  background: #1e293b !important;
+}
+
+/* Tablas Completas en Modo Oscuro (elimina fondos blancos de celdas Bootstrap) */
+body.dark-mode table,
+body.dark-mode .table {
+  --bs-table-bg: transparent !important;
+  --bs-table-color: #f8fafc !important;
+  --bs-table-border-color: #334155 !important;
+  background-color: transparent !important;
+  color: #f8fafc !important;
+  border-color: #334155 !important;
+}
+
+body.dark-mode .table > :not(caption) > * > * {
+  background-color: transparent !important;
+  color: #f8fafc !important;
+  border-bottom-color: #334155 !important;
+  box-shadow: none !important;
+}
+
+body.dark-mode .table thead,
+body.dark-mode .table thead th,
+body.dark-mode .table-light,
+body.dark-mode .table-light th,
+body.dark-mode .table-light td {
+  background-color: #0f172a !important;
+  color: #cbd5e1 !important;
+  border-color: #334155 !important;
+  border-bottom: 2px solid #334155 !important;
+}
+
+body.dark-mode .table-hover > tbody > tr:hover > * {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+  color: #ffffff !important;
+}
+
+/* Formularios en Modo Oscuro */
+body.dark-mode .form-control,
+body.dark-mode .form-select,
+body.dark-mode .input-group-text {
+  background-color: #0f172a !important;
+  color: #f8fafc !important;
+  border-color: #334155 !important;
+}
+
+body.dark-mode .form-control:focus,
+body.dark-mode .form-select:focus {
+  border-color: #34d399 !important;
+  box-shadow: 0 0 0 0.25rem rgba(52, 211, 153, 0.25) !important;
+}
+
+body.dark-mode .form-control::placeholder {
+  color: #64748b !important;
+}
+
+/* Tipografía y Énfasis de Alto Contraste en Modo Oscuro */
+body.dark-mode h1,
+body.dark-mode h2,
+body.dark-mode h3,
+body.dark-mode h4,
+body.dark-mode h5,
+body.dark-mode h6,
+body.dark-mode .text-dark {
+  color: #f8fafc !important;
+}
+
+body.dark-mode .text-secondary {
+  color: #cbd5e1 !important;
+}
+
+body.dark-mode .text-muted {
+  color: #94a3b8 !important;
+}
+
+body.dark-mode .text-warning-emphasis {
+  color: #fde047 !important;
+}
+
+body.dark-mode .text-danger-emphasis {
+  color: #fca5a5 !important;
+}
+
+body.dark-mode .text-success-emphasis {
+  color: #86efac !important;
+}
+
+body.dark-mode .text-primary-emphasis {
+  color: #93c5fd !important;
+}
+
+body.dark-mode .text-success {
+  color: #34d399 !important;
+}
+
+body.dark-mode .text-primary {
+  color: #60a5fa !important;
+}
+
+body.dark-mode .text-info {
+  color: #38bdf8 !important;
+}
+
+body.dark-mode .text-warning {
+  color: #facc15 !important;
+}
+
+body.dark-mode .text-danger {
+  color: #f87171 !important;
+}
+
+body.dark-mode .btn-outline-secondary {
+  color: #cbd5e1 !important;
+  border-color: #64748b !important;
+}
+
+body.dark-mode .btn-outline-secondary:hover {
+  background-color: #334155 !important;
+  color: #f8fafc !important;
+  border-color: #94a3b8 !important;
+}
+
+body.dark-mode .btn-outline-primary {
+  color: #93c5fd !important;
+  border-color: #3b82f6 !important;
+}
+
+body.dark-mode .btn-outline-primary:hover,
+body.dark-mode .btn-outline-primary:focus {
+  background-color: #1d4ed8 !important;
+  color: #ffffff !important;
+  border-color: #60a5fa !important;
+}
+
+/* Códigos y Etiquetas Logísticas en Modo Oscuro */
+body.dark-mode .code-tag {
+  background-color: #0f172a !important;
+  color: #f8fafc !important;
+  border-color: #334155 !important;
+}
+
+body.dark-mode .code-tag.text-dark,
+body.dark-mode .code-tag .text-dark {
+  color: #f8fafc !important;
+}
+
+body.dark-mode .code-tag .text-muted {
+  color: #94a3b8 !important;
+}
+
+body.dark-mode .code-tag .text-primary,
+body.dark-mode .code-tag i {
+  color: #38bdf8 !important;
+}
+
+body.dark-mode .border-dark {
+  border-color: #94a3b8 !important;
+}
+
+/* Pastillas secundarias (Unidades de Medida y Datos) en Modo Oscuro */
+body.dark-mode .badge.bg-secondary-subtle,
+body.dark-mode .badge.bg-secondary,
+body.dark-mode .bg-secondary-subtle {
+  background-color: #334155 !important;
+  color: #f8fafc !important;
+  border: 1px solid #475569 !important;
+}
+
+body.dark-mode .badge.bg-secondary-subtle.text-secondary,
+body.dark-mode .badge.bg-secondary-subtle .text-secondary,
+body.dark-mode .badge.bg-secondary-subtle *,
+body.dark-mode .badge.bg-secondary.text-secondary {
+  color: #f8fafc !important;
+}
+
+
+/* Badges y Pastillas en Modo Oscuro */
+body.dark-mode .badge.bg-light {
+  background-color: #334155 !important;
+  color: #f8fafc !important;
+  border: 1px solid #475569 !important;
+}
+
+body.dark-mode .badge.bg-primary-subtle {
+  background-color: #1e3a5f !important;
+  color: #93c5fd !important;
+  border: 1px solid #2563eb !important;
+}
+
+body.dark-mode .badge.bg-success-subtle {
+  background-color: #064e3b !important;
+  color: #6ee7b7 !important;
+  border: 1px solid #059669 !important;
+}
+
+body.dark-mode .badge.bg-warning-subtle {
+  background-color: #451a03 !important;
+  color: #fde047 !important;
+  border: 1px solid #d97706 !important;
+}
+
+body.dark-mode .badge.bg-danger-subtle {
+  background-color: #4c0519 !important;
+  color: #fda4af !important;
+  border: 1px solid #dc2626 !important;
+}
+
+/* Alertas en Modo Oscuro */
+body.dark-mode .alert {
+  background-color: #1e293b !important;
+  color: #f8fafc !important;
+  border-color: #334155 !important;
+}
+
+body.dark-mode .alert-success {
+  background-color: #064e3b !important;
+  color: #6ee7b7 !important;
+  border-color: #047857 !important;
+}
+
+body.dark-mode .alert-danger {
+  background-color: #4c0519 !important;
+  color: #fda4af !important;
+  border-color: #be123c !important;
+}
+
+body.dark-mode .alert-warning {
+  background-color: #451a03 !important;
+  color: #fde047 !important;
+  border-color: #b45309 !important;
+}
+
+body.dark-mode .alert-info {
+  background-color: #172554 !important;
+  color: #93c5fd !important;
+  border-color: #1e40af !important;
+}
+
+/* Botones en Modo Oscuro */
+body.dark-mode .btn-light {
+  background-color: #334155 !important;
+  color: #f8fafc !important;
+  border-color: #475569 !important;
+}
+
+body.dark-mode .btn-warning,
+body.dark-mode .btn-warning .text-dark,
+body.dark-mode .btn-warning * {
+  color: #000000 !important;
+}
+
+/* Footer y Paginación */
+body.dark-mode .footer-nutrired {
+  background-color: #0b1120 !important;
+  border-top-color: #1f2937 !important;
+  color: #94a3b8 !important;
+}
+
+body.dark-mode .footer-nutrired .text-dark {
+  color: #f3f4f6 !important;
+}
+
+body.dark-mode .page-link {
+  background-color: #111827 !important;
+  border-color: #1f2937 !important;
+  color: #f3f4f6 !important;
+}
+
+body.dark-mode .page-item.active .page-link {
+  background-color: #059669 !important;
+  border-color: #059669 !important;
+  color: #ffffff !important;
+}
+
+body.dark-mode .page-item.disabled .page-link {
+  background-color: #0b1120 !important;
+  color: #4b5563 !important;
+}
+
+body.dark-mode .theme-option-btn {
+  background-color: #0f172a !important;
+  border-color: #334155 !important;
+}
+
+body.dark-mode .theme-option-btn.active {
+  border-color: #34d399 !important;
+  background-color: rgba(52, 211, 153, 0.1) !important;
+}
+
+body.high-contrast .theme-option-btn {
+  background-color: #000000 !important;
+  border: 2px solid #ffffff !important;
+}
+
+body.high-contrast .theme-option-btn.active {
+  border-color: #ffff00 !important;
+  background-color: #1a1a1a !important;
+}
+
+/* Dropdowns del Navbar en Modo Oscuro */
+body.dark-mode .dropdown-menu {
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.5) !important;
+}
+
+body.dark-mode .dropdown-item {
+  color: #f8fafc !important;
+}
+
+body.dark-mode .dropdown-item:hover,
+body.dark-mode .dropdown-item:focus {
+  background-color: rgba(52, 211, 153, 0.15) !important;
+  color: #34d399 !important;
+}
+
+body.dark-mode .dropdown-divider {
+  border-top-color: #334155 !important;
+  opacity: 1 !important;
+}
+
+/* Dropdowns del Navbar en Alto Contraste */
+body.high-contrast .dropdown-menu {
+  background-color: #000000 !important;
+  border: 2px solid #ffffff !important;
+  box-shadow: none !important;
+}
+
+body.high-contrast .dropdown-item {
+  color: #ffffff !important;
+  background-color: #000000 !important;
+}
+
+body.high-contrast .dropdown-item:hover,
+body.high-contrast .dropdown-item:focus {
+  background-color: #ffff00 !important;
+  color: #000000 !important;
+  font-weight: 700 !important;
+}
+
+body.high-contrast .dropdown-item:hover *,
+body.high-contrast .dropdown-item:focus * {
+  color: #000000 !important;
+}
+
+body.high-contrast .dropdown-divider {
+  border-top-color: #ffffff !important;
+  opacity: 1 !important;
+}
+
+/* ==========================================================================
+   Select2 - Desplegables de Búsqueda Accesibles
+   ========================================================================== */
+.select2-container--bootstrap-5 .select2-selection {
+  min-height: 44px !important;
+  padding: 0.45rem 0.85rem !important;
+  border-radius: 10px !important;
+  border: 1px solid var(--nr-border-subtle) !important;
+  display: flex !important;
+  align-items: center !important;
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out !important;
+}
+
+.select2-container--bootstrap-5.select2-container--focus .select2-selection,
+.select2-container--bootstrap-5.select2-container--open .select2-selection {
+  border-color: var(--nr-emerald-primary) !important;
+  box-shadow: 0 0 0 0.25rem rgba(5, 150, 105, 0.25) !important;
+}
+
+.select2-container--bootstrap-5 .select2-selection--single .select2-selection__rendered {
+  color: var(--nr-ink) !important;
+  font-size: 0.95rem !important;
+  padding-left: 0 !important;
+}
+
+.select2-container--bootstrap-5 .select2-dropdown {
+  border-radius: 10px !important;
+  border: 1px solid var(--nr-border-subtle) !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15) !important;
+  overflow: hidden !important;
+  z-index: 1060 !important;
+}
+
+.select2-container--bootstrap-5 .select2-search--dropdown {
+  padding: 0.5rem 0.6rem !important;
+}
+
+.select2-container--bootstrap-5 .select2-search__field {
+  border-radius: 8px !important;
+  border: 1px solid var(--nr-border-subtle) !important;
+  padding: 0.5rem 0.75rem !important;
+  font-size: 0.9rem !important;
+}
+
+.select2-container--bootstrap-5 .select2-results__option {
+  padding: 0.65rem 0.9rem !important;
+  font-size: 0.92rem !important;
+  color: var(--nr-ink) !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.04) !important;
+}
+
+.select2-container--bootstrap-5 .select2-results__option--highlighted {
+  background-color: var(--nr-emerald-primary) !important;
+  color: #ffffff !important;
+}
+
+.select2-container--bootstrap-5 .select2-results__option--selected {
+  background-color: var(--nr-emerald-light) !important;
+  color: var(--nr-emerald-primary) !important;
+  font-weight: 600 !important;
+}
+
+/* Select2 en Modo Oscuro */
+body.dark-mode .select2-container--bootstrap-5 .select2-selection {
+  background-color: #0f172a !important;
+  border-color: #334155 !important;
+}
+
+body.dark-mode .select2-container--bootstrap-5.select2-container--focus .select2-selection,
+body.dark-mode .select2-container--bootstrap-5.select2-container--open .select2-selection {
+  border-color: #34d399 !important;
+  box-shadow: 0 0 0 0.25rem rgba(52, 211, 153, 0.25) !important;
+}
+
+body.dark-mode .select2-container--bootstrap-5 .select2-selection--single .select2-selection__rendered {
+  color: #f8fafc !important;
+}
+
+body.dark-mode .select2-container--bootstrap-5 .select2-selection--single .select2-selection__placeholder {
+  color: #94a3b8 !important;
+}
+
+body.dark-mode .select2-container--bootstrap-5 .select2-dropdown {
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.5) !important;
+}
+
+body.dark-mode .select2-container--bootstrap-5 .select2-search__field {
+  background-color: #0f172a !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+
+body.dark-mode .select2-container--bootstrap-5 .select2-results__option {
+  background-color: #1e293b !important;
+  color: #f8fafc !important;
+  border-bottom: 1px solid #334155 !important;
+}
+
+body.dark-mode .select2-container--bootstrap-5 .select2-results__option--highlighted {
+  background-color: #059669 !important;
+  color: #ffffff !important;
+}
+
+body.dark-mode .select2-container--bootstrap-5 .select2-results__option--selected {
+  background-color: rgba(5, 150, 105, 0.25) !important;
+  color: #6ee7b7 !important;
+}
+
+/* Select2 en Alto Contraste */
+body.high-contrast .select2-container--bootstrap-5 .select2-selection {
+  background-color: #000000 !important;
+  border: 2px solid #ffffff !important;
+}
+
+body.high-contrast .select2-container--bootstrap-5.select2-container--focus .select2-selection,
+body.high-contrast .select2-container--bootstrap-5.select2-container--open .select2-selection {
+  border-color: #ffff00 !important;
+  outline: 2px solid #ffff00 !important;
+}
+
+body.high-contrast .select2-container--bootstrap-5 .select2-selection--single .select2-selection__rendered {
+  color: #ffffff !important;
+}
+
+body.high-contrast .select2-container--bootstrap-5 .select2-selection--single .select2-selection__placeholder {
+  color: #ffff00 !important;
+}
+
+body.high-contrast .select2-container--bootstrap-5 .select2-dropdown {
+  background-color: #000000 !important;
+  border: 2px solid #ffffff !important;
+}
+
+body.high-contrast .select2-container--bootstrap-5 .select2-search__field {
+  background-color: #000000 !important;
+  border: 2px solid #ffffff !important;
+  color: #ffff00 !important;
+}
+
+body.high-contrast .select2-container--bootstrap-5 .select2-results__option {
+  background-color: #000000 !important;
+  color: #ffffff !important;
+  border-bottom: 1px solid #ffffff !important;
+}
+
+body.high-contrast .select2-container--bootstrap-5 .select2-results__option--highlighted {
+  background-color: #ffff00 !important;
+  color: #000000 !important;
+  font-weight: 700 !important;
+}
+
+body.high-contrast .select2-container--bootstrap-5 .select2-results__option--highlighted * {
+  color: #000000 !important;
+}
+
+/* ==========================================================================
+   Botón Burbuja Flotante de Accesibilidad Universal (FAB)
+   ========================================================================== */
+.btn-a11y-fab {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 52px;
+  height: 52px;
+  border-radius: 50% !important;
+  background-color: var(--nr-emerald-primary);
+  color: #ffffff !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1040;
+  border: 2px solid rgba(255, 255, 255, 0.5) !important;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25), 0 2px 5px rgba(0, 0, 0, 0.15) !important;
+  transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  cursor: pointer;
+}
+
+.btn-a11y-fab:hover {
+  transform: scale(1.12);
+  background-color: var(--nr-emerald-hover);
+  box-shadow: 0 8px 25px rgba(5, 150, 105, 0.4) !important;
+  color: #ffffff !important;
+}
+
+.btn-a11y-fab:active {
+  transform: scale(0.96);
+}
+
+.btn-a11y-fab:focus-visible {
+  outline: 3px solid #ffff00 !important;
+  outline-offset: 3px !important;
+}
+
+/* FAB en Modo Oscuro */
+body.dark-mode .btn-a11y-fab {
+  background-color: #059669 !important;
+  color: #ffffff !important;
+  border-color: #34d399 !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5) !important;
+}
+
+/* FAB en Alto Contraste */
+body.high-contrast .btn-a11y-fab {
+  background-color: #000000 !important;
+  color: #ffff00 !important;
+  border: 3px solid #ffff00 !important;
+  box-shadow: 0 0 15px rgba(255, 255, 0, 0.5) !important;
+}
+
+body.high-contrast .btn-a11y-fab:hover {
+  background-color: #ffff00 !important;
+  color: #000000 !important;
+}
+
+/* ==========================================================================
+   Comprobantes Oficiales, Fichas de Paquetes y Constancias Imprimibles
+   (Accesibilidad en Modo Oscuro y Alto Contraste + Preservación @media print)
+   ========================================================================== */
+
+/* Hoja oficial en Modo Oscuro */
+body.dark-mode .comprobante-hoja,
+body.dark-mode .hoja-rotulo {
+  background: #1e293b !important;
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4) !important;
+}
+
+body.dark-mode .hoja-rotulo {
+  border: 2px dashed #475569 !important;
+}
+
+body.dark-mode .comprobante-hoja .border-bottom,
+body.dark-mode .comprobante-hoja .border-top,
+body.dark-mode .hoja-rotulo .border-bottom,
+body.dark-mode .hoja-rotulo .border-top {
+  border-color: #334155 !important;
+}
+
+/* Brand Icon en Encabezados */
+body.dark-mode .brand-icon {
+  background-color: rgba(5, 150, 105, 0.25) !important;
+  color: #34d399 !important;
+  border: 1px solid rgba(52, 211, 153, 0.3) !important;
+}
+
+/* Tarjetas y Paneles internos en Comprobantes (Modo Oscuro) */
+body.dark-mode .comprobante-hoja .bg-light,
+body.dark-mode .hoja-rotulo .bg-light {
+  background-color: #0f172a !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+
+body.dark-mode .comprobante-hoja .table-borderless td,
+body.dark-mode .hoja-rotulo .table-borderless td {
+  border: none !important;
+}
+
+/* Tablas con bordes en Comprobantes (Modo Oscuro) */
+body.dark-mode .comprobante-hoja .table-bordered,
+body.dark-mode .hoja-rotulo .table-bordered {
+  border-color: #334155 !important;
+}
+
+body.dark-mode .comprobante-hoja .table-bordered th,
+body.dark-mode .comprobante-hoja .table-bordered td,
+body.dark-mode .hoja-rotulo .table-bordered th,
+body.dark-mode .hoja-rotulo .table-bordered td {
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+
+body.dark-mode .comprobante-hoja .table tfoot.table-light,
+body.dark-mode .hoja-rotulo .table tfoot.table-light,
+body.dark-mode .comprobante-hoja .table tfoot td,
+body.dark-mode .hoja-rotulo .table tfoot td {
+  background-color: #0f172a !important;
+  color: #f8fafc !important;
+  border-top: 2px solid #334155 !important;
+}
+
+/* Badges en Comprobantes y Fichas (Modo Oscuro) */
+body.dark-mode .comprobante-hoja .badge.bg-success,
+body.dark-mode .hoja-rotulo .badge.bg-success,
+body.dark-mode .comprobante-hoja .badge.text-success,
+body.dark-mode .hoja-rotulo .badge.text-success {
+  background-color: rgba(5, 150, 105, 0.25) !important;
+  color: #6ee7b7 !important;
+  border-color: #059669 !important;
+}
+
+body.dark-mode .comprobante-hoja .badge.bg-primary,
+body.dark-mode .hoja-rotulo .badge.bg-primary,
+body.dark-mode .comprobante-hoja .badge.text-primary,
+body.dark-mode .hoja-rotulo .badge.text-primary {
+  background-color: rgba(37, 99, 235, 0.25) !important;
+  color: #93c5fd !important;
+  border-color: #2563eb !important;
+}
+
+body.dark-mode .comprobante-hoja .badge.bg-warning,
+body.dark-mode .hoja-rotulo .badge.bg-warning,
+body.dark-mode .comprobante-hoja .badge.text-warning,
+body.dark-mode .hoja-rotulo .badge.text-warning,
+body.dark-mode .hoja-rotulo .badge.text-warning-emphasis {
+  background-color: rgba(217, 119, 6, 0.25) !important;
+  color: #fde047 !important;
+  border-color: #d97706 !important;
+}
+
+body.dark-mode .comprobante-hoja .badge.bg-info,
+body.dark-mode .hoja-rotulo .badge.bg-info,
+body.dark-mode .comprobante-hoja .badge.text-info,
+body.dark-mode .hoja-rotulo .badge.text-info {
+  background-color: rgba(14, 165, 233, 0.25) !important;
+  color: #7dd3fc !important;
+  border-color: #0284c7 !important;
+}
+
+body.dark-mode .comprobante-hoja .badge.bg-light,
+body.dark-mode .hoja-rotulo .badge.bg-light {
+  background-color: #334155 !important;
+  color: #e2e8f0 !important;
+  border-color: #475569 !important;
+}
+
+/* Caja de Firma Digital en Modo Oscuro */
+body.dark-mode .firma-box {
+  background: #0f172a !important;
+  background-color: #0f172a !important;
+  border: 1px solid #334155 !important;
+}
+
+body.dark-mode .firma-box img {
+  filter: invert(1) brightness(1.2) contrast(1.2);
+}
+
+/* Contenedor QR en Modo Oscuro (se preserva fondo blanco para lectura óptica de cámara) */
+body.dark-mode .qr-container {
+  background: #ffffff !important;
+  background-color: #ffffff !important;
+  border: 2px solid #334155 !important;
+}
+
+/* Leyenda Bromatológica / Alertas en Comprobantes */
+body.dark-mode .comprobante-hoja .alert-light {
+  background-color: #0f172a !important;
+  border-color: #334155 !important;
+  color: #cbd5e1 !important;
+}
+
+/* Controles de verificación de depósito */
+body.dark-mode .hoja-rotulo .form-check-input:disabled {
+  background-color: #059669 !important;
+  border-color: #34d399 !important;
+  opacity: 0.9;
+}
+
+
+/* --------------------------------------------------------------------------
+   Hoja Oficial en Alto Contraste
+   -------------------------------------------------------------------------- */
+body.high-contrast .comprobante-hoja,
+body.high-contrast .hoja-rotulo {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #ffffff !important;
+  border: 2px solid #ffffff !important;
+  box-shadow: none !important;
+}
+
+body.high-contrast .hoja-rotulo {
+  border: 2px dashed #ffffff !important;
+}
+
+body.high-contrast .comprobante-hoja .border-bottom,
+body.high-contrast .comprobante-hoja .border-top,
+body.high-contrast .hoja-rotulo .border-bottom,
+body.high-contrast .hoja-rotulo .border-top {
+  border-color: #ffffff !important;
+}
+
+body.high-contrast .brand-icon {
+  background-color: #000000 !important;
+  color: #00ff66 !important;
+  border: 2px solid #00ff66 !important;
+}
+
+/* Paneles internos en Alto Contraste */
+body.high-contrast .comprobante-hoja .bg-light,
+body.high-contrast .hoja-rotulo .bg-light {
+  background-color: #000000 !important;
+  border: 2px solid #ffffff !important;
+  color: #ffffff !important;
+}
+
+body.high-contrast .comprobante-hoja .table-borderless td,
+body.high-contrast .hoja-rotulo .table-borderless td {
+  border: none !important;
+  color: #ffffff !important;
+}
+
+/* Tablas con bordes en Alto Contraste */
+body.high-contrast .comprobante-hoja .table-bordered,
+body.high-contrast .hoja-rotulo .table-bordered {
+  border: 2px solid #ffffff !important;
+}
+
+body.high-contrast .comprobante-hoja .table-bordered th,
+body.high-contrast .comprobante-hoja .table-bordered td,
+body.high-contrast .hoja-rotulo .table-bordered th,
+body.high-contrast .hoja-rotulo .table-bordered td {
+  border: 1px solid #ffffff !important;
+  color: #ffffff !important;
+  background-color: #000000 !important;
+}
+
+body.high-contrast .comprobante-hoja .table tfoot.table-light,
+body.high-contrast .hoja-rotulo .table tfoot.table-light,
+body.high-contrast .comprobante-hoja .table tfoot td,
+body.high-contrast .hoja-rotulo .table tfoot td {
+  background-color: #121212 !important;
+  color: #ffff00 !important;
+  border-top: 2px solid #ffffff !important;
+}
+
+/* Badges en Alto Contraste */
+body.high-contrast .comprobante-hoja .badge.bg-success,
+body.high-contrast .hoja-rotulo .badge.bg-success,
+body.high-contrast .comprobante-hoja .badge.text-success,
+body.high-contrast .hoja-rotulo .badge.text-success {
+  background-color: #000000 !important;
+  color: #00ff66 !important;
+  border: 2px solid #00ff66 !important;
+}
+
+body.high-contrast .comprobante-hoja .badge.bg-primary,
+body.high-contrast .hoja-rotulo .badge.bg-primary,
+body.high-contrast .comprobante-hoja .badge.text-primary,
+body.high-contrast .hoja-rotulo .badge.text-primary {
+  background-color: #000000 !important;
+  color: #00ccff !important;
+  border: 2px solid #00ccff !important;
+}
+
+body.high-contrast .comprobante-hoja .badge.bg-warning,
+body.high-contrast .hoja-rotulo .badge.bg-warning,
+body.high-contrast .comprobante-hoja .badge.text-warning,
+body.high-contrast .hoja-rotulo .badge.text-warning,
+body.high-contrast .hoja-rotulo .badge.text-warning-emphasis {
+  background-color: #000000 !important;
+  color: #ffff00 !important;
+  border: 2px solid #ffff00 !important;
+}
+
+body.high-contrast .comprobante-hoja .badge.bg-info,
+body.high-contrast .hoja-rotulo .badge.bg-info,
+body.high-contrast .comprobante-hoja .badge.text-info,
+body.high-contrast .hoja-rotulo .badge.text-info {
+  background-color: #000000 !important;
+  color: #00ccff !important;
+  border: 2px solid #00ccff !important;
+}
+
+body.high-contrast .comprobante-hoja .badge.bg-light,
+body.high-contrast .hoja-rotulo .badge.bg-light {
+  background-color: #000000 !important;
+  color: #ffffff !important;
+  border: 2px solid #ffffff !important;
+}
+
+/* Caja de Firma Digital en Alto Contraste */
+body.high-contrast .firma-box {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2px solid #ffffff !important;
+}
+
+body.high-contrast .firma-box img {
+  filter: invert(1) brightness(1.5) contrast(1.5);
+}
+
+/* QR en Alto Contraste (Fondo blanco estricto con borde amarillo) */
+body.high-contrast .qr-container {
+  background: #ffffff !important;
+  background-color: #ffffff !important;
+  border: 3px solid #ffff00 !important;
+}
+
+/* Alerta Leyenda Legal en Alto Contraste */
+body.high-contrast .comprobante-hoja .alert-light {
+  background-color: #000000 !important;
+  border: 2px solid #ffffff !important;
+  color: #ffffff !important;
+}
+
+/* Controles de depósito en Alto Contraste */
+body.high-contrast .hoja-rotulo .form-check-input:disabled {
+  background-color: #ffff00 !important;
+  border-color: #ffffff !important;
+  opacity: 1;
+}
+
+/* --------------------------------------------------------------------------
+   Salida de Impresión Física / PDF (Protección estricta @media print)
+   Garantiza que sin importar el tema activo, siempre se imprima en tinta
+   negra sobre papel blanco nítido sin gastar tóner ni invertir firmas.
+   -------------------------------------------------------------------------- */
+@media print {
+  body.dark-mode,
+  body.high-contrast {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+  }
+
+  body.dark-mode *,
+  body.high-contrast * {
+    color: #000000 !important;
+    text-shadow: none !important;
+    box-shadow: none !important;
+  }
+
+  body.dark-mode .comprobante-hoja,
+  body.high-contrast .comprobante-hoja {
+    background: #ffffff !important;
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  body.dark-mode .hoja-rotulo,
+  body.high-contrast .hoja-rotulo {
+    background: #ffffff !important;
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    border: 2px dashed #000000 !important;
+    box-shadow: none !important;
+    padding: 1.5rem !important;
+    margin: 0 auto !important;
+  }
+
+  body.dark-mode .comprobante-hoja .bg-light,
+  body.dark-mode .hoja-rotulo .bg-light,
+  body.high-contrast .comprobante-hoja .bg-light,
+  body.high-contrast .hoja-rotulo .bg-light {
+    background: #f8fafc !important;
+    background-color: #f8fafc !important;
+    border-color: #dee2e6 !important;
+    color: #000000 !important;
+  }
+
+  body.dark-mode .firma-box,
+  body.high-contrast .firma-box {
+    background: #ffffff !important;
+    background-color: #ffffff !important;
+    border-color: #cbd5e1 !important;
+  }
+
+  body.dark-mode .firma-box img,
+  body.high-contrast .firma-box img {
+    filter: none !important;
+  }
+
+  body.dark-mode .border-dark,
+  body.high-contrast .border-dark {
+    border-color: #000000 !important;
+  }
+
+  body.dark-mode .qr-container,
+  body.high-contrast .qr-container {
+    background: #ffffff !important;
+    background-color: #ffffff !important;
+    border: 2px solid #000000 !important;
+  }
+
+  body.dark-mode .table,
+  body.high-contrast .table {
+    border-color: #dee2e6 !important;
+    background-color: #ffffff !important;
+    color: #000000 !important;
+  }
+
+  body.dark-mode .table > :not(caption) > * > *,
+  body.high-contrast .table > :not(caption) > * > * {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    border-bottom: 1px solid #dee2e6 !important;
+  }
+
+  body.dark-mode .badge,
+  body.high-contrast .badge {
+    border: 1px solid #000000 !important;
+    color: #000000 !important;
+    background: transparent !important;
+    background-color: transparent !important;
+  }
+
+  body.dark-mode .brand-icon,
+  body.high-contrast .brand-icon {
+    background: #f8fafc !important;
+    color: #000000 !important;
+    border: 1px solid #dee2e6 !important;
+  }
 }

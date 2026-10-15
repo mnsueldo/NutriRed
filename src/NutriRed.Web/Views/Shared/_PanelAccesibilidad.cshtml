@@ -1,0 +1,135 @@
+<!-- ==========================================================================
+     NutriRed - Panel Lateral de Accesibilidad Universal (WCAG 2.1 AA)
+     Partial View: Views/Shared/_PanelAccesibilidad.cshtml
+     ========================================================================== -->
+
+<div class="offcanvas offcanvas-end shadow-lg" tabindex="-1" id="panelAccesibilidad" aria-labelledby="panelAccesibilidadLabel" style="width: 380px; max-width: 90vw;">
+    <div class="offcanvas-header border-bottom py-3 bg-light">
+        <div class="d-flex align-items-center gap-2">
+            <span class="rounded-circle bg-primary bg-opacity-10 text-primary p-2 d-inline-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
+                <i class="bi bi-universal-access fs-5"></i>
+            </span>
+            <div>
+                <h5 class="offcanvas-title fw-bold mb-0 text-dark" id="panelAccesibilidadLabel">Accesibilidad</h5>
+                <small class="text-muted" style="font-size: 0.75rem;">Preferencias de navegación inclusiva (WCAG 2.1)</small>
+            </div>
+        </div>
+        <button type="button" class="btn-close text-reset shadow-none" data-bs-dismiss="offcanvas" aria-label="Cerrar panel de accesibilidad"></button>
+    </div>
+
+    <div class="offcanvas-body p-4 d-flex flex-column gap-4">
+
+        <!-- 1. TAMAÑO DE TEXTO (ZOOM TIPOGRÁFICO) -->
+        <section aria-labelledby="headingFontSize">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <h6 id="headingFontSize" class="fw-bold mb-0 text-dark">
+                    <i class="bi bi-fonts me-1 text-primary"></i> Tamaño de letra
+                </h6>
+                <span id="lblFontSizeCurrent" class="badge bg-light text-dark border">Normal (100%)</span>
+            </div>
+            <p class="text-muted small mb-2">Ajusta el tamaño del texto en todas las pantallas sin alterar la disposición.</p>
+            <div class="btn-group w-100 shadow-sm" role="group" aria-label="Selector de tamaño de texto">
+                <button type="button" class="btn btn-outline-secondary btn-sm" id="btnFontSm" title="Texto pequeño (90%)">A-</button>
+                <button type="button" class="btn btn-outline-secondary btn-sm active" id="btnFontMd" title="Texto estándar (100%)">A</button>
+                <button type="button" class="btn btn-outline-secondary btn-sm" id="btnFontLg" title="Texto grande (115%)">A+</button>
+                <button type="button" class="btn btn-outline-secondary btn-sm" id="btnFontXl" title="Texto muy grande (130%)">A++</button>
+            </div>
+        </section>
+
+        <hr class="my-0 text-muted opacity-25" />
+
+        <!-- 2. CONTRASTE Y MODOS DE COLOR -->
+        <section aria-labelledby="headingTheme">
+            <h6 id="headingTheme" class="fw-bold mb-2 text-dark">
+                <i class="bi bi-palette me-1 text-primary"></i> Modo visual y contraste
+            </h6>
+            <p class="text-muted small mb-2">Selecciona la paleta que mejor se adapte a tu entorno y agudeza visual.</p>
+            <div class="d-flex flex-column gap-2" role="radiogroup" aria-label="Modo de contraste y color">
+                <!-- Modo Normal -->
+                <button type="button" class="btn btn-outline-secondary text-start p-2 d-flex align-items-center gap-3 border rounded-3 theme-option-btn active" data-theme="normal" id="themeBtnNormal">
+                    <span class="rounded p-2 bg-light border text-dark d-inline-flex"><i class="bi bi-sun-fill text-warning"></i></span>
+                    <div class="flex-grow-1 lh-1">
+                        <strong class="d-block mb-1 text-dark">Modo Estándar (Claro)</strong>
+                        <small class="text-muted" style="font-size: 0.75rem;">Diseño verde esmeralda institucional</small>
+                    </div>
+                    <i class="bi bi-check-circle-fill text-success theme-check"></i>
+                </button>
+
+                <!-- Modo Oscuro -->
+                <button type="button" class="btn btn-outline-secondary text-start p-2 d-flex align-items-center gap-3 border rounded-3 theme-option-btn" data-theme="dark" id="themeBtnDark">
+                    <span class="rounded p-2 bg-dark text-white d-inline-flex"><i class="bi bi-moon-stars-fill text-info"></i></span>
+                    <div class="flex-grow-1 lh-1">
+                        <strong class="d-block mb-1 text-dark">Modo Oscuro</strong>
+                        <small class="text-muted" style="font-size: 0.75rem;">Reduce fatiga visual y deslumbramiento</small>
+                    </div>
+                    <i class="bi bi-check-circle-fill text-success theme-check d-none"></i>
+                </button>
+
+                <!-- Modo Alto Contraste -->
+                <button type="button" class="btn btn-outline-secondary text-start p-2 d-flex align-items-center gap-3 border rounded-3 theme-option-btn" data-theme="contrast" id="themeBtnContrast">
+                    <span class="rounded p-2 bg-black text-warning border border-warning d-inline-flex"><i class="bi bi-circle-half"></i></span>
+                    <div class="flex-grow-1 lh-1">
+                        <strong class="d-block mb-1 text-dark">Alto Contraste (WCAG AAA)</strong>
+                        <small class="text-muted" style="font-size: 0.75rem;">Fondo negro profundo con texto amarillo/blanco</small>
+                    </div>
+                    <i class="bi bi-check-circle-fill text-success theme-check d-none"></i>
+                </button>
+            </div>
+        </section>
+
+        <hr class="my-0 text-muted opacity-25" />
+
+        <!-- 3. HERRAMIENTAS ADICIONALES DE LECTURA Y MOTRICIDAD -->
+        <section aria-labelledby="headingTools">
+            <h6 id="headingTools" class="fw-bold mb-2 text-dark">
+                <i class="bi bi-sliders me-1 text-primary"></i> Adaptaciones de lectura
+            </h6>
+            
+            <div class="d-flex flex-column gap-3 mt-3">
+                <!-- Fuente para dislexia -->
+                <div class="form-check form-switch d-flex justify-content-between align-items-center ps-0 mb-0">
+                    <label class="form-check-label text-dark pe-3" for="switchDyslexiaFont">
+                        <strong class="d-block small">Tipografía para Dislexia</strong>
+                        <span class="text-muted" style="font-size: 0.75rem;">Fuente con base pesada y espaciado mejorado</span>
+                    </label>
+                    <input class="form-check-input ms-auto" type="checkbox" role="switch" id="switchDyslexiaFont" style="width: 2.5em; height: 1.25em;">
+                </div>
+
+                <!-- Resaltar y subrayar enlaces -->
+                <div class="form-check form-switch d-flex justify-content-between align-items-center ps-0 mb-0">
+                    <label class="form-check-label text-dark pe-3" for="switchHighlightLinks">
+                        <strong class="d-block small">Resaltar enlaces y botones</strong>
+                        <span class="text-muted" style="font-size: 0.75rem;">Subraya elementos interactivos de navegación</span>
+                    </label>
+                    <input class="form-check-input ms-auto" type="checkbox" role="switch" id="switchHighlightLinks" style="width: 2.5em; height: 1.25em;">
+                </div>
+
+                <!-- Reducir movimiento / animaciones -->
+                <div class="form-check form-switch d-flex justify-content-between align-items-center ps-0 mb-0">
+                    <label class="form-check-label text-dark pe-3" for="switchReducedMotion">
+                        <strong class="d-block small">Pausar animaciones</strong>
+                        <span class="text-muted" style="font-size: 0.75rem;">Desactiva transiciones y movimientos visuales</span>
+                    </label>
+                    <input class="form-check-input ms-auto" type="checkbox" role="switch" id="switchReducedMotion" style="width: 2.5em; height: 1.25em;">
+                </div>
+            </div>
+        </section>
+
+        <!-- ATAJOS DE TECLADO INFORMATIVOS -->
+        <div class="bg-light p-3 rounded-3 border">
+            <h6 class="fw-bold small text-dark mb-1"><i class="bi bi-keyboard me-1 text-secondary"></i> Atajos de teclado</h6>
+            <div class="d-flex justify-content-between small text-muted">
+                <span>Abrir / Cerrar este panel:</span>
+                <kbd class="bg-dark text-white px-2 py-0">Alt + A</kbd>
+            </div>
+        </div>
+
+        <!-- 4. BOTÓN DE RESTABLECER PREFERENCIAS -->
+        <div class="mt-auto pt-2">
+            <button type="button" class="btn btn-outline-danger w-100 btn-sm rounded-pill py-2 shadow-sm fw-semibold" id="btnResetA11y">
+                <i class="bi bi-arrow-counterclockwise me-1"></i> Restablecer valores por defecto
+            </button>
+        </div>
+
+    </div>
+</div>

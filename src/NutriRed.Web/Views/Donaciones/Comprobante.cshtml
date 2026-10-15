@@ -148,7 +148,7 @@
             <thead class="table-light small">
                 <tr>
                     <th class="text-center" style="width: 40px;">#</th>
-                    <th>Código EAN</th>
+                    <th class="text-nowrap">Código EAN</th>
                     <th>Alimento </th>
                     <th>Categoría</th>
                     <th>Lote asignado</th>
@@ -163,7 +163,7 @@
                     var dias = (int)(item.FechaVencimiento.Date - DateTime.Today).TotalDays;
                     <tr>
                         <td class="text-center small text-muted">@(i + 1)</td>
-                        <td><span class="code-tag font-mono">@item.CodigoBarras</span></td>
+                        <td class="text-nowrap"><span class="code-tag font-mono text-nowrap">@item.CodigoBarras</span></td>
                         <td class="fw-semibold text-dark">@item.NombreProducto</td>
                         <td><span class="badge bg-light text-secondary border">@item.Categoria</span></td>
                         <td><span class="font-mono small">@item.NumeroLote</span></td>

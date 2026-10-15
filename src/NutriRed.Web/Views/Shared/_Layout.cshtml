@@ -21,6 +21,9 @@
     <link rel="stylesheet" href="~/NutriRed.Web.styles.css" asp-append-version="true" />
 </head>
 <body>
+    <!-- Enlace accesible de salto al contenido principal (WCAG 2.1) -->
+    <a href="#main-content" class="skip-link">Saltar al contenido principal</a>
+
     <header class="sticky-top">
         <nav class="navbar navbar-expand-lg navbar-nutrired py-2">
             <div class="container-fluid px-lg-4">
@@ -153,19 +156,15 @@
 
                     <!-- Herramientas de la Barra Superior -->
                     <div class="d-flex align-items-center gap-2 mt-3 mt-lg-0">
+                        @* Enlace a Swagger para la App Móvil Android (Ocultado a pedido)
                         @if (SignInManager.IsSignedIn(User))
                         {
-                            <!-- Enlace a Swagger para la App Móvil Android -->
                             <a href="/swagger" target="_blank" class="btn btn-sm btn-outline-secondary rounded-pill px-3" title="Explorador interactivo de endpoints REST para Android">
                                 <i class="bi bi-phone me-1 text-primary"></i> API Android
                             </a>
                         }
+                        *@
 
-                        <!-- Botón Accesible: Modo Alto Contraste (WCAG) -->
-                        <button id="btnToggleHighContrast" type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3" aria-label="Alternar modo de alto contraste para accesibilidad">
-                            <i id="highContrastIcon" class="bi bi-circle-half me-1"></i>
-                            <span id="highContrastLabel">Contraste</span>
-                        </button>
 
                         <!-- Identificación de Usuario y Menú de Sesión (Fase 10) -->
                         @if (SignInManager.IsSignedIn(User))
@@ -223,7 +222,7 @@
     </header>
 
     <!-- Contenido Dinámico de las Vistas -->
-    <main role="main" class="py-4">
+    <main id="main-content" role="main" class="py-4" tabindex="-1">
         <div class="container-fluid px-lg-4">
             <!-- Inyección Global de Notificaciones Flash (TempData) -->
             <partial name="_Alertas" />
@@ -248,6 +247,16 @@
             </div>
         </div>
     </footer>
+
+    <!-- Botón Burbuja Flotante de Accesibilidad Universal (FAB) -->
+    <button id="btnFloatingA11y" type="button" class="btn btn-a11y-fab shadow"
+            data-bs-toggle="offcanvas" data-bs-target="#panelAccesibilidad" aria-controls="panelAccesibilidad"
+            aria-label="Abrir panel de preferencias de accesibilidad (Alt + A)" title="Accesibilidad (Alt + A)">
+        <i class="bi bi-universal-access fs-4"></i>
+    </button>
+
+    <!-- Panel Lateral de Accesibilidad (Offcanvas) -->
+    <partial name="_PanelAccesibilidad" />
 
     <!-- Scripts Esenciales -->
     <script src="~/lib/jquery/dist/jquery.min.js"></script>

@@ -175,21 +175,21 @@
             <table class="table table-hover align-middle mb-0">
                 <thead class="table-light text-secondary text-uppercase small fw-bold">
                     <tr>
-                        <th style="width: 150px;" class="ps-4">Código EAN</th>
+                        <th class="ps-4 text-nowrap" style="min-width: 170px;">Código EAN</th>
                         <th>Alimento</th>
                         <th>Categoría</th>
-                        <th style="width: 120px;" class="text-center">U. Medida</th>
-                        <th style="width: 120px;" class="text-center">Stock Mín.</th>
-                        <th style="width: 120px;" class="text-center">Estado</th>
-                        <th style="width: 190px;" class="text-end pe-4">Acciones</th>
+                        <th style="width: 120px;" class="text-center text-nowrap">U. Medida</th>
+                        <th style="width: 120px;" class="text-center text-nowrap">Stock Mín.</th>
+                        <th style="width: 120px;" class="text-center text-nowrap">Estado</th>
+                        <th style="width: 190px;" class="text-end pe-4 text-nowrap">Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach (var prod in Model)
                     {
                         <tr>
-                            <td class="ps-4">
-                                <span class="code-tag rounded-3 font-mono">
+                            <td class="ps-4 text-nowrap">
+                                <span class="code-tag rounded-3 font-mono text-nowrap">
                                     <i class="bi bi-upc me-1 text-muted"></i>@prod.CodigoBarras
                                 </span>
                             </td>

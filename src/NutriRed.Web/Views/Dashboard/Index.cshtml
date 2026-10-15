@@ -1,4 +1,4 @@
-﻿@model NutriRed.Web.Models.DashboardViewModel
+@model NutriRed.Web.Models.DashboardViewModel
 
 @{
     ViewData["Title"] = "Dashboard - Control Center";
@@ -9,7 +9,7 @@
     double CalcPorcentaje(int cantidad) => totalLotesFefo > 0 ? Math.Round((double)cantidad / totalLotesFefo * 100, 1) : 0;
 }
 
-<div class="container-fluid py-4" style="background-color: #F8FAFC;">
+<div class="container-fluid py-4">
 
     <!-- Encabezado Principal -->
     <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-4">

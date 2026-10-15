@@ -148,7 +148,7 @@
                             </div>
 
                             <div class="col-lg-2 col-md-3 col-sm-6">
-                                <label class="form-label small fw-semibold text-muted mb-1">Código EAN-13</label>
+                                <label class="form-label small fw-semibold text-muted mb-1 text-nowrap">Código EAN-13</label>
                                 <input type="text" id="tempEan" class="form-control font-mono" placeholder="779..." />
                             </div>
 
@@ -184,7 +184,7 @@
                         <table class="table table-hover align-middle mb-0" id="tablaDetalles">
                             <thead class="table-light text-secondary text-uppercase small fw-bold">
                                 <tr>
-                                    <th class="ps-4">EAN</th>
+                                    <th class="ps-4 text-nowrap">EAN</th>
                                     <th>Alimento</th>
                                     <th>Categoría</th>
                                     <th>Lote Asignado</th>
@@ -209,7 +209,7 @@
                                             <input type="hidden" name="Items[@i].FechaVencimiento" value="@itm.FechaVencimiento.ToString("yyyy-MM-dd")" />
                                             <input type="hidden" name="Items[@i].NumeroLote" value="@itm.NumeroLote" />
 
-                                            <td class="ps-4"><span class="code-tag font-mono rounded-3">@itm.CodigoBarras</span></td>
+                                            <td class="ps-4 text-nowrap"><span class="code-tag font-mono rounded-3 text-nowrap">@itm.CodigoBarras</span></td>
                                             <td class="fw-semibold text-dark">@itm.NombreProducto</td>
                                             <td><span class="badge bg-light text-secondary border rounded-pill px-3 py-1">@itm.Categoria</span></td>
                                             <td><span class="font-mono small text-muted">@(string.IsNullOrWhiteSpace(itm.NumeroLote) ? "(Automático)" : itm.NumeroLote)</span></td>
@@ -467,7 +467,7 @@
                     <input type="hidden" name="Items[${rowCounter}].FechaVencimiento" value="${vencimiento}" />
                     <input type="hidden" name="Items[${rowCounter}].NumeroLote" value="${lote}" />
 
-                    <td class="ps-4"><span class="code-tag font-mono rounded-3">${ean}</span></td>
+                    <td class="ps-4 text-nowrap"><span class="code-tag font-mono rounded-3 text-nowrap">${ean}</span></td>
                     <td class="fw-semibold text-dark">${nombre}</td>
                     <td><span class="badge bg-light text-secondary border rounded-pill px-3 py-1">${categoria}</span></td>
                     <td><span class="font-mono small text-muted">${lote ? lote : "(Automático)"}</span></td>
