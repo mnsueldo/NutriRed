@@ -516,6 +516,44 @@ public class PaqueteService : IPaqueteService
         }
     }
 
+    public async Task<OperationResult<bool>> EliminarTipoPaqueteAsync(int id)
+    {
+        try
+        {
+            var tipo = await _context.TiposPaquete
+                .Include(t => t.ItemsPlantilla)
+                .FirstOrDefaultAsync(t => t.Id == id);
+
+            if (tipo == null)
+            {
+                return OperationResult<bool>.Fail($"No se encontró la receta de kit con ID {id}.");
+            }
+
+            // Los 3 kits oficiales predeterminados no pueden ser eliminados para proteger la integridad del sistema
+            if (tipo.EsKitBase)
+            {
+                return OperationResult<bool>.Fail("Los kits base predeterminados del sistema (Básico, Familiar y Familiar Numeroso) están protegidos y no pueden ser eliminados.");
+            }
+
+            // Integridad referencial con paquetes históricos
+            var enUso = await _context.Paquetes.AnyAsync(p => p.TipoPaqueteId == id);
+            if (enUso)
+            {
+                return OperationResult<bool>.Fail("No se puede eliminar esta receta porque ya existen paquetes históricos asociados. Puedes desactivarla para que no se utilice en nuevas asignaciones.");
+            }
+
+            _context.PlantillaPaqueteDetalles.RemoveRange(tipo.ItemsPlantilla);
+            _context.TiposPaquete.Remove(tipo);
+            await _context.SaveChangesAsync();
+
+            return OperationResult<bool>.Ok(true);
+        }
+        catch (Exception ex)
+        {
+            return OperationResult<bool>.Fail($"Error al eliminar la receta de kit: {ex.Message}");
+        }
+    }
+
     private static PaqueteDto MapearAPaqueteDto(Paquete paquete)
     {
         return new PaqueteDto

@@ -1,7 +1,7 @@
 @model NutriRed.Web.Models.PlantillasIndexViewModel
 
 @{
-    ViewData["Title"] = "Recetas y Plantillas de Kits";
+    ViewData["Title"] = "Recetas de kits";
 }
 
 <div class="container-fluid py-4 px-md-4">
@@ -12,11 +12,11 @@
                 <ol class="breadcrumb small mb-1">
                     <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index" class="text-decoration-none">Inicio</a></li>
                     <li class="breadcrumb-item"><a asp-controller="Paquetes" asp-action="Index" class="text-decoration-none">Paquetes</a></li>
-                    <li class="breadcrumb-item active" aria-current="page">Plantillas de Kits</li>
+                    <li class="breadcrumb-item active" aria-current="page">Recetas de kits</li>
                 </ol>
             </nav>
             <h2 class="fw-bold text-dark mb-0">
-                <i class="bi bi-sliders text-warning me-2"></i>Recetas y Plantillas de Kits
+                <i class="bi bi-sliders text-warning me-2"></i>Recetas de kits
             </h2>
             <p class="text-secondary mb-0">Configuración de raciones bromatológicas oficiales y gestión de alimentos por franja familiar.</p>
         </div>
@@ -24,9 +24,12 @@
             <a asp-action="Armar" class="btn btn-outline-primary rounded-pill px-3 py-2 fw-semibold shadow-xs">
                 <i class="bi bi-magic me-1"></i> Ir al Armado de Kits
             </a>
-            <a asp-action="CrearPlantilla" class="btn btn-primary rounded-pill px-3 py-2 fw-semibold shadow-xs">
-                <i class="bi bi-plus-lg me-1"></i> Nueva Plantilla de Kit
-            </a>
+            @if (User.IsInRole("Administrador"))
+            {
+                <a asp-action="CrearPlantilla" class="btn btn-primary rounded-pill px-3 py-2 fw-semibold shadow-xs">
+                    <i class="bi bi-plus-lg me-1"></i> Nuevo kit
+                </a>
+            }
         </div>
     </div>
 
@@ -46,7 +49,7 @@
         </div>
     }
 
-    <!-- Grilla de Plantillas de Kits -->
+    <!-- Grilla de Recetas de Kits -->
     <div class="row g-4">
         @if (Model.TiposPaquete != null && Model.TiposPaquete.Any())
         {
@@ -56,25 +59,33 @@
                 var categoriasDistintas = kit.ItemsPlantilla.Select(i => i.Producto?.Categoria?.Nombre ?? "General").Distinct().Count();
 
                 <div class="col-xl-4 col-md-6">
-                    <div class="card h-100 border rounded-4 shadow-sm hover-shadow transition-all bg-white overflow-hidden d-flex flex-column">
+                    <div class="card h-100 border rounded-4 shadow-sm hover-shadow transition-all bg-white overflow-hidden d-flex flex-column recipe-card">
                         <!-- Cabecera de la Tarjeta -->
                         <div class="card-header bg-light bg-opacity-50 border-bottom p-4">
-                            <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+                            <div class="d-flex justify-content-between align-items-start gap-2 mb-2 flex-wrap">
                                 <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-3 py-1 font-mono small">
                                     <i class="bi bi-people me-1"></i>@(kit.MinIntegrantes == kit.MaxIntegrantes ? $"{kit.MinIntegrantes} personas" : $"{kit.MinIntegrantes} a {kit.MaxIntegrantes} integrantes")
                                 </span>
-                                @if (kit.Activo)
-                                {
-                                    <span class="badge bg-success bg-opacity-10 text-success border border-success small rounded-pill px-2 py-1">
-                                        <i class="bi bi-check-circle me-1"></i>Activo
-                                    </span>
-                                }
-                                else
-                                {
-                                    <span class="badge bg-secondary bg-opacity-10 text-secondary border small rounded-pill px-2 py-1">
-                                        Inactivo
-                                    </span>
-                                }
+                                <div class="d-flex gap-1">
+                                    @if (kit.EsKitBase)
+                                    {
+                                        <span class="badge bg-info bg-opacity-10 text-info border border-info small rounded-pill px-2 py-1" title="Kit oficial base del sistema (no eliminable)">
+                                            <i class="bi bi-shield-check me-1"></i>Oficial Base
+                                        </span>
+                                    }
+                                    @if (kit.Activo)
+                                    {
+                                        <span class="badge bg-success bg-opacity-10 text-success border border-success small rounded-pill px-2 py-1">
+                                            <i class="bi bi-check-circle me-1"></i>Activo
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary bg-opacity-10 text-secondary border small rounded-pill px-2 py-1">
+                                            Inactivo
+                                        </span>
+                                    }
+                                </div>
                             </div>
                             <h5 class="fw-bold text-dark mb-1">@kit.Nombre</h5>
                             <p class="text-muted small mb-0">@(kit.Descripcion ?? "Sin descripción asignada.")</p>
@@ -84,14 +95,14 @@
                         <div class="card-body p-4 flex-grow-1">
                             <div class="row g-2 mb-3 text-center">
                                 <div class="col-6">
-                                    <div class="p-2 rounded-3 bg-light border">
+                                    <div class="p-2 rounded-3 bg-light border recipe-metric-box">
                                         <small class="text-muted d-block text-uppercase" style="font-size: 0.68rem;">Alimentos</small>
                                         <span class="fs-5 fw-bold text-dark font-mono">@kit.ItemsPlantilla.Count</span>
                                         <small class="text-secondary d-block" style="font-size: 0.7rem;">variedades</small>
                                     </div>
                                 </div>
                                 <div class="col-6">
-                                    <div class="p-2 rounded-3 bg-light border">
+                                    <div class="p-2 rounded-3 bg-light border recipe-metric-box">
                                         <small class="text-muted d-block text-uppercase" style="font-size: 0.68rem;">Ración Total</small>
                                         <span class="fs-5 fw-bold text-primary font-mono">@Math.Round(totalUnidades)</span>
                                         <small class="text-secondary d-block" style="font-size: 0.7rem;">unidades</small>
@@ -103,7 +114,7 @@
                             <h6 class="small fw-bold text-secondary text-uppercase mb-2" style="font-size: 0.72rem;">
                                 <i class="bi bi-basket me-1"></i>Composición de la Receta:
                             </h6>
-                            <div class="list-group list-group-flush rounded-3 border overflow-auto" style="max-height: 220px;">
+                            <div class="list-group list-group-flush rounded-3 border overflow-auto recipe-food-list" style="max-height: 220px;">
                                 @if (kit.ItemsPlantilla.Any())
                                 {
                                     @foreach (var item in kit.ItemsPlantilla.OrderBy(i => i.Producto?.Categoria?.Nombre).ThenBy(i => i.Producto?.Nombre))
@@ -124,17 +135,38 @@
                                 else
                                 {
                                     <div class="p-3 text-center text-muted small fst-italic">
-                                        Sin alimentos configurados en esta plantilla.
+                                        Sin alimentos configurados en esta receta.
                                     </div>
                                 }
                             </div>
                         </div>
 
                         <!-- Pie con Acciones -->
-                        <div class="card-footer bg-white border-top p-3 text-end">
-                            <a asp-action="EditarPlantilla" asp-route-id="@kit.Id" class="btn btn-outline-warning text-dark btn-sm rounded-pill px-3 py-2 fw-semibold w-100">
-                                <i class="bi bi-pencil-square me-1"></i> Configurar Receta y Cantidades
-                            </a>
+                        <div class="card-footer bg-white border-top p-3">
+                            @if (User.IsInRole("Administrador"))
+                            {
+                                <div class="d-flex gap-2">
+                                    <a asp-action="EditarPlantilla" asp-route-id="@kit.Id" class="btn btn-outline-warning text-dark btn-sm rounded-pill px-3 py-2 fw-semibold flex-grow-1">
+                                        <i class="bi bi-pencil-square me-1"></i> Configurar Receta y Cantidades
+                                    </a>
+                                    @if (!kit.EsKitBase)
+                                    {
+                                        <form asp-action="EliminarPlantilla" asp-route-id="@kit.Id" method="post" class="d-inline"
+                                              onsubmit="return confirm('¿Está seguro de que desea eliminar permanentemente la receta \'@kit.Nombre\'? Esta acción no se puede deshacer.');">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="btn btn-outline-danger btn-sm rounded-pill px-3 py-2 fw-semibold" title="Eliminar este kit personalizado">
+                                                <i class="bi bi-trash3"></i>
+                                            </button>
+                                        </form>
+                                    }
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="text-center text-muted small py-1">
+                                    <i class="bi bi-eye me-1"></i> Modo consulta (Edición restringida a Administradores)
+                                </div>
+                            }
                         </div>
                     </div>
                 </div>
@@ -145,15 +177,18 @@
             <div class="col-12">
                 <div class="card border rounded-4 shadow-sm p-5 text-center">
                     <i class="bi bi-sliders fs-1 text-muted opacity-50 mb-3"></i>
-                    <h5 class="fw-bold text-dark">No hay plantillas de kit configuradas</h5>
+                    <h5 class="fw-bold text-dark">No hay recetas de kits configuradas</h5>
                     <p class="text-muted mx-auto" style="max-width: 450px;">
-                        Comienza creando las plantillas base según el tamaño de las familias beneficiarias.
+                        Comienza creando las recetas base según el tamaño de las familias beneficiarias.
                     </p>
-                    <div>
-                        <a asp-action="CrearPlantilla" class="btn btn-primary rounded-pill px-4 py-2">
-                            <i class="bi bi-plus-lg me-1"></i> Crear Primera Plantilla
-                        </a>
-                    </div>
+                    @if (User.IsInRole("Administrador"))
+                    {
+                        <div>
+                            <a asp-action="CrearPlantilla" class="btn btn-primary rounded-pill px-4 py-2">
+                                <i class="bi bi-plus-lg me-1"></i> Nuevo kit
+                            </a>
+                        </div>
+                    }
                 </div>
             </div>
         }

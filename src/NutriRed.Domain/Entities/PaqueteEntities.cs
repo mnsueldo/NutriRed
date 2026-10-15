@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using NutriRed.Domain.Enums;
 
 namespace NutriRed.Domain.Entities;
@@ -80,6 +81,16 @@ public class TipoPaquete
 
     [Display(Name = "Activo")]
     public bool Activo { get; set; } = true;
+
+    /// <summary>
+    /// Identifica si el kit corresponde a alguna de las 3 plantillas nutricionales base oficiales
+    /// (1-2 integrantes, 3-5 integrantes, 6+ integrantes). Los kits base no pueden ser eliminados.
+    /// </summary>
+    [NotMapped]
+    public bool EsKitBase =>
+        (MinIntegrantes == 1 && MaxIntegrantes == 2) ||
+        (MinIntegrantes == 3 && MaxIntegrantes == 5) ||
+        (MinIntegrantes >= 6 && (Nombre.Contains("Numeroso") || MaxIntegrantes >= 20));
 
     // Productos estándar que componen esta plantilla de paquete
     public ICollection<PlantillaPaqueteDetalle> ItemsPlantilla { get; set; } = new List<PlantillaPaqueteDetalle>();

@@ -1,4 +1,4 @@
-﻿@model NutriRed.Web.Models.TrazabilidadFiltroViewModel
+@model NutriRed.Web.Models.TrazabilidadFiltroViewModel
 @{
     ViewData["Title"] = "Módulo de Trazabilidad";
 }
@@ -48,7 +48,7 @@
 </style>
 
 <!-- Encabezado de Página -->
-<div class="d-flex align-items-center justify-content-between mb-4">
+<div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-3">
     <div>
         <h2 class="fw-bold text-dark mb-1 d-flex align-items-center gap-2">
             <span class="bg-success bg-opacity-10 text-success p-2 rounded-3 d-inline-flex align-items-center justify-content-center" style="width: 42px; height: 42px;">
@@ -57,6 +57,11 @@
             Módulo de Trazabilidad
         </h2>
         <p class="text-muted mb-0 ms-1 small">Rastrea la cadena de custodia completa de los alimentos desde el donante hasta la familia receptora.</p>
+    </div>
+    <div>
+        <a asp-controller="Dashboard" asp-action="Index" class="btn btn-outline-secondary rounded-pill px-3 py-2 fw-semibold">
+            <i class="bi bi-arrow-left me-1"></i> Volver al Dashboard
+        </a>
     </div>
 </div>
 

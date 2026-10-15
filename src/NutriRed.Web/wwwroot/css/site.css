@@ -1299,6 +1299,169 @@ body.high-contrast .btn-a11y-fab:hover {
 }
 
 /* ==========================================================================
+   Listados de Alimentos y Alertas (Recetas de Kits & Prevención de Desperdicio FEFO)
+   Accesibilidad en Modo Oscuro y Alto Contraste
+   ========================================================================== */
+
+/* --- MODO OSCURO --- */
+body.dark-mode .list-group {
+  background-color: transparent !important;
+  border-color: #334155 !important;
+}
+
+body.dark-mode .list-group-item {
+  background-color: #1e293b !important;
+  color: #f8fafc !important;
+  border-color: #334155 !important;
+}
+
+body.dark-mode .list-group-item.list-group-item-action {
+  background-color: #1e293b !important;
+  color: #f8fafc !important;
+}
+
+body.dark-mode .list-group-item.list-group-item-action:hover,
+body.dark-mode .list-group-item.list-group-item-action:focus {
+  background-color: #273549 !important;
+  color: #ffffff !important;
+}
+
+body.dark-mode .list-group-item .text-dark,
+body.dark-mode .list-group-item h6 {
+  color: #f8fafc !important;
+}
+
+body.dark-mode .list-group-item .text-muted,
+body.dark-mode .list-group-item .text-secondary {
+  color: #94a3b8 !important;
+}
+
+body.dark-mode .list-group-item .badge.bg-light {
+  background-color: #0f172a !important;
+  color: #38bdf8 !important;
+  border-color: #334155 !important;
+}
+
+body.dark-mode .recipe-metric-box {
+  background-color: #0f172a !important;
+  border-color: #334155 !important;
+}
+
+body.dark-mode .recipe-metric-box .text-dark {
+  color: #f8fafc !important;
+}
+
+body.dark-mode .recipe-metric-box .text-secondary {
+  color: #94a3b8 !important;
+}
+
+body.dark-mode .btn-outline-warning.text-dark {
+  color: #fde047 !important;
+  border-color: #eab308 !important;
+}
+
+body.dark-mode .btn-outline-warning.text-dark:hover {
+  background-color: #eab308 !important;
+  color: #000000 !important;
+}
+
+body.dark-mode .card-header.bg-danger .badge.bg-white {
+  background-color: rgba(255, 255, 255, 0.2) !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.4) !important;
+}
+
+/* --- MODO ALTO CONTRASTE --- */
+body.high-contrast .list-group {
+  background-color: #000000 !important;
+  border: 2px solid #ffffff !important;
+}
+
+body.high-contrast .list-group-item {
+  background-color: #000000 !important;
+  color: #ffffff !important;
+  border-color: #ffffff !important;
+}
+
+body.high-contrast .list-group-item.list-group-item-action {
+  background-color: #000000 !important;
+  color: #ffffff !important;
+}
+
+body.high-contrast .list-group-item.list-group-item-action:hover,
+body.high-contrast .list-group-item.list-group-item-action:focus {
+  background-color: #1a1a1a !important;
+  color: #ffff00 !important;
+  outline: 1px solid #ffff00 !important;
+}
+
+body.high-contrast .list-group-item .text-dark,
+body.high-contrast .list-group-item h6 {
+  color: #ffffff !important;
+}
+
+body.high-contrast .list-group-item .text-muted,
+body.high-contrast .list-group-item .text-secondary,
+body.high-contrast .list-group-item p {
+  color: #ffff00 !important;
+}
+
+body.high-contrast .list-group-item .badge.bg-light {
+  background-color: #000000 !important;
+  color: #ffff00 !important;
+  border: 2px solid #ffff00 !important;
+  font-weight: 700 !important;
+}
+
+body.high-contrast .list-group-item .badge.bg-warning {
+  background-color: #000000 !important;
+  color: #ffff00 !important;
+  border: 2px solid #ffff00 !important;
+}
+
+body.high-contrast .list-group-item .badge.bg-danger {
+  background-color: #000000 !important;
+  color: #ff4d4d !important;
+  border: 2px solid #ff4d4d !important;
+}
+
+body.high-contrast .recipe-metric-box {
+  background-color: #000000 !important;
+  border: 2px solid #ffffff !important;
+}
+
+body.high-contrast .recipe-metric-box * {
+  color: #ffffff !important;
+}
+
+body.high-contrast .recipe-metric-box .text-primary {
+  color: #ffff00 !important;
+}
+
+body.high-contrast .btn-outline-warning.text-dark {
+  color: #ffff00 !important;
+  border: 2px solid #ffff00 !important;
+  background-color: #000000 !important;
+}
+
+body.high-contrast .btn-outline-warning.text-dark:hover {
+  background-color: #ffff00 !important;
+  color: #000000 !important;
+}
+
+body.high-contrast .card-header.bg-danger {
+  background-color: #000000 !important;
+  border-bottom: 2px solid #ff4d4d !important;
+  color: #ffffff !important;
+}
+
+body.high-contrast .card-header.bg-danger .badge.bg-white {
+  background-color: #000000 !important;
+  color: #ff4d4d !important;
+  border: 2px solid #ff4d4d !important;
+}
+
+/* ==========================================================================
    Comprobantes Oficiales, Fichas de Paquetes y Constancias Imprimibles
    (Accesibilidad en Modo Oscuro y Alto Contraste + Preservación @media print)
    ========================================================================== */

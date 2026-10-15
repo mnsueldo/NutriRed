@@ -343,6 +343,7 @@ public class PaquetesController : Controller
     }
 
     // GET: Paquetes/CrearPlantilla
+    [Authorize(Roles = "Administrador")]
     public IActionResult CrearPlantilla()
     {
         var model = new CrearPlantillaViewModel
@@ -357,6 +358,7 @@ public class PaquetesController : Controller
     // POST: Paquetes/CrearPlantilla
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [Authorize(Roles = "Administrador")]
     public async Task<IActionResult> CrearPlantilla(CrearPlantillaViewModel model)
     {
         if (model.MinIntegrantes > model.MaxIntegrantes)
@@ -387,6 +389,7 @@ public class PaquetesController : Controller
     }
 
     // GET: Paquetes/EditarPlantilla/3
+    [Authorize(Roles = "Administrador")]
     public async Task<IActionResult> EditarPlantilla(int id)
     {
         if (id <= 0)
@@ -432,6 +435,7 @@ public class PaquetesController : Controller
     // POST: Paquetes/EditarPlantilla
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [Authorize(Roles = "Administrador")]
     public async Task<IActionResult> EditarPlantilla(EditarPlantillaViewModel model)
     {
         if (model.MinIntegrantes > model.MaxIntegrantes)
@@ -473,6 +477,30 @@ public class PaquetesController : Controller
         }
 
         TempData["Exito"] = $"La receta de '{model.Nombre}' fue actualizada con éxito.";
+        return RedirectToAction(nameof(Plantillas));
+    }
+
+    // POST: Paquetes/EliminarPlantilla/3
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [Authorize(Roles = "Administrador")]
+    public async Task<IActionResult> EliminarPlantilla(int id)
+    {
+        if (id <= 0)
+        {
+            return NotFound();
+        }
+
+        var result = await _paqueteService.EliminarTipoPaqueteAsync(id);
+        if (result.Success)
+        {
+            TempData["Exito"] = "La receta de kit fue eliminada exitosamente.";
+        }
+        else
+        {
+            TempData["Error"] = result.ErrorMessage ?? "No se pudo eliminar la receta de kit.";
+        }
+
         return RedirectToAction(nameof(Plantillas));
     }
 }
