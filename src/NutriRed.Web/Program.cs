@@ -5,9 +5,13 @@ using NutriRed.Domain.Entities;
 using NutriRed.Services;
 using NutriRed.Services.Interfaces;
 using NutriRed.Services.Implementations;
+using QuestPDF.Infrastructure;
 
 // Compatibilidad de fechas para PostgreSQL (Npgsql) en Supabase
 AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+
+// Configuración de licencia para QuestPDF
+QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
 
 var builder = WebApplication.CreateBuilder(args);
 

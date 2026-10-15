@@ -9,6 +9,9 @@ using NutriRed.Services.DTOs;
 using NutriRed.Services.Interfaces;
 using NutriRed.Web.Models;
 using System.Text;
+using QuestPDF.Fluent;
+using QuestPDF.Infrastructure;
+using QuestPDF.Helpers;
 
 namespace NutriRed.Web.Controllers
 {
@@ -120,7 +123,10 @@ namespace NutriRed.Web.Controllers
         public async Task<IActionResult> Exportar(string formato, string tab = "inventario", DateTime? fechaDesde = null, DateTime? fechaHasta = null, int? categoriaId = null, string? busquedaInventario = null, string? estadoStock = null, string? semaforoFefo = null, int? donanteId = null, int? tipoPaqueteId = null, string? voluntarioId = null, string? busqueda = null)
         {
             var sb = new StringBuilder();
-            string fileName = $"Reporte_{tab}_{DateTime.Now:yyyyMMdd_HHmmss}";
+            string fechaStr = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+            string fileName = $"Reporte_{tab}_{fechaStr}";
+            string contentType = "text/csv";
+            string extension = "csv";
 
             if (tab.Equals("inventario", StringComparison.OrdinalIgnoreCase))
             {
@@ -172,14 +178,106 @@ namespace NutriRed.Web.Controllers
 
             if (formato?.ToLower() == "excel")
             {
-                return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", $"{fileName}.xlsx");
+                contentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+                extension = "xlsx";
             }
             else if (formato?.ToLower() == "pdf")
             {
-                return File(bytes, "application/pdf", $"{fileName}.pdf");
+                // 1. Obtener los datos de forma asincrónica ANTES de construir el PDF
+                List<ReporteInventarioItemDto> datosInventario = new();
+                if (tab.Equals("inventario", StringComparison.OrdinalIgnoreCase))
+                {
+                    datosInventario = await _reporteService.ObtenerReporteInventarioAsync(categoriaId, busquedaInventario, estadoStock, semaforoFefo);
+                }
+
+                // 2. Generación de PDF profesional y estructurado con QuestPDF
+                var pdfBytes = QuestPDF.Fluent.Document.Create(container =>
+                {
+                    container.Page(page =>
+                    {
+                        page.Size(QuestPDF.Helpers.PageSizes.A4.Landscape());
+                        page.Margin(30);
+                        page.PageColor(QuestPDF.Helpers.Colors.White);
+                        page.DefaultTextStyle(x => x.FontSize(10).FontColor(QuestPDF.Helpers.Colors.Grey.Darken3));
+
+                        // Encabezado del PDF
+                        page.Header().Row(row =>
+                        {
+                            row.RelativeItem().Column(col =>
+                            {
+                                col.Item().Text("NutriRed - Banco de Alimentos").Bold().FontSize(18).FontColor("#198754");
+                                col.Item().Text($"Reporte Consolidado de {tab.ToUpper()}").Medium().FontSize(12).FontColor(QuestPDF.Helpers.Colors.Grey.Medium);
+                            });
+                            row.ConstantItem(150).AlignRight().Column(col =>
+                            {
+                                col.Item().Text($"Fecha: {DateTime.Now:dd/MM/yyyy HH:mm}").FontSize(9).FontColor(QuestPDF.Helpers.Colors.Grey.Medium);
+                                col.Item().Text("Sistema de Trazabilidad").FontSize(9).FontColor(QuestPDF.Helpers.Colors.Grey.Medium);
+                            });
+                        });
+
+                        // Contenido Principal (Tabla Estructurada)
+                        page.Content().PaddingVertical(15).Column(col =>
+                        {
+                            if (tab.Equals("inventario", StringComparison.OrdinalIgnoreCase))
+                            {
+                                col.Item().Table(table =>
+                                {
+                                    table.ColumnsDefinition(columns =>
+                                    {
+                                        columns.RelativeColumn(3); // Producto
+                                        columns.RelativeColumn(1.5f); // Categoría
+                                        columns.RelativeColumn(1.5f); // Lote
+                                        columns.RelativeColumn(1.2f); // Vencimiento
+                                        columns.RelativeColumn(1f); // Stock
+                                        columns.RelativeColumn(1.5f); // Estado
+                                    });
+
+                                    // Cabecera de la Tabla
+                                    table.Header(header =>
+                                    {
+                                        header.Cell().Background("#198754").Padding(5).Text("Producto / EAN").Bold().FontColor(QuestPDF.Helpers.Colors.White);
+                                        header.Cell().Background("#198754").Padding(5).Text("Categoría").Bold().FontColor(QuestPDF.Helpers.Colors.White);
+                                        header.Cell().Background("#198754").Padding(5).Text("Lote").Bold().FontColor(QuestPDF.Helpers.Colors.White);
+                                        header.Cell().Background("#198754").Padding(5).Text("Vencimiento").Bold().FontColor(QuestPDF.Helpers.Colors.White);
+                                        header.Cell().Background("#198754").Padding(5).Text("Stock").Bold().FontColor(QuestPDF.Helpers.Colors.White);
+                                        header.Cell().Background("#198754").Padding(5).Text("Estado").Bold().FontColor(QuestPDF.Helpers.Colors.White);
+                                    });
+
+                                    // Filas de Datos
+                                    foreach (var d in datosInventario)
+                                    {
+                                        table.Cell().BorderBottom(1).BorderColor(QuestPDF.Helpers.Colors.Grey.Lighten2).Padding(5).Text(d.Producto);
+                                        table.Cell().BorderBottom(1).BorderColor(QuestPDF.Helpers.Colors.Grey.Lighten2).Padding(5).Text(d.Categoria);
+                                        table.Cell().BorderBottom(1).BorderColor(QuestPDF.Helpers.Colors.Grey.Lighten2).Padding(5).Text(d.NumeroLote);
+                                        table.Cell().BorderBottom(1).BorderColor(QuestPDF.Helpers.Colors.Grey.Lighten2).Padding(5).Text(d.FechaVencimiento != DateTime.MinValue ? d.FechaVencimiento.ToString("dd/MM/yyyy") : "-");
+                                        table.Cell().BorderBottom(1).BorderColor(QuestPDF.Helpers.Colors.Grey.Lighten2).Padding(5).Text($"{d.StockDisponible} {d.UnidadMedida}");
+                                        table.Cell().BorderBottom(1).BorderColor(QuestPDF.Helpers.Colors.Grey.Lighten2).Padding(5).Text(d.Estado);
+                                    }
+                                });
+                            }
+                            else
+                            {
+                                col.Item().Text(sb.ToString()).FontSize(9);
+                            }
+                        });
+
+                        // Pie de Página
+                        page.Footer().AlignCenter().Text(x =>
+                        {
+                            x.Span("Página ");
+                            x.CurrentPageNumber();
+                            x.Span(" de ");
+                            x.TotalPages();
+                        });
+                    });
+                }).GeneratePdf();
+
+                bytes = pdfBytes;
+                contentType = "application/pdf";
+                extension = "pdf";
             }
 
-            return File(bytes, "text/csv", $"{fileName}.csv");
+            return File(bytes, contentType, $"{fileName}.{extension}");
         }
     }
 }

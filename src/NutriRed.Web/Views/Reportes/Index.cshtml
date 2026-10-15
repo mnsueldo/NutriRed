@@ -458,12 +458,6 @@
                         <i class="bi bi-file-earmark-spreadsheet-fill fs-5"></i>Descargar CSV
                     </a>
 
-                    <a asp-action="Exportar" asp-route-formato="excel" asp-route-tab="@Model.TabActiva"
-                       asp-route-fechaDesde="@(Model.FechaDesde?.ToString("yyyy-MM-dd"))" asp-route-fechaHasta="@(Model.FechaHasta?.ToString("yyyy-MM-dd"))" asp-route-busqueda="@Model.Busqueda"
-                       class="btn btn-export-excel rounded-3 fw-semibold py-2.5 d-flex align-items-center justify-content-center gap-2 shadow-sm text-decoration-none">
-                        <i class="bi bi-file-earmark-excel-fill fs-5"></i>Descargar Excel
-                    </a>
-
                     <a asp-action="Exportar" asp-route-formato="pdf" asp-route-tab="@Model.TabActiva"
                        asp-route-fechaDesde="@(Model.FechaDesde?.ToString("yyyy-MM-dd"))" asp-route-fechaHasta="@(Model.FechaHasta?.ToString("yyyy-MM-dd"))" asp-route-busqueda="@Model.Busqueda"
                        class="btn btn-export-pdf rounded-3 fw-semibold py-2.5 d-flex align-items-center justify-content-center gap-2 shadow-sm text-decoration-none">
@@ -481,3 +475,4 @@
         </div>
     </div>
 </div>
+
