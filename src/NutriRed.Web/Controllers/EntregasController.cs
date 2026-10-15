@@ -241,7 +241,7 @@ public class EntregasController : Controller
         }
         else
         {
-            TempData["Advertencia"] = $"Se asentó el intento de entrega no concretado para el paquete '{model.CodigoSeguimiento}' por motivo: {model.MotivoNoEntrega}.";
+            TempData["Advertencia"] = $"Se asentó el intento no concretado para el paquete '{model.CodigoSeguimiento}' (Motivo: {model.MotivoNoEntrega}). Los alimentos fueron restituidos al inventario de sus lotes correspondientes.";
         }
 
         return RedirectToAction(nameof(Index));

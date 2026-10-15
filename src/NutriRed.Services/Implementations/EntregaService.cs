@@ -211,6 +211,7 @@ public class EntregaService : IEntregaService
 
     public async Task<OperationResult> RegistrarEntregaNoConcretadaAsync(RegistrarEntregaFallidaRequest request)
     {
+        using var transaction = await _context.Database.BeginTransactionAsync();
         try
         {
             if (string.IsNullOrWhiteSpace(request.CodigoSeguimiento))
@@ -227,6 +228,8 @@ public class EntregaService : IEntregaService
 
             var paquete = await _context.Paquetes
                 .Include(p => p.FamiliaBeneficiaria)
+                .Include(p => p.Detalles)
+                    .ThenInclude(d => d.Lote)
                 .FirstOrDefaultAsync(p => p.CodigoSeguimiento == codigoNormalizado);
 
             if (paquete == null)
@@ -236,11 +239,10 @@ public class EntregaService : IEntregaService
 
             if (paquete.Estado != EstadoPaquete.Preparado)
             {
-                return OperationResult.Fail("El paquete no se encuentra en estado Preparado.");
+                return OperationResult.Fail("El paquete no se encuentra en estado Preparado y no puede ser cancelado.");
             }
 
-            // Regla de Negocio (Pág. 10 del PDF):
-            // "Entrega no concretada: Permitir marcar el paquete como no entregado con registro de motivo (ej. ausente, rechazado)"
+            // 1. Asentar registro formal de entrega no concretada
             var entregaFallida = new Entrega
             {
                 PaqueteId = paquete.Id,
@@ -256,16 +258,54 @@ public class EntregaService : IEntregaService
 
             _context.Entregas.Add(entregaFallida);
 
-            // Transición a Cancelado para que deje de figurar como disponible para despacho
+            // 2. Transición de estado a Cancelado (inmutable para despacho)
             paquete.Estado = EstadoPaquete.Cancelado;
 
+            // 3. Restitución física de stock a los lotes de origen y asiento en Kárdex
+            var usuarioOperador = string.IsNullOrWhiteSpace(request.VoluntarioDespachoId) ? "operador_despacho" : request.VoluntarioDespachoId.Trim();
+            var hoy = DateTime.Today;
+
+            foreach (var detalle in paquete.Detalles)
+            {
+                var loteDb = detalle.Lote ?? await _context.Lotes.FindAsync(detalle.LoteId);
+                if (loteDb != null)
+                {
+                    // Reintegrar la cantidad física al lote
+                    loteDb.CantidadDisponible += detalle.Cantidad;
+
+                    // Si el lote figuraba como agotado, evaluamos si puede volver a Disponible o si venció mientras tanto
+                    if (loteDb.Estado == EstadoLote.Agotado)
+                    {
+                        loteDb.Estado = loteDb.FechaVencimiento.Date <= hoy
+                            ? EstadoLote.Vencido
+                            : EstadoLote.Disponible;
+                    }
+
+                    // Movimiento auditable de reingreso en el Kárdex
+                    var movimiento = new MovimientoStock
+                    {
+                        LoteId = loteDb.Id,
+                        TipoMovimiento = TipoMovimiento.AjusteManual,
+                        Motivo = MotivoMovimiento.AjusteInventario,
+                        Cantidad = detalle.Cantidad,
+                        Fecha = DateTime.UtcNow,
+                        UsuarioId = usuarioOperador,
+                        Observaciones = $"Reintegro por entrega no concretada del Paquete {paquete.CodigoSeguimiento}. Motivo: {request.MotivoNoEntrega.Trim()}"
+                    };
+
+                    _context.MovimientosStock.Add(movimiento);
+                }
+            }
+
             await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
 
             return OperationResult.Ok();
         }
         catch (Exception ex)
         {
-            return OperationResult.Fail($"Error al registrar la entrega no concretada: {ex.Message}");
+            await transaction.RollbackAsync();
+            return OperationResult.Fail($"Error al registrar la entrega no concretada y restituir el stock: {ex.Message}");
         }
     }
 

@@ -503,4 +503,36 @@ public class PaquetesController : Controller
 
         return RedirectToAction(nameof(Plantillas));
     }
+
+    // POST: Paquetes/Cancelar/3
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Cancelar(int id, string motivo)
+    {
+        if (id <= 0)
+        {
+            return NotFound();
+        }
+
+        if (string.IsNullOrWhiteSpace(motivo))
+        {
+            TempData["Error"] = "Debe indicar el motivo de la cancelación del paquete.";
+            return RedirectToAction(nameof(Detalles), new { id });
+        }
+
+        var user = await _userManager.GetUserAsync(User);
+        var operador = user?.NombreCompleto ?? User.Identity?.Name ?? "Operador Depósito";
+
+        var result = await _paqueteService.CancelarPaqueteAsync(id, motivo.Trim(), operador);
+        if (result.Success)
+        {
+            TempData["Advertencia"] = "El paquete ha sido cancelado y los alimentos fueron restituidos al stock de sus lotes correspondientes.";
+        }
+        else
+        {
+            TempData["Error"] = result.ErrorMessage ?? "No se pudo cancelar el paquete.";
+        }
+
+        return RedirectToAction(nameof(Detalles), new { id });
+    }
 }

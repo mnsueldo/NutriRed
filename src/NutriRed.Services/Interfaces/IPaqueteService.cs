@@ -17,4 +17,5 @@ public interface IPaqueteService
     Task<OperationResult<TipoPaquete>> ActualizarPlantillaAsync(int id, string nombre, string? descripcion, int minIntegrantes, int maxIntegrantes, bool activo, List<(int productoId, decimal cantidad)> items);
     Task<OperationResult<TipoPaquete>> CrearTipoPaqueteAsync(string nombre, string? descripcion, int minIntegrantes, int maxIntegrantes, bool activo);
     Task<OperationResult<bool>> EliminarTipoPaqueteAsync(int id);
+    Task<OperationResult> CancelarPaqueteAsync(int id, string motivo, string usuarioId);
 }

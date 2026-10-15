@@ -45,6 +45,28 @@
 </style>
 
 <!-- Barra Superior de Acciones (No se imprime) -->
+@if (TempData["Exito"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show rounded-4 border-0 shadow-sm mb-4 no-print" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i>@TempData["Exito"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+    </div>
+}
+@if (TempData["Advertencia"] != null)
+{
+    <div class="alert alert-warning alert-dismissible fade show rounded-4 border-0 shadow-sm mb-4 no-print" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>@TempData["Advertencia"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+    </div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show rounded-4 border-0 shadow-sm mb-4 no-print" role="alert">
+        <i class="bi bi-exclamation-octagon-fill me-2"></i>@TempData["Error"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+    </div>
+}
+
 <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2 no-print">
     <div>
         <a asp-action="Index" class="btn btn-outline-secondary rounded-pill px-3 shadow-sm me-2">
@@ -55,6 +77,12 @@
         </a>
     </div>
     <div class="d-flex gap-2">
+        @if (Model.Estado == EstadoPaquete.Preparado)
+        {
+            <button type="button" class="btn btn-outline-danger rounded-pill px-4 shadow-sm fw-semibold" data-bs-toggle="modal" data-bs-target="#modalCancelarPaquete">
+                <i class="bi bi-x-circle me-1"></i> Cancelar Paquete
+            </button>
+        }
         <button onclick="window.print()" class="btn btn-primary rounded-pill px-4 shadow-sm fw-semibold">
             <i class="bi bi-printer me-2"></i> Imprimir Rótulo QR
         </button>
@@ -234,3 +262,51 @@
         </div>
     </div>
 </div>
+
+@if (Model.Estado == EstadoPaquete.Preparado)
+{
+    <!-- MODAL: CANCELAR PAQUETE CON RESTITUCIÓN DE STOCK -->
+    <div class="modal fade no-print" id="modalCancelarPaquete" tabindex="-1" aria-labelledby="modalCancelarPaqueteLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content border-0 shadow rounded-4 overflow-hidden">
+                <form asp-action="Cancelar" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@Model.Id" />
+
+                    <div class="modal-header bg-danger text-white">
+                        <h5 class="modal-title" id="modalCancelarPaqueteLabel">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>Cancelar Paquete Asistencial
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                    </div>
+                    <div class="modal-body p-4">
+                        <p class="text-secondary small mb-3">
+                            ¿Está seguro de que desea cancelar la preparación del paquete <strong>@Model.CodigoSeguimiento</strong> destinado a <strong>@Model.FamiliaTitular</strong>?
+                        </p>
+                        <div class="alert alert-info py-2 px-3 small border-0 rounded-3 mb-3">
+                            <i class="bi bi-arrow-return-left me-1 text-primary"></i>
+                            <strong>Restitución automática:</strong> Los alimentos reservados para esta caja volverán inmediatamente a estar disponibles en el stock de sus lotes correspondientes.
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Motivo de la cancelación *</label>
+                            <select name="motivo" class="form-select" required>
+                                <option value="">Seleccione el motivo</option>
+                                <option value="Error en el armado o selección de alimentos">Error en el armado o selección de alimentos</option>
+                                <option value="Baja o suspensión de la familia beneficiaria">Baja o suspensión de la familia beneficiaria</option>
+                                <option value="Familia notificó que no retirará">Familia notificó que no retirará</option>
+                                <option value="Deterioro o rotura de caja durante manipulación">Deterioro o rotura de caja durante manipulación</option>
+                                <option value="Otro motivo operativo">Otro motivo operativo</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-footer bg-light">
+                        <button type="button" class="btn btn-outline-secondary rounded-pill px-3" data-bs-dismiss="modal">Volver</button>
+                        <button type="submit" class="btn btn-danger rounded-pill px-4 fw-semibold">
+                            <i class="bi bi-check-circle me-1"></i> Confirmar Cancelación y Restituir
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}

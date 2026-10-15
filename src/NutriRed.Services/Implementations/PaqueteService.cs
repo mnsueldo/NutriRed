@@ -554,6 +554,84 @@ public class PaqueteService : IPaqueteService
         }
     }
 
+    public async Task<OperationResult> CancelarPaqueteAsync(int id, string motivo, string usuarioId)
+    {
+        using var transaction = await _context.Database.BeginTransactionAsync();
+        try
+        {
+            if (id <= 0)
+            {
+                return OperationResult.Fail("Identificador de paquete inválido.");
+            }
+
+            if (string.IsNullOrWhiteSpace(motivo))
+            {
+                return OperationResult.Fail("Debe ingresar el motivo de la cancelación.");
+            }
+
+            var paquete = await _context.Paquetes
+                .Include(p => p.Detalles)
+                    .ThenInclude(d => d.Lote)
+                .FirstOrDefaultAsync(p => p.Id == id);
+
+            if (paquete == null)
+            {
+                return OperationResult.Fail($"No se encontró el paquete con ID {id}.");
+            }
+
+            if (paquete.Estado != EstadoPaquete.Preparado)
+            {
+                return OperationResult.Fail($"Solo se pueden cancelar paquetes en estado Preparado. El estado actual es '{paquete.Estado}'.");
+            }
+
+            // Transición a Cancelado
+            paquete.Estado = EstadoPaquete.Cancelado;
+
+            // Restituir stock a los lotes de origen y asentar en el Kárdex
+            var usuario = string.IsNullOrWhiteSpace(usuarioId) ? "operador_deposito" : usuarioId.Trim();
+            var hoy = DateTime.Today;
+
+            foreach (var detalle in paquete.Detalles)
+            {
+                var loteDb = detalle.Lote ?? await _context.Lotes.FindAsync(detalle.LoteId);
+                if (loteDb != null)
+                {
+                    loteDb.CantidadDisponible += detalle.Cantidad;
+
+                    if (loteDb.Estado == EstadoLote.Agotado)
+                    {
+                        loteDb.Estado = loteDb.FechaVencimiento.Date <= hoy
+                            ? EstadoLote.Vencido
+                            : EstadoLote.Disponible;
+                    }
+
+                    var movimiento = new MovimientoStock
+                    {
+                        LoteId = loteDb.Id,
+                        TipoMovimiento = TipoMovimiento.AjusteManual,
+                        Motivo = MotivoMovimiento.AjusteInventario,
+                        Cantidad = detalle.Cantidad,
+                        Fecha = DateTime.UtcNow,
+                        UsuarioId = usuario,
+                        Observaciones = $"Reintegro por cancelación de Paquete {paquete.CodigoSeguimiento}. Motivo: {motivo.Trim()}"
+                    };
+
+                    _context.MovimientosStock.Add(movimiento);
+                }
+            }
+
+            await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
+
+            return OperationResult.Ok();
+        }
+        catch (Exception ex)
+        {
+            await transaction.RollbackAsync();
+            return OperationResult.Fail($"Error al cancelar el paquete y restituir el stock: {ex.Message}");
+        }
+    }
+
     private static PaqueteDto MapearAPaqueteDto(Paquete paquete)
     {
         return new PaqueteDto
