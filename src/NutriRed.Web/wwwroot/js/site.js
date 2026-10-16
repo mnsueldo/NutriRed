@@ -293,7 +293,7 @@ function initAutoDismissAlerts() {
             if (bsAlert) {
                 bsAlert.close();
             }
-        }, 7000);
+        }, 6000);
     });
 }
 
@@ -306,3 +306,197 @@ function initTooltips() {
         new bootstrap.Tooltip(tooltipTriggerEl);
     });
 }
+
+/**
+ * ==========================================================================
+ * Gestor Global de Experiencia de Usuario (NutriRedUI)
+ * - Toasts dinámicos Bootstrap 5 (reemplaza alert() nativos)
+ * - Modal Universal de Confirmación (reemplaza confirm() nativos)
+ * - Buscador Global Rápido / Command Palette (Ctrl + K)
+ * ==========================================================================
+ */
+const NutriRedUI = {
+    pendingConfirmForm: null,
+
+    init: function () {
+        this.initConfirmModals();
+        this.initCommandPalette();
+    },
+
+    /**
+     * Muestra una notificación Toast flotante de Bootstrap 5
+     * @param {string} message - Texto del mensaje
+     * @param {'success'|'danger'|'warning'|'info'} variant - Estilo visual
+     * @param {string} [title] - Título opcional
+     */
+    toast: function (message, variant = 'warning', title = '') {
+        const container = document.getElementById('toastContainerGlobal');
+        if (!container) return;
+
+        const config = {
+            success: { icon: 'bi-check-circle-fill text-success', border: 'border-success', defaultTitle: 'Operación exitosa' },
+            danger:  { icon: 'bi-exclamation-octagon-fill text-danger', border: 'border-danger', defaultTitle: 'Atención requerida' },
+            warning: { icon: 'bi-exclamation-triangle-fill text-warning', border: 'border-warning', defaultTitle: 'Validación' },
+            info:    { icon: 'bi-info-circle-fill text-info', border: 'border-info', defaultTitle: 'Información' }
+        };
+
+        const cfg = config[variant] || config.warning;
+        const headerTitle = title || cfg.defaultTitle;
+
+        const toastEl = document.createElement('div');
+        toastEl.className = `toast align-items-center bg-white border-0 border-start border-4 ${cfg.border} shadow-lg rounded-3 mb-2`;
+        toastEl.setAttribute('role', 'alert');
+        toastEl.setAttribute('aria-live', 'assertive');
+        toastEl.setAttribute('aria-atomic', 'true');
+
+        toastEl.innerHTML = `
+            <div class="d-flex p-3 align-items-start">
+                <i class="bi ${cfg.icon} fs-5 me-2 mt-0"></i>
+                <div class="me-auto pe-2">
+                    <strong class="d-block text-dark small">${headerTitle}</strong>
+                    <div class="text-secondary small mt-0.5">${message}</div>
+                </div>
+                <button type="button" class="btn-close ms-2 mt-1" data-bs-dismiss="toast" aria-label="Cerrar"></button>
+            </div>
+        `;
+
+        container.appendChild(toastEl);
+        const bsToast = new bootstrap.Toast(toastEl, { delay: 4500 });
+        bsToast.show();
+
+        toastEl.addEventListener('hidden.bs.toast', function () {
+            toastEl.remove();
+        });
+    },
+
+    /**
+     * Intercepta formularios con atributo data-confirm-message y abre #modalConfirmacionUniversal
+     */
+    initConfirmModals: function () {
+        const self = this;
+        const modalEl = document.getElementById('modalConfirmacionUniversal');
+        if (!modalEl) return;
+
+        const titleEl = document.getElementById('modalConfirmacionTitle');
+        const msgEl = document.getElementById('modalConfirmMessage');
+        const iconBox = document.getElementById('modalConfirmIconBox');
+        const iconEl = document.getElementById('modalConfirmIcon');
+        const btnAccept = document.getElementById('btnConfirmModalAccept');
+
+        document.addEventListener('submit', function (e) {
+            const form = e.target;
+            if (!form || !form.hasAttribute('data-confirm-message')) return;
+            if (form.dataset.confirmed === 'true') return;
+
+            e.preventDefault();
+            self.pendingConfirmForm = form;
+
+            const title = form.getAttribute('data-confirm-title') || 'Confirmar Acción';
+            const message = form.getAttribute('data-confirm-message') || '¿Está seguro de que desea continuar?';
+            const variant = form.getAttribute('data-confirm-variant') || 'danger';
+            const btnText = form.getAttribute('data-confirm-btn') || 'Confirmar';
+
+            if (titleEl) titleEl.textContent = title;
+            if (msgEl) msgEl.textContent = message;
+
+            if (iconBox && iconEl) {
+                iconBox.className = `bg-${variant} bg-opacity-10 text-${variant} p-2 rounded-3 d-flex align-items-center justify-content-center`;
+                iconEl.className = variant === 'success'
+                    ? 'bi bi-check-circle-fill fs-5'
+                    : (variant === 'danger' ? 'bi bi-trash3-fill fs-5' : 'bi bi-exclamation-triangle-fill fs-5');
+            }
+
+            if (btnAccept) {
+                btnAccept.className = `btn btn-${variant} rounded-pill px-4 fw-semibold shadow-sm`;
+                btnAccept.innerHTML = `<i class="bi bi-check2-circle me-1"></i> ${btnText}`;
+            }
+
+            const bsModal = bootstrap.Modal.getOrCreateInstance(modalEl);
+            bsModal.show();
+        });
+
+        if (btnAccept) {
+            btnAccept.addEventListener('click', function () {
+                if (self.pendingConfirmForm) {
+                    self.pendingConfirmForm.dataset.confirmed = 'true';
+                    btnAccept.disabled = true;
+                    btnAccept.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Procesando...';
+                    self.pendingConfirmForm.submit();
+                }
+            });
+        }
+    },
+
+    /**
+     * Inicializa el Buscador Rápido / Command Palette (Ctrl + K)
+     */
+    initCommandPalette: function () {
+        const modalEl = document.getElementById('modalCommandPalette');
+        const inputEl = document.getElementById('inputCommandPalette');
+        if (!modalEl || !inputEl) return;
+
+        const items = modalEl.querySelectorAll('.cmd-item');
+        const directBox = document.getElementById('cmdDirectSearchBox');
+        const termTxt = document.getElementById('cmdSearchTermTxt');
+        const linkTrazabilidad = document.getElementById('cmdLinkTrazabilidad');
+        const linkFamilias = document.getElementById('cmdLinkFamilias');
+        const linkProductos = document.getElementById('cmdLinkProductos');
+
+        // Atajo global Ctrl + K
+        document.addEventListener('keydown', function (e) {
+            if ((e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K')) {
+                e.preventDefault();
+                const bsModal = bootstrap.Modal.getOrCreateInstance(modalEl);
+                bsModal.show();
+            }
+        });
+
+        modalEl.addEventListener('shown.bs.modal', function () {
+            inputEl.value = '';
+            inputEl.dispatchEvent(new Event('input'));
+            inputEl.focus();
+        });
+
+        inputEl.addEventListener('input', function () {
+            const q = this.value.trim();
+            const qLower = q.toLowerCase();
+
+            items.forEach(item => {
+                const text = (item.textContent || '').toLowerCase();
+                const kw = (item.getAttribute('data-keywords') || '').toLowerCase();
+                const match = !qLower || text.includes(qLower) || kw.includes(qLower);
+                item.classList.toggle('d-none', !match);
+            });
+
+            if (q.length >= 2 && directBox) {
+                directBox.classList.remove('d-none');
+                if (termTxt) termTxt.textContent = `"${q}"`;
+                const encoded = encodeURIComponent(q);
+                if (linkTrazabilidad) linkTrazabilidad.href = `/Trazabilidad?busqueda=${encoded}`;
+                if (linkFamilias) linkFamilias.href = `/Familias?busqueda=${encoded}`;
+                if (linkProductos) linkProductos.href = `/Productos?busqueda=${encoded}`;
+            } else if (directBox) {
+                directBox.classList.add('d-none');
+            }
+        });
+
+        inputEl.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const firstVisible = modalEl.querySelector('.cmd-item:not(.d-none)');
+                const q = this.value.trim();
+                if (firstVisible && q.length < 4) {
+                    window.location.href = firstVisible.getAttribute('href');
+                } else if (q.length >= 2 && linkTrazabilidad) {
+                    window.location.href = linkTrazabilidad.href;
+                }
+            }
+        });
+    }
+};
+
+window.NutriRedUI = NutriRedUI;
+document.addEventListener('DOMContentLoaded', function () {
+    NutriRedUI.init();
+});
+

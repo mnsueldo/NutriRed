@@ -48,38 +48,44 @@
                 <div class="collapse navbar-collapse" id="navbarNutriRedContent">
                     @if (SignInManager.IsSignedIn(User))
                     {
+                        var ctrl = ViewContext.RouteData.Values["controller"]?.ToString() ?? "";
+                        var act = ViewContext.RouteData.Values["action"]?.ToString() ?? "";
+                        bool esAlmacen = ctrl == "Productos" || ctrl == "Categorias" || ctrl == "Inventario";
+                        bool esDonaciones = ctrl == "Donaciones";
+                        bool esPaquetes = ctrl == "Paquetes";
+
                         <ul class="navbar-nav me-auto mb-2 mb-lg-0 gap-1">
                             <!-- Dashboard -->
                             <li class="nav-item">
-                                <a class="nav-link" asp-controller="Dashboard" asp-action="Index">
+                                <a class="nav-link @(ctrl == "Dashboard" ? "active fw-bold" : "")" asp-controller="Dashboard" asp-action="Index">
                                     <i class="bi bi-speedometer2 me-1"></i> Dashboard
                                 </a>
                             </li>
 
                             <!-- Módulo Almacén & Catálogo -->
                             <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <a class="nav-link dropdown-toggle @(esAlmacen ? "active fw-bold" : "")" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                                     <i class="bi bi-boxes me-1"></i> Almacén
                                 </a>
                                 <ul class="dropdown-menu shadow-sm border-0 rounded-3 mt-2">
                                     <li>
-                                        <a class="dropdown-item py-2" asp-controller="Productos" asp-action="Index">
+                                        <a class="dropdown-item py-2 @(ctrl == "Productos" ? "active bg-emerald-light text-success fw-bold" : "")" asp-controller="Productos" asp-action="Index">
                                             <i class="bi bi-egg-fried text-success me-2"></i> Catálogo de alimentos
                                         </a>
                                     </li>
                                     <li>
-                                        <a class="dropdown-item py-2" asp-controller="Categorias" asp-action="Index">
+                                        <a class="dropdown-item py-2 @(ctrl == "Categorias" ? "active bg-emerald-light text-success fw-bold" : "")" asp-controller="Categorias" asp-action="Index">
                                             <i class="bi bi-tags text-primary me-2"></i> Categorías de alimentos
                                         </a>
                                     </li>
                                     <li><hr class="dropdown-divider"></li>
                                     <li>
-                                        <a class="dropdown-item py-2" asp-controller="Inventario" asp-action="Index">
+                                        <a class="dropdown-item py-2 @(ctrl == "Inventario" && act != "RegistrarMerma" ? "active bg-emerald-light text-success fw-bold" : "")" asp-controller="Inventario" asp-action="Index">
                                             <i class="bi bi-hourglass-split text-warning me-2"></i> Stock de alimentos
                                         </a>
                                     </li>
                                     <li>
-                                        <a class="dropdown-item py-2" asp-controller="Inventario" asp-action="RegistrarMerma">
+                                        <a class="dropdown-item py-2 @(ctrl == "Inventario" && act == "RegistrarMerma" ? "active bg-emerald-light text-success fw-bold" : "")" asp-controller="Inventario" asp-action="RegistrarMerma">
                                             <i class="bi bi-trash3 text-danger me-2"></i> Registro de bajas
                                         </a>
                                     </li>
@@ -88,17 +94,17 @@
 
                             <!-- Módulo Donaciones (RF1) -->
                             <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <a class="nav-link dropdown-toggle @(esDonaciones ? "active fw-bold" : "")" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                                     <i class="bi bi-gift me-1"></i> Donaciones
                                 </a>
                                 <ul class="dropdown-menu shadow-sm border-0 rounded-3 mt-2">
                                     <li>
-                                        <a class="dropdown-item py-2" asp-controller="Donaciones" asp-action="Registrar">
-                                            <i class="bi bi-plus-circle text-success me-2"></i> Recepción de donaciónes
+                                        <a class="dropdown-item py-2 @(esDonaciones && act == "Registrar" ? "active bg-emerald-light text-success fw-bold" : "")" asp-controller="Donaciones" asp-action="Registrar">
+                                            <i class="bi bi-plus-circle text-success me-2"></i> Recepción de donaciones
                                         </a>
                                     </li>
                                     <li>
-                                        <a class="dropdown-item py-2" asp-controller="Donaciones" asp-action="Index">
+                                        <a class="dropdown-item py-2 @(esDonaciones && act != "Registrar" ? "active bg-emerald-light text-success fw-bold" : "")" asp-controller="Donaciones" asp-action="Index">
                                             <i class="bi bi-receipt text-secondary me-2"></i> Historial y comprobantes
                                         </a>
                                     </li>
@@ -107,23 +113,23 @@
 
                             <!-- Módulo Kits Nutricionales (RF2) -->
                             <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <a class="nav-link dropdown-toggle @(esPaquetes ? "active fw-bold" : "")" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                                     <i class="bi bi-box-seam me-1"></i> Kits nutricionales
                                 </a>
                                 <ul class="dropdown-menu shadow-sm border-0 rounded-3 mt-2">
                                     <li>
-                                        <a class="dropdown-item py-2" asp-controller="Paquetes" asp-action="Armar">
+                                        <a class="dropdown-item py-2 @(esPaquetes && act == "Armar" ? "active bg-emerald-light text-success fw-bold" : "")" asp-controller="Paquetes" asp-action="Armar">
                                             <i class="bi bi-magic text-success me-2"></i> Armado de kit
                                         </a>
                                     </li>
                                     <li>
-                                        <a class="dropdown-item py-2" asp-controller="Paquetes" asp-action="Index">
+                                        <a class="dropdown-item py-2 @(esPaquetes && act == "Index" ? "active bg-emerald-light text-success fw-bold" : "")" asp-controller="Paquetes" asp-action="Index">
                                             <i class="bi bi-qr-code text-primary me-2"></i> Paquetes
                                         </a>
                                     </li>
                                     <li><hr class="dropdown-divider"></li>
                                     <li>
-                                        <a class="dropdown-item py-2" asp-controller="Paquetes" asp-action="Plantillas">
+                                        <a class="dropdown-item py-2 @(esPaquetes && act == "Plantillas" ? "active bg-emerald-light text-success fw-bold" : "")" asp-controller="Paquetes" asp-action="Plantillas">
                                             <i class="bi bi-sliders text-warning me-2"></i> Recetas de kits
                                         </a>
                                     </li>
@@ -132,14 +138,14 @@
 
                             <!-- Módulo Beneficiarios -->
                             <li class="nav-item">
-                                <a class="nav-link" asp-controller="Familias" asp-action="Index">
+                                <a class="nav-link @(ctrl == "Familias" ? "active fw-bold" : "")" asp-controller="Familias" asp-action="Index">
                                     <i class="bi bi-people me-1"></i> Beneficiarios
                                 </a>
                             </li>
 
                             <!-- Módulo Despacho y Entrega (RF3) -->
                             <li class="nav-item">
-                                <a class="nav-link" asp-controller="Entregas" asp-action="Index">
+                                <a class="nav-link @(ctrl == "Entregas" ? "active fw-bold" : "")" asp-controller="Entregas" asp-action="Index">
                                     <i class="bi bi-truck me-1"></i> Despacho
                                 </a>
                             </li>
@@ -148,7 +154,7 @@
                             @if (User.IsInRole("Administrador"))
                             {
                                 <li class="nav-item">
-                                    <a class="nav-link" asp-controller="Reportes" asp-action="Index">
+                                    <a class="nav-link @(ctrl == "Reportes" ? "active fw-bold" : "")" asp-controller="Reportes" asp-action="Index">
                                         <i class="bi bi-file-earmark-bar-graph me-1"></i> Reportes
                                     </a>
                                 </li>
@@ -158,7 +164,7 @@
                             @if (User.IsInRole("Administrador"))
                             {
                                 <li class="nav-item">
-                                    <a class="nav-link text-danger fw-semibold" asp-controller="Usuarios" asp-action="Index">
+                                    <a class="nav-link text-danger fw-semibold @(ctrl == "Usuarios" ? "active fw-bold" : "")" asp-controller="Usuarios" asp-action="Index">
                                         <i class="bi bi-people-fill me-1"></i> Usuarios
                                     </a>
                                 </li>
@@ -172,19 +178,16 @@
 
                     <!-- Herramientas de la Barra Superior -->
                     <div class="d-flex align-items-center gap-2 mt-3 mt-lg-0">
-                        @* Enlace a Swagger para la App Móvil Android (Ocultado a pedido)
                         @if (SignInManager.IsSignedIn(User))
                         {
-                            <a href="/swagger" target="_blank" class="btn btn-sm btn-outline-secondary rounded-pill px-3" title="Explorador interactivo de endpoints REST para Android">
-                                <i class="bi bi-phone me-1 text-primary"></i> API Android
-                            </a>
-                        }
-                        *@
+                            <!-- Buscador Rápido / Command Palette (Ctrl + K) -->
+                            <button type="button" class="btn btn-sm btn-light border rounded-pill px-3 py-1 d-flex align-items-center gap-2 text-secondary shadow-none"
+                                    data-bs-toggle="modal" data-bs-target="#modalCommandPalette" title="Navegación y búsqueda rápida (Ctrl + K)">
+                                <i class="bi bi-search text-success"></i>
+                                <span class="d-none d-xl-inline small">Ir a / Buscar...</span>
+                                <kbd class="bg-white text-muted border rounded px-1 py-0 d-none d-md-inline" style="font-size: 0.68rem;">Ctrl+K</kbd>
+                            </button>
 
-
-                        <!-- Identificación de Usuario y Menú de Sesión (Fase 10) -->
-                        @if (SignInManager.IsSignedIn(User))
-                        {
                             var currentUser = await UserManager.GetUserAsync(User);
                             var isAdmin = User.IsInRole("Administrador");
                             var displayName = currentUser?.NombreCompleto ?? User.Identity?.Name ?? "Usuario";
@@ -237,6 +240,9 @@
         </nav>
     </header>
 
+    <!-- Contenedor Global de Notificaciones Toast (Bootstrap 5) -->
+    <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1095;" id="toastContainerGlobal"></div>
+
     <!-- Contenido Dinámico de las Vistas -->
     <main id="main-content" role="main" class="py-4" tabindex="-1">
         <div class="container-fluid px-lg-4">
@@ -263,6 +269,109 @@
             </div>
         </div>
     </footer>
+
+    <!-- Modal Universal de Confirmación Bootstrap 5 (Reemplaza confirm() nativo) -->
+    <div class="modal fade" id="modalConfirmacionUniversal" tabindex="-1" aria-labelledby="modalConfirmacionTitle" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content rounded-4 border-0 shadow-lg">
+                <div class="modal-header border-bottom p-3 px-4 bg-light rounded-top-4">
+                    <div class="d-flex align-items-center gap-2">
+                        <div id="modalConfirmIconBox" class="bg-warning bg-opacity-10 text-warning p-2 rounded-3 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                            <i id="modalConfirmIcon" class="bi bi-exclamation-triangle-fill fs-5"></i>
+                        </div>
+                        <h5 class="modal-title fw-bold text-dark mb-0" id="modalConfirmacionTitle">Confirmar Acción</h5>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <p id="modalConfirmMessage" class="text-secondary mb-0" style="white-space: pre-line;"></p>
+                </div>
+                <div class="modal-footer border-top p-3 px-4 bg-light rounded-bottom-4">
+                    <button type="button" class="btn btn-outline-secondary rounded-pill px-4 fw-semibold" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" id="btnConfirmModalAccept" class="btn btn-danger rounded-pill px-4 fw-semibold shadow-sm">
+                        <i class="bi bi-check2-circle me-1"></i> Confirmar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Búsqueda Rápida / Command Palette (Ctrl + K) -->
+    @if (SignInManager.IsSignedIn(User))
+    {
+        <div class="modal fade" id="modalCommandPalette" tabindex="-1" aria-labelledby="modalCommandPaletteLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-scrollable">
+                <div class="modal-content rounded-4 border-0 shadow-lg overflow-hidden">
+                    <div class="modal-header border-bottom p-3 bg-white">
+                        <div class="input-group input-group-lg border-0">
+                            <span class="input-group-text bg-transparent border-0 text-success ps-2">
+                                <i class="bi bi-search fs-5"></i>
+                            </span>
+                            <input type="text" id="inputCommandPalette" class="form-control border-0 shadow-none ps-1"
+                                   placeholder="Ir a un módulo o buscar PKG, lote, DNI..." autocomplete="off" />
+                            <button type="button" class="btn btn-sm btn-light border rounded-pill px-2 text-muted my-auto" data-bs-dismiss="modal">ESC</button>
+                        </div>
+                    </div>
+                    <div class="modal-body p-2 bg-light" style="max-height: 380px;">
+                        <div id="cmdDirectSearchBox" class="d-none p-2 mb-2 bg-white rounded-3 border shadow-xs">
+                            <div class="small text-muted fw-semibold mb-2 px-1">Buscar término <strong id="cmdSearchTermTxt" class="text-dark font-mono"></strong> en:</div>
+                            <div class="d-flex flex-wrap gap-2">
+                                <a href="#" id="cmdLinkTrazabilidad" class="btn btn-sm btn-outline-success rounded-pill px-3 fw-semibold">
+                                    <i class="bi bi-diagram-3 me-1"></i> Trazabilidad
+                                </a>
+                                <a href="#" id="cmdLinkFamilias" class="btn btn-sm btn-outline-primary rounded-pill px-3 fw-semibold">
+                                    <i class="bi bi-people me-1"></i> Familias (DNI/Apellido)
+                                </a>
+                                <a href="#" id="cmdLinkProductos" class="btn btn-sm btn-outline-secondary rounded-pill px-3 fw-semibold">
+                                    <i class="bi bi-egg-fried me-1"></i> Catálogo (Nombre/EAN)
+                                </a>
+                            </div>
+                        </div>
+
+                        <div class="px-2 py-1 small fw-bold text-uppercase text-muted" style="font-size: 0.7rem; letter-spacing: 0.04em;">Accesos Rápidos a Módulos</div>
+                        <div class="list-group list-group-flush rounded-3" id="cmdModuleList">
+                            <a asp-controller="Donaciones" asp-action="Registrar" class="list-group-item list-group-item-action d-flex align-items-center justify-content-between py-2.5 px-3 cmd-item" data-keywords="recibir donacion ingreso mercaderia lote ean">
+                                <span><i class="bi bi-plus-circle-fill text-success me-2"></i> Recepción Física de Donaciones</span>
+                                <span class="badge bg-light text-secondary border">Donaciones</span>
+                            </a>
+                            <a asp-controller="Paquetes" asp-action="Armar" class="list-group-item list-group-item-action d-flex align-items-center justify-content-between py-2.5 px-3 cmd-item" data-keywords="armar kit paquete caja receta fefo">
+                                <span><i class="bi bi-magic text-success me-2"></i> Asistente de Armado de Kits</span>
+                                <span class="badge bg-light text-secondary border">Kits</span>
+                            </a>
+                            <a asp-controller="Entregas" asp-action="Index" class="list-group-item list-group-item-action d-flex align-items-center justify-content-between py-2.5 px-3 cmd-item" data-keywords="despachar entregar firma qr retiro">
+                                <span><i class="bi bi-truck text-primary me-2"></i> Despacho y Entrega Asistencial</span>
+                                <span class="badge bg-light text-secondary border">Despacho</span>
+                            </a>
+                            <a asp-controller="Inventario" asp-action="Index" class="list-group-item list-group-item-action d-flex align-items-center justify-content-between py-2.5 px-3 cmd-item" data-keywords="stock inventario fefo vencimiento almacen">
+                                <span><i class="bi bi-boxes text-warning me-2"></i> Stock Consolidado & Semáforo FEFO</span>
+                                <span class="badge bg-light text-secondary border">Almacén</span>
+                            </a>
+                            <a asp-controller="Inventario" asp-action="RegistrarMerma" class="list-group-item list-group-item-action d-flex align-items-center justify-content-between py-2.5 px-3 cmd-item" data-keywords="merma baja descarte vencido rotura">
+                                <span><i class="bi bi-trash3 text-danger me-2"></i> Registro de Mermas y Bajas</span>
+                                <span class="badge bg-light text-secondary border">Almacén</span>
+                            </a>
+                            <a asp-controller="Familias" asp-action="Index" class="list-group-item list-group-item-action d-flex align-items-center justify-content-between py-2.5 px-3 cmd-item" data-keywords="familias beneficiarios padron hogar dni">
+                                <span><i class="bi bi-people-fill text-success me-2"></i> Padrón de Familias Beneficiarias</span>
+                                <span class="badge bg-light text-secondary border">Beneficiarios</span>
+                            </a>
+                            <a asp-controller="Trazabilidad" asp-action="Index" class="list-group-item list-group-item-action d-flex align-items-center justify-content-between py-2.5 px-3 cmd-item" data-keywords="trazabilidad seguimiento cadena custodia flujo">
+                                <span><i class="bi bi-diagram-3-fill text-info me-2"></i> Cadena de Custodia y Trazabilidad</span>
+                                <span class="badge bg-light text-secondary border">Auditoría</span>
+                            </a>
+                            <a asp-controller="Productos" asp-action="Index" class="list-group-item list-group-item-action d-flex align-items-center justify-content-between py-2.5 px-3 cmd-item" data-keywords="catalogo alimentos productos codigo barras">
+                                <span><i class="bi bi-egg-fried text-success me-2"></i> Catálogo Maestro de Alimentos</span>
+                                <span class="badge bg-light text-secondary border">Almacén</span>
+                            </a>
+                            <a asp-controller="Dashboard" asp-action="Index" class="list-group-item list-group-item-action d-flex align-items-center justify-content-between py-2.5 px-3 cmd-item" data-keywords="dashboard inicio metricas graficos kpi">
+                                <span><i class="bi bi-speedometer2 text-primary me-2"></i> Dashboard Control Center</span>
+                                <span class="badge bg-light text-secondary border">General</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
 
     <!-- Botón Burbuja Flotante de Accesibilidad Universal (FAB) -->
     <button id="btnFloatingA11y" type="button" class="btn btn-a11y-fab shadow"

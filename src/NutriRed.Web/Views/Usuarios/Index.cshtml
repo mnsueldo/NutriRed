@@ -115,7 +115,10 @@
                                 @if (!isCurrentLoggedUser)
                                 {
                                     <form asp-action="CambiarEstado" method="post" class="d-inline"
-                                          onsubmit="return confirm('¿Está seguro de que desea @(user.Activo ? "desactivar" : "reactivar") la cuenta de @user.NombreCompleto?');">
+                                          data-confirm-title="@(user.Activo ? "Desactivar Cuenta de Usuario" : "Reactivar Cuenta de Usuario")"
+                                          data-confirm-message="¿Está seguro de que desea @(user.Activo ? "desactivar" : "reactivar") la cuenta de @user.NombreCompleto (@user.Email)?"
+                                          data-confirm-variant="@(user.Activo ? "danger" : "success")"
+                                          data-confirm-btn="@(user.Activo ? "Sí, desactivar" : "Sí, reactivar")">
                                         @Html.AntiForgeryToken()
                                         <input type="hidden" name="id" value="@user.Id" />
                                         <input type="hidden" name="nuevoEstado" value="@(!user.Activo)" />

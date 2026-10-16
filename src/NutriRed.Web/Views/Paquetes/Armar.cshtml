@@ -10,6 +10,9 @@
     bool tienePropuestaInicial = Model.Propuesta != null;
 }
 
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
+
 <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
     <div>
         <nav aria-label="breadcrumb">
@@ -465,6 +468,7 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
     <script>
         // Catálogo de productos serializado con JsonSerializer para garantizar compatibilidad cultural estricta (puntos decimales) y evitar SyntaxError
@@ -733,6 +737,14 @@
                 });
             }
 
+            function notificarArmado(msg, variante = "warning") {
+                if (window.NutriRedUI && typeof window.NutriRedUI.toast === "function") {
+                    window.NutriRedUI.toast(msg, variante, "Armado de Kit");
+                } else {
+                    alert(msg);
+                }
+            }
+
             // Incorporar Alimento Manual al Kit (Paso 2)
             if (btnAgregarAlimentoManual) {
                 btnAgregarAlimentoManual.addEventListener("click", function () {
@@ -740,13 +752,13 @@
                     const cantidad = parseInt(inputNuevaCantidad.value) || 1;
 
                     if (!prodIdStr) {
-                        alert("Por favor selecciona un alimento del listado.");
+                        notificarArmado("Por favor selecciona un alimento del listado.", "warning");
                         selectNuevoProducto.focus();
                         return;
                     }
 
                     if (cantidad <= 0) {
-                        alert("La cantidad a incluir debe ser mayor a cero.");
+                        notificarArmado("La cantidad a incluir debe ser mayor a cero.", "warning");
                         inputNuevaCantidad.focus();
                         return;
                     }
@@ -779,8 +791,10 @@
                         setTimeout(() => filaExistente.classList.remove("table-warning"), 800);
 
                         selectNuevoProducto.value = "";
+                        if (window.jQuery && $.fn.select2) $('#selectNuevoProducto').val('').trigger('change');
                         inputNuevaCantidad.value = 1;
                         actualizarMetricasKit();
+                        notificarArmado(`Se sumaron ${cantidad} u. de ${prod.nombre} a la receta.`, "info");
                         return;
                     }
 
@@ -853,6 +867,7 @@
 
                     // Limpiar formulario manual
                     selectNuevoProducto.value = "";
+                    if (window.jQuery && $.fn.select2) $('#selectNuevoProducto').val('').trigger('change');
                     inputNuevaCantidad.value = 1;
 
                     vincularEventosTabla();
@@ -883,8 +898,6 @@
 
                         // Si hay faltante en este producto:
                         if (stockActual < cant) {
-                            // Buscar en las opciones del select
-                            // Prioridad 1: Misma Categoría con stock suficiente
                             const optsMismaCat = Array.from(selectSust.querySelectorAll('optgroup[label*="Misma Categoría"] option'));
                             let mejorOpcion = null;
 
@@ -896,7 +909,6 @@
                                 }
                             }
 
-                            // Prioridad 2: Misma Categoría con algún stock
                             if (!mejorOpcion) {
                                 for (const opt of optsMismaCat) {
                                     const altProd = catalogoProductos.find(p => p.id === parseInt(opt.value));
@@ -907,7 +919,6 @@
                                 }
                             }
 
-                            // Prioridad 3: Otras Categorías con stock suficiente
                             if (!mejorOpcion) {
                                 const optsOtrasCat = Array.from(selectSust.querySelectorAll('optgroup[label*="Otras Categorías"] option'));
                                 for (const opt of optsOtrasCat) {
@@ -929,8 +940,9 @@
 
                     if (sustitucionesAplicadas > 0) {
                         actualizarMetricasKit();
+                        notificarArmado(`Se aplicaron ${sustitucionesAplicadas} sustituciones automáticas con FEFO.`, "success");
                     } else {
-                        alert("No se encontraron productos alternativos con existencias en depósito para resolver los faltantes.");
+                        notificarArmado("No se encontraron productos alternativos con existencias en depósito para resolver los faltantes.", "warning");
                     }
                 });
             }
@@ -1125,7 +1137,27 @@
                 }
             }
 
-            comboFamilia.addEventListener("change", (e) => cargarPropuestaReactiva(e));
+            // Inicializar Select2 en Destinatario y Selector de Alimento Adicional
+            if (window.jQuery && $.fn.select2) {
+                $('#comboFamilia').select2({
+                    theme: 'bootstrap-5',
+                    placeholder: 'Escriba apellido, nombre o DNI del titular...',
+                    allowClear: true,
+                    width: '100%'
+                }).on('change', function () {
+                    cargarPropuestaReactiva({ target: comboFamilia });
+                });
+
+                $('#selectNuevoProducto').select2({
+                    theme: 'bootstrap-5',
+                    placeholder: 'Escriba nombre o categoría del alimento...',
+                    allowClear: true,
+                    width: '100%'
+                });
+            } else {
+                comboFamilia.addEventListener("change", (e) => cargarPropuestaReactiva(e));
+            }
+
             comboKit.addEventListener("change", (e) => cargarPropuestaReactiva(e));
 
             // Si al cargar ya hay familia seleccionada en el combo pero no hay filas, disparar la propuesta

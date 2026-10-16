@@ -85,7 +85,7 @@
 
                     <!-- Cantidad y Motivo -->
                     <div class="row g-3 mb-4">
-                        <!-- Cantidad Entera con Badge de Unidad en Vivo -->
+                        <!-- Cantidad Entera con Badge de Unidad en Vivo y Botón Total del Lote -->
                         <div class="col-md-6">
                             <label asp-for="Cantidad" class="form-label fw-semibold text-dark d-flex align-items-center justify-content-between">
                                 <span><i class="bi bi-dash-circle text-secondary me-1"></i>Cantidad a Dar de Baja</span>
@@ -94,11 +94,14 @@
                             <div class="input-group">
                                 <input asp-for="Cantidad"
                                        type="number"
-                                       class="form-control rounded-3 py-2 font-monospace"
+                                       class="form-control rounded-start-3 py-2 font-monospace"
                                        min="1"
                                        step="1"
                                        id="txtCantidadInput"
                                        placeholder="Ej: 1, 5, 10" />
+                                <button type="button" id="btnTotalDelLote" class="btn btn-outline-danger rounded-end-3 px-3 fw-semibold small" title="Cargar el 100% de la existencia disponible del lote seleccionado" disabled>
+                                    Total del lote
+                                </button>
                             </div>
                             <span asp-validation-for="Cantidad" class="text-danger small mt-1 d-block"></span>
                             <small class="text-muted d-block mt-1" style="font-size: 0.72rem;">* Cantidades en números enteros (sin decimales).</small>
@@ -172,13 +175,16 @@
                 const panel = $('#panelCalculoStock');
                 const alerta = $('#alertaStockExcedido');
                 const btn = $('#btnConfirmarBaja');
+                const btnTotal = $('#btnTotalDelLote');
 
                 if (!loteId || lotesMap[loteId] === undefined) {
                     panel.addClass('d-none');
+                    btnTotal.prop('disabled', true);
                     return;
                 }
 
                 panel.removeClass('d-none');
+                btnTotal.prop('disabled', false);
                 const disponible = lotesMap[loteId];
                 const rawCant = $('#txtCantidadInput').val();
                 const cant = parseInt(rawCant, 10) || 0;
@@ -199,6 +205,13 @@
                 }
             }
 
+            $('#btnTotalDelLote').on('click', function () {
+                const loteId = $('#cboLote').val();
+                if (loteId && lotesMap[loteId] !== undefined) {
+                    $('#txtCantidadInput').val(Math.floor(lotesMap[loteId])).trigger('input');
+                }
+            });
+
             // Evento dinámico al seleccionar un Producto
             $('#cboProducto').on('change', function () {
                 var productoId = $(this).val();
@@ -207,6 +220,7 @@
                 $cboLote.empty();
                 lotesMap = {};
                 $('#panelCalculoStock').addClass('d-none');
+                $('#btnTotalDelLote').prop('disabled', true);
 
                 if (!productoId) {
                     $cboLote.append('<option value="">Primero seleccione un alimento arriba</option>');

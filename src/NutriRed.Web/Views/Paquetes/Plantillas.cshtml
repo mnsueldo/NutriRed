@@ -33,22 +33,6 @@
         </div>
     </div>
 
-    <!-- Mensajes de Notificación -->
-    @if (TempData["Exito"] != null)
-    {
-        <div class="alert alert-success alert-dismissible fade show rounded-4 border-0 shadow-sm mb-4" role="alert">
-            <i class="bi bi-check-circle-fill me-2"></i>@TempData["Exito"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
-        </div>
-    }
-    @if (TempData["Error"] != null)
-    {
-        <div class="alert alert-danger alert-dismissible fade show rounded-4 border-0 shadow-sm mb-4" role="alert">
-            <i class="bi bi-exclamation-octagon-fill me-2"></i>@TempData["Error"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
-        </div>
-    }
-
     <!-- Grilla de Recetas de Kits -->
     <div class="row g-4">
         @if (Model.TiposPaquete != null && Model.TiposPaquete.Any())
@@ -152,7 +136,10 @@
                                     @if (!kit.EsKitBase)
                                     {
                                         <form asp-action="EliminarPlantilla" asp-route-id="@kit.Id" method="post" class="d-inline"
-                                              onsubmit="return confirm('¿Está seguro de que desea eliminar permanentemente la receta \'@kit.Nombre\'? Esta acción no se puede deshacer.');">
+                                              data-confirm-title="Eliminar Receta de Kit"
+                                              data-confirm-message="¿Está seguro de que desea eliminar permanentemente la receta '@kit.Nombre'? Esta acción no se puede deshacer."
+                                              data-confirm-variant="danger"
+                                              data-confirm-btn="Sí, eliminar">
                                             @Html.AntiForgeryToken()
                                             <button type="submit" class="btn btn-outline-danger btn-sm rounded-pill px-3 py-2 fw-semibold" title="Eliminar este kit personalizado">
                                                 <i class="bi bi-trash3"></i>

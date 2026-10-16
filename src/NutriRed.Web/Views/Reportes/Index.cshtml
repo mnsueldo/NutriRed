@@ -289,10 +289,13 @@
             }
         }
 
-        <div class="col-12 col-md-4 col-lg-2 ms-auto">
+        <div class="col-12 col-md-5 col-lg-3 ms-auto d-flex gap-2">
             <button type="submit" class="btn btn-success rounded-3 fw-semibold w-100 py-2 shadow-sm">
                 <i class="bi bi-funnel-fill me-1"></i>Generar
             </button>
+            <a asp-action="Index" asp-route-tab="@Model.TabActiva" class="btn btn-outline-secondary rounded-3 px-3 py-2 fw-semibold" title="Limpiar filtros de la pestaña actual">
+                <i class="bi bi-x-lg"></i>
+            </a>
         </div>
     </div>
 </form>

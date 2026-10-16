@@ -137,12 +137,7 @@
                         <div class="row g-2 align-items-end">
                             <!-- Buscador Inteligente Select2 -->
                             <div class="col-lg-4 col-md-6">
-                                <div class="d-flex justify-content-between align-items-center mb-1">
-                                    <label class="form-label small fw-semibold text-muted mb-0">Seleccionar o escanear alimento</label>
-                                    <button type="button" class="btn btn-link btn-sm p-0 text-success fw-bold text-decoration-none shadow-none" id="btnAbrirModalNuevoAlimentoPill" title="Dar de alta un nuevo alimento en catálogo">
-                                        <i class="bi bi-plus-circle me-1"></i>+ Nuevo
-                                    </button>
-                                </div>
+                                <label class="form-label small fw-semibold text-muted mb-1">Seleccionar o escanear alimento</label>
                                 <select id="selProductoCatalogo" class="form-select select2-search">
                                     <option value="">Escriba nombre o código de barras (EAN)...</option>
                                     @foreach (var prod in productos)
@@ -179,7 +174,15 @@
                             </div>
 
                             <div class="col-lg-2 col-md-4 col-sm-6">
-                                <label class="form-label small fw-semibold text-muted mb-1">Fecha vencimiento</label>
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <label class="form-label small fw-semibold text-muted mb-0">Fecha vencimiento</label>
+                                    <div class="d-inline-flex gap-1" title="Atajos rápidos de caducidad">
+                                        <button type="button" class="btn btn-outline-secondary py-0 px-1 rounded-2 btn-atajo-venc" style="font-size: 0.68rem;" data-months="1">+1m</button>
+                                        <button type="button" class="btn btn-outline-secondary py-0 px-1 rounded-2 btn-atajo-venc" style="font-size: 0.68rem;" data-months="3">+3m</button>
+                                        <button type="button" class="btn btn-outline-secondary py-0 px-1 rounded-2 btn-atajo-venc" style="font-size: 0.68rem;" data-months="6">+6m</button>
+                                        <button type="button" class="btn btn-outline-secondary py-0 px-1 rounded-2 btn-atajo-venc" style="font-size: 0.68rem;" data-months="12">+1a</button>
+                                    </div>
+                                </div>
                                 <input type="date" id="tempVencimiento" class="form-control" min="@hoyMasUno" value="@DateTime.Today.AddMonths(3).ToString("yyyy-MM-dd")" />
                             </div>
 
@@ -206,7 +209,7 @@
                                     <th>Categoría</th>
                                     <th>Lote Asignado</th>
                                     <th>Vencimiento</th>
-                                    <th class="text-end">Cantidad</th>
+                                    <th class="text-end" style="min-width: 170px;">Cantidad</th>
                                     <th class="text-center pe-4" style="width: 80px;">Quitar</th>
                                 </tr>
                             </thead>
@@ -216,7 +219,7 @@
                                     for (int i = 0; i < Model.Items.Count; i++)
                                     {
                                         var itm = Model.Items[i];
-                                        <tr data-row-id="@i">
+                                        <tr data-row-id="@i" data-ean="@itm.CodigoBarras" data-venc="@itm.FechaVencimiento.ToString("yyyy-MM-dd")" data-lote="@(itm.NumeroLote ?? "")" data-unidad="@itm.UnidadMedida">
                                             <input type="hidden" name="Items.Index" value="@i" />
                                             <input type="hidden" name="Items[@i].CodigoBarras" value="@itm.CodigoBarras" />
                                             <input type="hidden" name="Items[@i].NombreProducto" value="@itm.NombreProducto" />
@@ -235,7 +238,13 @@
                                                     @itm.FechaVencimiento.ToString("dd/MM/yyyy") (@itm.TextoFefo)
                                                 </span>
                                             </td>
-                                            <td class="text-end fw-bold text-success">@itm.Cantidad.ToString("N0") @itm.UnidadMedida</td>
+                                            <td class="text-end">
+                                                <div class="d-inline-flex align-items-center justify-content-end gap-1">
+                                                    <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 rounded-2 btn-step-cant" data-delta="-1" title="Restar 1">-</button>
+                                                    <span class="fw-bold text-success px-2 span-cantidad-fila">@itm.Cantidad.ToString("N0") @itm.UnidadMedida</span>
+                                                    <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 rounded-2 btn-step-cant" data-delta="1" title="Sumar 1">+</button>
+                                                </div>
+                                            </td>
                                             <td class="text-center pe-4">
                                                 <button type="button" class="btn btn-sm btn-outline-danger border-0 rounded-3 btn-quitar" title="Eliminar fila">
                                                     <i class="bi bi-trash3"></i>
@@ -684,7 +693,28 @@
                 }
             }
 
-            // 5. Agregar fila dinámicamente con cantidad entera estricta
+            function notificarValidacion(msg, variante = "warning") {
+                if (window.NutriRedUI && typeof window.NutriRedUI.toast === "function") {
+                    window.NutriRedUI.toast(msg, variante, "Recepción de Donación");
+                } else {
+                    alert(msg);
+                }
+            }
+
+            // Atajos rápidos de fecha de vencimiento (+1m, +3m, +6m, +1a)
+            document.querySelectorAll(".btn-atajo-venc").forEach(btn => {
+                btn.addEventListener("click", function () {
+                    const meses = parseInt(this.getAttribute("data-months"), 10) || 3;
+                    const fecha = new Date();
+                    fecha.setMonth(fecha.getMonth() + meses);
+                    const yyyy = fecha.getFullYear();
+                    const mm = String(fecha.getMonth() + 1).padStart(2, '0');
+                    const dd = String(fecha.getDate()).padStart(2, '0');
+                    tempVencimiento.value = `${yyyy}-${mm}-${dd}`;
+                });
+            });
+
+            // 5. Agregar fila dinámicamente con cantidad entera estricta y consolidación
             btnAgregar.addEventListener("click", function () {
                 const ean = tempEan.value.trim();
                 const cantidad = parseInt(tempCantidad.value, 10);
@@ -692,19 +722,19 @@
                 const lote = tempLote.value.trim();
 
                 if (!ean) {
-                    alert("Debe seleccionar o ingresar el código EAN de un producto.");
+                    notificarValidacion("Debe seleccionar o ingresar el código EAN de un producto.", "warning");
                     tempEan.focus();
                     return;
                 }
 
                 if (!cantidad || isNaN(cantidad) || cantidad <= 0) {
-                    alert("La cantidad debe ser un número entero mayor a 0 (sin decimales).");
+                    notificarValidacion("La cantidad debe ser un número entero mayor a 0 (sin decimales).", "warning");
                     tempCantidad.focus();
                     return;
                 }
 
                 if (!vencimiento) {
-                    alert("Debe especificar la fecha de vencimiento.");
+                    notificarValidacion("Debe especificar la fecha de vencimiento.", "warning");
                     tempVencimiento.focus();
                     return;
                 }
@@ -714,7 +744,7 @@
                 hoy.setHours(0, 0, 0, 0);
 
                 if (fechaVenc <= hoy) {
-                    alert("RF1: No se pueden recibir alimentos vencidos o que vencen en el día.");
+                    notificarValidacion("RF1: No se pueden recibir alimentos vencidos o que vencen en el día.", "danger");
                     tempVencimiento.focus();
                     return;
                 }
@@ -731,46 +761,75 @@
                     unidad = selectedOpt.data('unidad');
                 }
 
-                // Cálculo de badge FEFO para la UI
-                const diffDias = Math.round((fechaVenc - hoy) / (1000 * 60 * 60 * 24));
-                let claseFefo = "badge-fefo-optimo";
-                if (diffDias <= 5) claseFefo = "badge-fefo-urgente";
-                else if (diffDias <= 15) claseFefo = "badge-fefo-atencion";
+                // Verificar si ya existe una fila con el mismo EAN + Vencimiento + Lote para consolidar
+                const filaExistente = Array.from(cuerpoTabla.querySelectorAll("tr")).find(tr =>
+                    tr.dataset.ean === ean &&
+                    tr.dataset.venc === vencimiento &&
+                    (tr.dataset.lote || "") === lote
+                );
 
-                const partesFecha = vencimiento.split("-");
-                const fechaFormateada = `${partesFecha[2]}/${partesFecha[1]}/${partesFecha[0]}`;
+                if (filaExistente) {
+                    const inputCant = filaExistente.querySelector("input[name$='.Cantidad']");
+                    const spanCant = filaExistente.querySelector(".span-cantidad-fila");
+                    const nuevaCant = (parseInt(inputCant.value, 10) || 0) + cantidad;
+                    inputCant.value = nuevaCant;
+                    if (spanCant) {
+                        spanCant.textContent = `${nuevaCant.toLocaleString('es-AR')} ${unidad}`;
+                    }
+                    notificarValidacion(`Se sumaron ${cantidad} ${unidad} al lote existente de ${nombre}.`, "info");
+                } else {
+                    // Cálculo de badge FEFO para la UI
+                    const diffDias = Math.round((fechaVenc - hoy) / (1000 * 60 * 60 * 24));
+                    let claseFefo = "badge-fefo-optimo";
+                    if (diffDias <= 5) claseFefo = "badge-fefo-urgente";
+                    else if (diffDias <= 15) claseFefo = "badge-fefo-atencion";
 
-                const nuevaFila = document.createElement("tr");
-                nuevaFila.setAttribute("data-row-id", rowCounter);
-                nuevaFila.innerHTML = `
-                    <input type="hidden" name="Items.Index" value="${rowCounter}" />
-                    <input type="hidden" name="Items[${rowCounter}].CodigoBarras" value="${ean}" />
-                    <input type="hidden" name="Items[${rowCounter}].NombreProducto" value="${nombre}" />
-                    <input type="hidden" name="Items[${rowCounter}].Categoria" value="${categoria}" />
-                    <input type="hidden" name="Items[${rowCounter}].UnidadMedida" value="${unidad}" />
-                    <input type="hidden" name="Items[${rowCounter}].Cantidad" value="${cantidad}" />
-                    <input type="hidden" name="Items[${rowCounter}].FechaVencimiento" value="${vencimiento}" />
-                    <input type="hidden" name="Items[${rowCounter}].NumeroLote" value="${lote}" />
+                    const partesFecha = vencimiento.split("-");
+                    const fechaFormateada = `${partesFecha[2]}/${partesFecha[1]}/${partesFecha[0]}`;
 
-                    <td class="ps-4 text-nowrap"><span class="code-tag font-mono rounded-3 text-nowrap">${ean}</span></td>
-                    <td class="fw-semibold text-dark">${nombre}</td>
-                    <td><span class="badge bg-light text-secondary border rounded-pill px-3 py-1">${categoria}</span></td>
-                    <td><span class="font-mono small text-muted">${lote ? lote : "(Automático)"}</span></td>
-                    <td>
-                        <span class="badge ${claseFefo} rounded-pill px-2 py-1">
-                            ${fechaFormateada} (${diffDias} días)
-                        </span>
-                    </td>
-                    <td class="text-end fw-bold text-success">${cantidad.toLocaleString('es-AR')} ${unidad}</td>
-                    <td class="text-center pe-4">
-                        <button type="button" class="btn btn-sm btn-outline-danger border-0 rounded-3 btn-quitar" title="Eliminar fila">
-                            <i class="bi bi-trash3"></i>
-                        </button>
-                    </td>
-                `;
+                    const nuevaFila = document.createElement("tr");
+                    nuevaFila.setAttribute("data-row-id", rowCounter);
+                    nuevaFila.dataset.ean = ean;
+                    nuevaFila.dataset.venc = vencimiento;
+                    nuevaFila.dataset.lote = lote;
+                    nuevaFila.dataset.unidad = unidad;
 
-                cuerpoTabla.appendChild(nuevaFila);
-                rowCounter++;
+                    nuevaFila.innerHTML = `
+                        <input type="hidden" name="Items.Index" value="${rowCounter}" />
+                        <input type="hidden" name="Items[${rowCounter}].CodigoBarras" value="${ean}" />
+                        <input type="hidden" name="Items[${rowCounter}].NombreProducto" value="${nombre}" />
+                        <input type="hidden" name="Items[${rowCounter}].Categoria" value="${categoria}" />
+                        <input type="hidden" name="Items[${rowCounter}].UnidadMedida" value="${unidad}" />
+                        <input type="hidden" name="Items[${rowCounter}].Cantidad" value="${cantidad}" />
+                        <input type="hidden" name="Items[${rowCounter}].FechaVencimiento" value="${vencimiento}" />
+                        <input type="hidden" name="Items[${rowCounter}].NumeroLote" value="${lote}" />
+
+                        <td class="ps-4 text-nowrap"><span class="code-tag font-mono rounded-3 text-nowrap">${ean}</span></td>
+                        <td class="fw-semibold text-dark">${nombre}</td>
+                        <td><span class="badge bg-light text-secondary border rounded-pill px-3 py-1">${categoria}</span></td>
+                        <td><span class="font-mono small text-muted">${lote ? lote : "(Automático)"}</span></td>
+                        <td>
+                            <span class="badge ${claseFefo} rounded-pill px-2 py-1">
+                                ${fechaFormateada} (${diffDias} días)
+                            </span>
+                        </td>
+                        <td class="text-end">
+                            <div class="d-inline-flex align-items-center justify-content-end gap-1">
+                                <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 rounded-2 btn-step-cant" data-delta="-1" title="Restar 1">-</button>
+                                <span class="fw-bold text-success px-2 span-cantidad-fila">${cantidad.toLocaleString('es-AR')} ${unidad}</span>
+                                <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 rounded-2 btn-step-cant" data-delta="1" title="Sumar 1">+</button>
+                            </div>
+                        </td>
+                        <td class="text-center pe-4">
+                            <button type="button" class="btn btn-sm btn-outline-danger border-0 rounded-3 btn-quitar" title="Eliminar fila">
+                                <i class="bi bi-trash3"></i>
+                            </button>
+                        </td>
+                    `;
+
+                    cuerpoTabla.appendChild(nuevaFila);
+                    rowCounter++;
+                }
 
                 // Reset de entradas temporales
                 tempLote.value = "";
@@ -781,8 +840,27 @@
                 recalcularTotales();
             });
 
-            // 6. Eliminar fila
+            // 6. Eliminar fila o ajustar cantidad con +/-
             cuerpoTabla.addEventListener("click", function (e) {
+                const btnStep = e.target.closest(".btn-step-cant");
+                if (btnStep) {
+                    const tr = btnStep.closest("tr");
+                    const delta = parseInt(btnStep.getAttribute("data-delta"), 10) || 0;
+                    const inputCant = tr.querySelector("input[name$='.Cantidad']");
+                    const spanCant = tr.querySelector(".span-cantidad-fila");
+                    const unidad = tr.dataset.unidad || "Unidades";
+                    if (inputCant) {
+                        const actual = parseInt(inputCant.value, 10) || 1;
+                        const nuevo = Math.max(1, actual + delta);
+                        inputCant.value = nuevo;
+                        if (spanCant) {
+                            spanCant.textContent = `${nuevo.toLocaleString('es-AR')} ${unidad}`;
+                        }
+                        recalcularTotales();
+                    }
+                    return;
+                }
+
                 const btn = e.target.closest(".btn-quitar");
                 if (btn) {
                     const tr = btn.closest("tr");
@@ -796,7 +874,7 @@
                 const filas = cuerpoTabla.querySelectorAll("tr");
                 if (filas.length === 0) {
                     e.preventDefault();
-                    alert("Detalle vacío: Bloquear la confirmación de la donación si no se ha cargado al menos un producto en la lista.");
+                    notificarValidacion("Agregue al menos un alimento a la lista antes de confirmar la recepción.", "warning");
                     return false;
                 }
 
@@ -804,7 +882,7 @@
                 if (tipo !== 3) {
                     if (!inputDocumento.value.trim() || !inputNombre.value.trim()) {
                         e.preventDefault();
-                        alert("Datos de donante incompletos: Ingrese el Documento y Nombre/Razón Social antes de continuar.");
+                        notificarValidacion("Datos de donante incompletos: Ingrese el Documento y Nombre/Razón Social antes de continuar.", "warning");
                         return false;
                     }
                 }

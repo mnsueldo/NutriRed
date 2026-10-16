@@ -248,7 +248,10 @@
 
                                     <!-- Alternar Activo / Desactivado (Soft Delete) -->
                                     <form asp-action="CambiarEstado" method="post" class="d-inline"
-                                          onsubmit="return confirm('¿Está seguro de que desea @(prod.Activo ? "desactivar" : "activar") el alimento \'@prod.Nombre\'?');">
+                                          data-confirm-title="@(prod.Activo ? "Desactivar Alimento" : "Reactivar Alimento")"
+                                          data-confirm-message="¿Está seguro de que desea @(prod.Activo ? "desactivar" : "activar") el alimento '@prod.Nombre'?"
+                                          data-confirm-variant="@(prod.Activo ? "warning" : "success")"
+                                          data-confirm-btn="@(prod.Activo ? "Sí, desactivar" : "Sí, activar")">
                                         @Html.AntiForgeryToken()
                                         <input type="hidden" name="id" value="@prod.Id" />
                                         <input type="hidden" name="nuevoEstado" value="@(!prod.Activo ? "true" : "false")" />
@@ -260,7 +263,10 @@
 
                                     <!-- Eliminar Alimento (Eliminación híbrida) -->
                                     <form asp-action="Delete" method="post" class="d-inline"
-                                          onsubmit="return confirm('¿Está seguro de eliminar el alimento \'@prod.Nombre\'?\n\n- Si no posee movimientos históricos, se eliminará físicamente del catálogo.\n- Si ya posee historial de lotes o donaciones, el sistema protegerá la trazabilidad.');">
+                                          data-confirm-title="Eliminar Alimento del Catálogo"
+                                          data-confirm-message="¿Está seguro de eliminar el alimento '@prod.Nombre'? Si no posee movimientos históricos, se eliminará físicamente del catálogo; si ya posee historial, el sistema protegerá la trazabilidad."
+                                          data-confirm-variant="danger"
+                                          data-confirm-btn="Sí, eliminar">
                                         @Html.AntiForgeryToken()
                                         <input type="hidden" name="id" value="@prod.Id" />
                                         <button type="submit" class="btn btn-sm btn-outline-danger rounded-3"

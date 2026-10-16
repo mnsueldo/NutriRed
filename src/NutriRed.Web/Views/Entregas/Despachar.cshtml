@@ -67,13 +67,19 @@
                     </tr>
                 </table>
 
-                <h6 class="fw-bold text-secondary mt-4 mb-2 small text-uppercase">
-                    <i class="bi bi-basket me-1 text-success"></i> Contenido físico del paquete
-                </h6>
+                <div class="d-flex justify-content-between align-items-center mt-4 mb-2">
+                    <h6 class="fw-bold text-secondary mb-0 small text-uppercase">
+                        <i class="bi bi-basket me-1 text-success"></i> Contenido físico del paquete
+                    </h6>
+                    <span id="badgeCheckContenido" class="badge bg-light text-secondary border rounded-pill px-2 py-1" style="font-size: 0.7rem;">
+                        Verificación opcional
+                    </span>
+                </div>
                 <div class="table-responsive">
-                    <table class="table table-sm table-bordered align-middle mb-0 small">
+                    <table class="table table-sm table-bordered align-middle mb-0 small" id="tablaContenidoDespacho">
                         <thead class="table-light">
                             <tr>
+                                <th class="text-center" style="width: 34px;" title="Tildar para verificar visualmente"><i class="bi bi-check2-square"></i></th>
                                 <th>Alimento</th>
                                 <th>Lote</th>
                                 <th class="text-end">Cant.</th>
@@ -84,7 +90,10 @@
                             {
                                 foreach (var itm in pkg.Alimentos)
                                 {
-                                    <tr>
+                                    <tr class="fila-check-item" style="cursor: pointer;">
+                                        <td class="text-center">
+                                            <input type="checkbox" class="form-check-input check-item-paquete" />
+                                        </td>
                                         <td>
                                             @itm.NombreProducto
                                             @if (itm.EsSustituto)
@@ -120,20 +129,28 @@
                     </span>
                 </div>
                 <div class="card-body p-4">
-                    <!-- Selector Titular o Tercero -->
+                    <!-- Selector Titular o Tercero con Tarjetas Táctiles Bootstrap -->
                     <div class="mb-3">
-                        <label asp-for="TipoReceptor" class="form-label fw-semibold"></label>
-                        <div class="d-flex gap-3">
-                            <div class="form-check">
-                                <input class="form-check-input" type="radio" asp-for="TipoReceptor" id="radioTitular" value="@((int)TipoReceptor.Titular)" checked>
-                                <label class="form-check-label fw-semibold" for="radioTitular">
-                                    <i class="bi bi-person-fill text-success me-1"></i> Titular del legajo
+                        <label asp-for="TipoReceptor" class="form-label fw-semibold d-block mb-2"></label>
+                        <div class="row g-2">
+                            <div class="col-sm-6">
+                                <input type="radio" class="btn-check" asp-for="TipoReceptor" id="radioTitular" value="@((int)TipoReceptor.Titular)" checked>
+                                <label class="btn btn-outline-success w-100 rounded-3 py-2 px-3 text-start d-flex align-items-center gap-2 shadow-xs" for="radioTitular">
+                                    <i class="bi bi-person-check-fill fs-5"></i>
+                                    <div>
+                                        <span class="fw-bold d-block small">Titular del legajo</span>
+                                        <small class="opacity-75 d-block" style="font-size: 0.72rem;">Autocompleta DNI y nombre</small>
+                                    </div>
                                 </label>
                             </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="radio" asp-for="TipoReceptor" id="radioTercero" value="@((int)TipoReceptor.TerceroAutorizado)">
-                                <label class="form-check-label fw-semibold" for="radioTercero">
-                                    <i class="bi bi-people-fill text-primary me-1"></i> Tercero autorizado
+                            <div class="col-sm-6">
+                                <input type="radio" class="btn-check" asp-for="TipoReceptor" id="radioTercero" value="@((int)TipoReceptor.TerceroAutorizado)">
+                                <label class="btn btn-outline-primary w-100 rounded-3 py-2 px-3 text-start d-flex align-items-center gap-2 shadow-xs" for="radioTercero">
+                                    <i class="bi bi-people-fill fs-5"></i>
+                                    <div>
+                                        <span class="fw-bold d-block small">Tercero autorizado</span>
+                                        <small class="opacity-75 d-block" style="font-size: 0.72rem;">Familiar o vecino con vínculo</small>
+                                    </div>
                                 </label>
                             </div>
                         </div>
@@ -312,6 +329,37 @@
 
             radioTitular.addEventListener("change", actualizarReceptor);
             radioTercero.addEventListener("change", actualizarReceptor);
+
+            // 1.b Checkboxes de verificación física del contenido del paquete
+            const filasCheck = document.querySelectorAll(".fila-check-item");
+            const badgeCheckContenido = document.getElementById("badgeCheckContenido");
+            function actualizarContadorCheck() {
+                const total = document.querySelectorAll(".check-item-paquete").length;
+                const marcados = document.querySelectorAll(".check-item-paquete:checked").length;
+                if (badgeCheckContenido && total > 0) {
+                    if (marcados === 0) {
+                        badgeCheckContenido.className = "badge bg-light text-secondary border rounded-pill px-2 py-1";
+                        badgeCheckContenido.textContent = "Verificación opcional";
+                    } else if (marcados === total) {
+                        badgeCheckContenido.className = "badge bg-success bg-opacity-10 text-success border border-success rounded-pill px-2 py-1";
+                        badgeCheckContenido.innerHTML = `<i class="bi bi-check-all me-1"></i>Completo (${marcados}/${total})`;
+                    } else {
+                        badgeCheckContenido.className = "badge bg-primary bg-opacity-10 text-primary border border-primary rounded-pill px-2 py-1";
+                        badgeCheckContenido.textContent = `Verificados ${marcados}/${total}`;
+                    }
+                }
+            }
+            filasCheck.forEach(tr => {
+                tr.addEventListener("click", function (e) {
+                    const chk = this.querySelector(".check-item-paquete");
+                    if (!chk) return;
+                    if (e.target !== chk) {
+                        chk.checked = !chk.checked;
+                    }
+                    this.classList.toggle("table-success", chk.checked);
+                    actualizarContadorCheck();
+                });
+            });
 
             // 2. Lienzo HTML5 Canvas para Firma Digital Manuscrita
             const canvas = document.getElementById("signatureCanvas");

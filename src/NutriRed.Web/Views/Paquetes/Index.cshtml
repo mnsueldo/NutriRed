@@ -108,28 +108,17 @@
     </div>
 
     <form method="get" asp-action="Index" class="row g-2 align-items-end">
-        <div class="col-12 col-sm-6 col-md-4">
-            <label class="form-label small text-muted mb-1 fw-semibold">Filtrar por estado</label>
-            <select name="estado" class="form-select bg-light">
-                <option value="">Todos los estados</option>
-                @foreach (var estado in Enum.GetValues<EstadoPaquete>().Where(e => e != EstadoPaquete.Pendiente))
-                {
-                    <option value="@estado" selected="@(Model.EstadoFiltro == estado)">
-                        @(estado == EstadoPaquete.Preparado ? "Listo en Depósito (Preparado)" : (estado == EstadoPaquete.Entregado ? "Entregado a Beneficiario" : "Cancelado / Anulado"))
-                    </option>
-                }
-            </select>
-        </div>
-        <div class="col-12 col-sm-6 col-md-5">
-            <label class="form-label small text-muted mb-1 fw-semibold">Código QR / Seguimiento</label>
+        <input type="hidden" name="estado" value="@Model.EstadoFiltro" />
+        <div class="col-12 col-md-9">
+            <label class="form-label small text-muted mb-1 fw-semibold">Buscar por código QR / Seguimiento</label>
             <div class="input-group">
                 <span class="input-group-text bg-light text-muted border-end-0"><i class="bi bi-qr-code"></i></span>
                 <input type="text" name="codigo" value="@Model.CodigoSeguimiento" placeholder="Ej: PKG-2026-00001" class="form-control bg-light border-start-0 font-mono" />
             </div>
         </div>
-        <div class="col-12 col-sm-12 col-md-3 d-flex gap-2">
+        <div class="col-12 col-md-3 d-flex gap-2">
             <button type="submit" class="btn btn-primary rounded-pill w-100 shadow-sm fw-semibold">
-                <i class="bi bi-funnel me-1"></i> Filtrar
+                <i class="bi bi-search me-1"></i> Buscar
             </button>
             @if (hayFiltros)
             {
@@ -233,10 +222,19 @@
                             <td>
                                 <span class="small text-muted font-mono">@pkg.Items.Count variedades</span>
                             </td>
-                            <td class="text-end pe-4">
-                                <a asp-action="Detalles" asp-route-id="@pkg.Id" class="btn btn-sm btn-outline-primary rounded-pill px-3 fw-semibold" title="Ver Ficha y Rótulo QR">
-                                    <i class="bi bi-eye me-1"></i> Ficha & Rótulo
-                                </a>
+                            <td class="text-end pe-4 text-nowrap">
+                                <div class="d-inline-flex align-items-center gap-1">
+                                    @if (pkg.Estado == EstadoPaquete.Preparado)
+                                    {
+                                        <a asp-controller="Entregas" asp-action="Despachar" asp-route-codigo="@pkg.CodigoSeguimiento"
+                                           class="btn btn-sm btn-success rounded-pill px-3 fw-semibold shadow-sm" title="Iniciar despacho y captura de firma">
+                                            <i class="bi bi-truck me-1"></i> Despachar
+                                        </a>
+                                    }
+                                    <a asp-action="Detalles" asp-route-id="@pkg.Id" class="btn btn-sm btn-outline-primary rounded-pill px-3 fw-semibold" title="Ver Ficha y Rótulo QR">
+                                        <i class="bi bi-eye me-1"></i> Ficha & Rótulo
+                                    </a>
+                                </div>
                             </td>
                         </tr>
                     }

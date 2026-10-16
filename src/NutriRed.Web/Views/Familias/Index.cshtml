@@ -275,33 +275,43 @@
 
                             <!-- Botones de Acción -->
                             <td class="text-end pe-4 text-nowrap">
-                                <div class="btn-group btn-group-sm" role="group" aria-label="Acciones de Legajo">
+                                <div class="d-inline-flex align-items-center justify-content-end gap-1">
+                                    @if (item.Estado == EstadoFamilia.Activo)
+                                    {
+                                        <a asp-controller="Paquetes" asp-action="Armar" asp-route-familiaId="@item.Id"
+                                           class="btn btn-sm btn-outline-success rounded-pill px-2 py-1 fw-semibold" title="Armar kit nutricional para esta familia">
+                                            <i class="bi bi-magic me-1"></i>Armar Kit
+                                        </a>
+                                    }
+
                                     <!-- Ver Detalle -->
-                                    <a asp-action="Detalles" asp-route-id="@item.Id" class="btn btn-outline-primary border-0 rounded-circle p-2 mx-1 shadow-none" title="Ver Detalle y Asistencia">
+                                    <a asp-action="Detalles" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary border-0 rounded-circle p-2 shadow-none" title="Ver Detalle y Asistencia">
                                         <i class="bi bi-eye-fill fs-6"></i>
                                     </a>
 
                                     <!-- Editar -->
-                                    <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-outline-secondary border-0 rounded-circle p-2 mx-1 shadow-none" title="Editar Legajo">
+                                    <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-secondary border-0 rounded-circle p-2 shadow-none" title="Editar Legajo">
                                         <i class="bi bi-pencil-fill fs-6"></i>
                                     </a>
 
                                     <!-- Alternar Estado -->
-                                    <form asp-action="ToggleEstado" asp-route-id="@item.Id" method="post" class="d-inline m-0">
+                                    <form asp-action="ToggleEstado" asp-route-id="@item.Id" method="post" class="d-inline m-0"
+                                          data-confirm-title="@(item.Estado == EstadoFamilia.Activo ? "Suspender Legajo Familiar" : "Reactivar Legajo Familiar")"
+                                          data-confirm-message="@(item.Estado == EstadoFamilia.Activo ? $"¿Está seguro de suspender temporalmente el legajo de {item.ApellidoTitular}, {item.NombreTitular}? No podrá recibir paquetes asistenciales mientras esté suspendido." : $"¿Reactivar el legajo familiar de {item.ApellidoTitular}, {item.NombreTitular} para habilitar la recepción de kits?")"
+                                          data-confirm-variant="@(item.Estado == EstadoFamilia.Activo ? "warning" : "success")"
+                                          data-confirm-btn="@(item.Estado == EstadoFamilia.Activo ? "Sí, suspender" : "Sí, reactivar")">
                                         @Html.AntiForgeryToken()
                                         @if (item.Estado == EstadoFamilia.Activo)
                                         {
-                                            <button type="submit" class="btn btn-outline-warning border-0 rounded-circle p-2 mx-1 shadow-none"
-                                                    title="Suspender Familia (bloquea retiro de kits)"
-                                                    onclick="return confirm('¿Está seguro de suspender temporalmente el legajo de @item.ApellidoTitular? No podrá recibir paquetes asistenciales mientras esté suspendido.');">
+                                            <button type="submit" class="btn btn-sm btn-outline-warning border-0 rounded-circle p-2 shadow-none"
+                                                    title="Suspender Familia (bloquea retiro de kits)">
                                                 <i class="bi bi-pause-circle text-warning fs-6"></i>
                                             </button>
                                         }
                                         else
                                         {
-                                            <button type="submit" class="btn btn-outline-success border-0 rounded-circle p-2 mx-1 shadow-none"
-                                                    title="Reactivar Legajo"
-                                                    onclick="return confirm('¿Reactivar el legajo familiar de @item.ApellidoTitular para habilitar la recepción de kits?');">
+                                            <button type="submit" class="btn btn-sm btn-outline-success border-0 rounded-circle p-2 shadow-none"
+                                                    title="Reactivar Legajo">
                                                 <i class="bi bi-play-circle text-success fs-6"></i>
                                             </button>
                                         }
