@@ -248,4 +248,41 @@ public class ProductoService : IProductoService
             return OperationResult.Fail($"Error al activar el producto: {ex.Message}");
         }
     }
+
+    public async Task<OperationResult> EliminarAsync(int id)
+    {
+        try
+        {
+            var producto = await _context.Productos.FindAsync(id);
+            if (producto == null)
+            {
+                return OperationResult.Fail("El alimento solicitado no existe en el catálogo.");
+            }
+
+            // Regla de Negocio / Integridad Referencial:
+            // Verificamos si tiene dependencias en Lotes, Donaciones o Paquetes
+            bool tieneLotes = await _context.Lotes.AnyAsync(l => l.ProductoId == id);
+            bool tieneDonaciones = await _context.DonacionDetalles.AnyAsync(d => d.ProductoId == id);
+            bool tienePaquetes = await _context.PaqueteDetalles.AnyAsync(pd => pd.ProductoId == id || pd.ProductoSustituidoId == id);
+            bool tienePlantillas = await _context.PlantillaPaqueteDetalles.AnyAsync(ppd => ppd.ProductoId == id);
+
+            if (tieneLotes || tieneDonaciones || tienePaquetes || tienePlantillas)
+            {
+                return OperationResult.Fail(
+                    $"No es posible eliminar físicamente '{producto.Nombre}' porque posee movimientos o registros históricos asociados (lotes, donaciones o paquetes). " +
+                    $"Para resguardar la trazabilidad y auditoría, utilice la baja lógica (desactivar)."
+                );
+            }
+
+            // Eliminación física segura: alimento sin movimientos históricos
+            _context.Productos.Remove(producto);
+            await _context.SaveChangesAsync();
+
+            return OperationResult.Ok();
+        }
+        catch (Exception ex)
+        {
+            return OperationResult.Fail($"Error al eliminar el alimento: {ex.Message}");
+        }
+    }
 }

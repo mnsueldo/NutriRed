@@ -252,9 +252,20 @@
                                         @Html.AntiForgeryToken()
                                         <input type="hidden" name="id" value="@prod.Id" />
                                         <input type="hidden" name="nuevoEstado" value="@(!prod.Activo ? "true" : "false")" />
-                                        <button type="submit" class="btn btn-sm @(prod.Activo ? "btn-outline-danger" : "btn-outline-success") rounded-3"
-                                                title="@(prod.Activo ? "Desactivar alimento" : "Activar alimento")">
+                                        <button type="submit" class="btn btn-sm @(prod.Activo ? "btn-outline-warning" : "btn-outline-success") rounded-3"
+                                                title="@(prod.Activo ? "Desactivar alimento (Baja lógica)" : "Activar alimento")">
                                             <i class="bi @(prod.Activo ? "bi-toggle-on" : "bi-toggle-off")"></i>
+                                        </button>
+                                    </form>
+
+                                    <!-- Eliminar Alimento (Eliminación híbrida) -->
+                                    <form asp-action="Delete" method="post" class="d-inline"
+                                          onsubmit="return confirm('¿Está seguro de eliminar el alimento \'@prod.Nombre\'?\n\n- Si no posee movimientos históricos, se eliminará físicamente del catálogo.\n- Si ya posee historial de lotes o donaciones, el sistema protegerá la trazabilidad.');">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@prod.Id" />
+                                        <button type="submit" class="btn btn-sm btn-outline-danger rounded-3"
+                                                title="Eliminar alimento (física o sugerencia de baja lógica)">
+                                            <i class="bi bi-trash3"></i>
                                         </button>
                                     </form>
                                 </div>

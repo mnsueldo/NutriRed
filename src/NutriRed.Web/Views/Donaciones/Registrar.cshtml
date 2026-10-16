@@ -5,6 +5,7 @@
 @{
     ViewData["Title"] = "Recepción Física de Donación";
     var productos = ViewBag.Productos as List<Producto> ?? new List<Producto>();
+    var categorias = ViewBag.Categorias as List<Categoria> ?? new List<Categoria>();
     var hoyMasUno = DateTime.Today.AddDays(1).ToString("yyyy-MM-dd");
 }
 
@@ -125,13 +126,23 @@
                 <div class="card-body p-4">
                     <!-- Barra de Entrada Rápida de Alimento con Select2 -->
                     <div class="p-3 bg-light rounded-4 border mb-4">
-                        <h6 class="fw-bold mb-3 text-secondary">
-                            <i class="bi bi-plus-circle me-1 text-success"></i> Incorporar Alimento a la Recepción
-                        </h6>
+                        <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+                            <h6 class="fw-bold mb-0 text-secondary">
+                                <i class="bi bi-plus-circle me-1 text-success"></i> Incorporar Alimento a la Recepción
+                            </h6>
+                            <button type="button" class="btn btn-sm btn-success rounded-pill px-3 py-1 fw-bold shadow-sm" id="btnAbrirModalNuevoAlimento" title="Dar de alta un nuevo alimento en catálogo">
+                                <i class="bi bi-plus-circle-fill me-1"></i> + Registrar Nuevo Alimento
+                            </button>
+                        </div>
                         <div class="row g-2 align-items-end">
-                            <!-- Buscador Inteligente Select2 (Propuesta 2) -->
+                            <!-- Buscador Inteligente Select2 -->
                             <div class="col-lg-4 col-md-6">
-                                <label class="form-label small fw-semibold text-muted mb-1">Seleccionar o escanear alimento</label>
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <label class="form-label small fw-semibold text-muted mb-0">Seleccionar o escanear alimento</label>
+                                    <button type="button" class="btn btn-link btn-sm p-0 text-success fw-bold text-decoration-none shadow-none" id="btnAbrirModalNuevoAlimentoPill" title="Dar de alta un nuevo alimento en catálogo">
+                                        <i class="bi bi-plus-circle me-1"></i>+ Nuevo
+                                    </button>
+                                </div>
                                 <select id="selProductoCatalogo" class="form-select select2-search">
                                     <option value="">Escriba nombre o código de barras (EAN)...</option>
                                     @foreach (var prod in productos)
@@ -150,6 +161,12 @@
                             <div class="col-lg-2 col-md-3 col-sm-6">
                                 <label class="form-label small fw-semibold text-muted mb-1 text-nowrap">Código EAN-13</label>
                                 <input type="text" id="tempEan" class="form-control font-mono" placeholder="779..." />
+                                <div id="avisoEanNoExiste" class="mt-1 d-none small">
+                                    <span class="text-danger fw-semibold"><i class="bi bi-exclamation-circle me-1"></i>No está en catálogo.</span>
+                                    <button type="button" class="btn btn-xs btn-outline-success ms-1 py-0 px-2 rounded-pill fw-semibold shadow-none" id="btnCrearDesdeEan">
+                                        <i class="bi bi-plus"></i> Alta rápida
+                                    </button>
+                                </div>
                             </div>
 
                             <!-- Cantidad Entera con Badge Dinámico de Unidad (Propuesta 1) -->
@@ -256,6 +273,73 @@
     </div>
 </form>
 
+<!-- MODAL: ALTA RÁPIDA DE ALIMENTO (OPCIÓN 1) -->
+<div class="modal fade" id="modalNuevoAlimento" tabindex="-1" aria-labelledby="modalNuevoAlimentoLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0 shadow">
+            <div class="modal-header border-bottom p-3 px-4 bg-light rounded-top-4">
+                <div class="d-flex align-items-center gap-2">
+                    <div class="bg-success bg-opacity-10 text-success p-2 rounded-3">
+                        <i class="bi bi-box-seam-fill fs-5"></i>
+                    </div>
+                    <div>
+                        <h5 class="modal-title fw-bold text-dark mb-0" id="modalNuevoAlimentoLabel">Alta Rápida de Alimento</h5>
+                        <small class="text-muted">Incorpórelo al catálogo sin salir de la recepción</small>
+                    </div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div id="modalNuevoAlimentoAlerta" class="alert alert-danger d-none rounded-3 py-2 px-3 small mb-3"></div>
+                <form id="formModalNuevoAlimento" onsubmit="return false;">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small text-muted">Código de Barras (EAN-13) *</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light text-muted"><i class="bi bi-upc-scan"></i></span>
+                            <input type="text" id="modalEan" class="form-control font-mono" placeholder="Ej: 7791234567890" maxlength="50" required />
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small text-muted">Nombre del Alimento *</label>
+                        <input type="text" id="modalNombre" class="form-control" placeholder="Ej: Mermelada de Frutilla 400g" maxlength="150" required />
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-md-7">
+                            <label class="form-label fw-semibold small text-muted">Categoría *</label>
+                            <select id="modalCategoriaId" class="form-select" required>
+                                <option value="">Seleccione categoría...</option>
+                                @foreach (var cat in categorias)
+                                {
+                                    <option value="@cat.Id">@cat.Nombre</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-5">
+                            <label class="form-label fw-semibold small text-muted">Unidad de Medida *</label>
+                            <select id="modalUnidadMedida" class="form-select">
+                                <option value="0">Unidades</option>
+                                <option value="1">Kilos</option>
+                                <option value="2">Litros</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label fw-semibold small text-muted">Stock Mínimo de Alerta (Opcional)</label>
+                        <input type="number" id="modalStockMinimo" class="form-control font-mono" value="10" min="0" step="1" />
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer border-top p-3 px-4 bg-light rounded-bottom-4">
+                <button type="button" class="btn btn-outline-secondary rounded-pill px-3 fw-semibold" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-success rounded-pill px-4 fw-semibold shadow-sm" id="btnGuardarModalAlimento">
+                    <span id="btnGuardarModalSpinner" class="spinner-border spinner-border-sm me-1 d-none" role="status" aria-hidden="true"></span>
+                    <i class="bi bi-check2-circle me-1" id="btnGuardarModalIcon"></i> Guardar y Seleccionar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
@@ -288,12 +372,25 @@
             const sinItemsAviso = document.getElementById("sinItemsAviso");
             const formDonacion = document.getElementById("formDonacion");
 
-            // 0. Inicializar Select2 con el tema Bootstrap 5
+            // 0. Inicializar Select2 con el tema Bootstrap 5 y mensaje contextual de creación rápida
             $('#selProductoCatalogo').select2({
                 theme: 'bootstrap-5',
                 placeholder: 'Escriba nombre o código de barras (EAN)...',
                 allowClear: true,
-                width: '100%'
+                width: '100%',
+                language: {
+                    noResults: function () {
+                        return $(`<div class="text-center py-2">
+                            <div class="text-muted small mb-2"><i class="bi bi-search me-1"></i>No se encontró este alimento en el catálogo.</div>
+                            <button type="button" class="btn btn-xs btn-success rounded-pill px-3 py-1 fw-bold shadow-sm" id="btnSelect2CrearNuevo">
+                                <i class="bi bi-plus-circle-fill me-1"></i> + Registrar este alimento
+                            </button>
+                        </div>`);
+                    }
+                },
+                escapeMarkup: function (markup) {
+                    return markup;
+                }
             });
 
             // 1. Manejo del tipo de donante
@@ -347,7 +444,21 @@
                 }
             });
 
-            // 3. Escribir EAN sincroniza el selector Select2
+            const avisoEanNoExiste = document.getElementById("avisoEanNoExiste");
+            const btnAbrirModalNuevoAlimento = document.getElementById("btnAbrirModalNuevoAlimento");
+            const btnCrearDesdeEan = document.getElementById("btnCrearDesdeEan");
+            const modalNuevoAlimentoEl = document.getElementById("modalNuevoAlimento");
+            const modalEan = document.getElementById("modalEan");
+            const modalNombre = document.getElementById("modalNombre");
+            const modalCategoriaId = document.getElementById("modalCategoriaId");
+            const modalUnidadMedida = document.getElementById("modalUnidadMedida");
+            const modalStockMinimo = document.getElementById("modalStockMinimo");
+            const modalNuevoAlimentoAlerta = document.getElementById("modalNuevoAlimentoAlerta");
+            const btnGuardarModalAlimento = document.getElementById("btnGuardarModalAlimento");
+            const btnGuardarModalSpinner = document.getElementById("btnGuardarModalSpinner");
+            const btnGuardarModalIcon = document.getElementById("btnGuardarModalIcon");
+
+            // 3. Escribir EAN sincroniza el selector Select2 y detecta alimentos no catalogados
             tempEan.addEventListener("input", function () {
                 const valor = tempEan.value.trim();
                 let encontrado = false;
@@ -358,8 +469,182 @@
                         return false;
                     }
                 });
-                if (!encontrado && valor === "") {
-                    $('#selProductoCatalogo').val('').trigger('change');
+
+                if (encontrado) {
+                    if (avisoEanNoExiste) avisoEanNoExiste.classList.add("d-none");
+                } else {
+                    if (valor === "") {
+                        $('#selProductoCatalogo').val('').trigger('change');
+                        if (avisoEanNoExiste) avisoEanNoExiste.classList.add("d-none");
+                    } else if (valor.length >= 8) {
+                        if (avisoEanNoExiste) avisoEanNoExiste.classList.remove("d-none");
+                    } else {
+                        if (avisoEanNoExiste) avisoEanNoExiste.classList.add("d-none");
+                    }
+                }
+            });
+
+            const btnAbrirModalNuevoAlimentoPill = document.getElementById("btnAbrirModalNuevoAlimentoPill");
+
+            // Función inteligente para abrir modal de alta rápida
+            function abrirModalAltaRapida(valorInicial) {
+                if (modalNuevoAlimentoAlerta) {
+                    modalNuevoAlimentoAlerta.classList.add("d-none");
+                    modalNuevoAlimentoAlerta.textContent = "";
+                }
+
+                const texto = (valorInicial || tempEan.value || "").trim();
+                const esSoloDigitos = /^\d+$/.test(texto);
+
+                if (esSoloDigitos && texto.length >= 6) {
+                    modalEan.value = texto;
+                    modalNombre.value = "";
+                } else if (!esSoloDigitos && texto.length > 0) {
+                    modalEan.value = "";
+                    modalNombre.value = texto;
+                } else {
+                    modalEan.value = texto;
+                    modalNombre.value = "";
+                }
+
+                modalCategoriaId.value = "";
+                modalUnidadMedida.value = "0";
+                modalStockMinimo.value = "10";
+
+                const bsModal = bootstrap.Modal.getOrCreateInstance(modalNuevoAlimentoEl);
+                bsModal.show();
+
+                setTimeout(() => {
+                    if (modalEan.value.trim() !== "") {
+                        modalNombre.focus();
+                    } else {
+                        modalEan.focus();
+                    }
+                }, 400);
+            }
+
+            // Click en botón principal destacado
+            if (btnAbrirModalNuevoAlimento) {
+                btnAbrirModalNuevoAlimento.addEventListener("click", function () {
+                    abrirModalAltaRapida(tempEan.value.trim());
+                });
+            }
+
+            // Click en botón secundario junto al label
+            if (btnAbrirModalNuevoAlimentoPill) {
+                btnAbrirModalNuevoAlimentoPill.addEventListener("click", function () {
+                    abrirModalAltaRapida(tempEan.value.trim());
+                });
+            }
+
+            // Click en botón sugerido al tipear EAN inexistente
+            if (btnCrearDesdeEan) {
+                btnCrearDesdeEan.addEventListener("click", function () {
+                    abrirModalAltaRapida(tempEan.value.trim());
+                });
+            }
+
+            // Click en botón integrado dentro del buscador Select2 cuando no hay resultados
+            $(document).on('click', '#btnSelect2CrearNuevo', function () {
+                const searchField = $('.select2-container--open .select2-search__field');
+                const busqueda = (searchField.length ? searchField.val() : '').trim();
+                $('#selProductoCatalogo').select2('close');
+                abrirModalAltaRapida(busqueda);
+            });
+
+            // Guardar producto nuevo vía AJAX (Opción 1)
+            btnGuardarModalAlimento.addEventListener("click", async function () {
+                const ean = modalEan.value.trim();
+                const nombre = modalNombre.value.trim();
+                const catId = parseInt(modalCategoriaId.value, 10);
+                const unidad = parseInt(modalUnidadMedida.value, 10);
+                const stockMin = parseFloat(modalStockMinimo.value) || 10;
+
+                modalNuevoAlimentoAlerta.classList.add("d-none");
+                modalNuevoAlimentoAlerta.textContent = "";
+
+                if (!ean) {
+                    modalNuevoAlimentoAlerta.textContent = "El código de barras (EAN) es obligatorio.";
+                    modalNuevoAlimentoAlerta.classList.remove("d-none");
+                    modalEan.focus();
+                    return;
+                }
+
+                if (!nombre) {
+                    modalNuevoAlimentoAlerta.textContent = "Debe ingresar el nombre descriptivo del alimento.";
+                    modalNuevoAlimentoAlerta.classList.remove("d-none");
+                    modalNombre.focus();
+                    return;
+                }
+
+                if (!catId || isNaN(catId) || catId <= 0) {
+                    modalNuevoAlimentoAlerta.textContent = "Debe seleccionar una categoría para clasificar el alimento.";
+                    modalNuevoAlimentoAlerta.classList.remove("d-none");
+                    modalCategoriaId.focus();
+                    return;
+                }
+
+                btnGuardarModalAlimento.disabled = true;
+                btnGuardarModalSpinner.classList.remove("d-none");
+                btnGuardarModalIcon.classList.add("d-none");
+
+                try {
+                    const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value || "";
+
+                    const response = await fetch('/Donaciones/CrearProductoRapido', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'RequestVerificationToken': token
+                        },
+                        body: JSON.stringify({
+                            codigoBarras: ean,
+                            nombre: nombre,
+                            categoriaId: catId,
+                            unidadMedida: unidad,
+                            stockMinimo: stockMin
+                        })
+                    });
+
+                    const data = await response.json();
+
+                    if (!data.success) {
+                        modalNuevoAlimentoAlerta.textContent = data.message || "Error al registrar el alimento.";
+                        modalNuevoAlimentoAlerta.classList.remove("d-none");
+                        btnGuardarModalAlimento.disabled = false;
+                        btnGuardarModalSpinner.classList.add("d-none");
+                        btnGuardarModalIcon.classList.remove("d-none");
+                        return;
+                    }
+
+                    // Éxito: Agregar nueva opción al select y seleccionarla en Select2
+                    const textoOpcion = `${data.nombre} (${data.categoria}) - [${data.codigoBarras}]`;
+                    const newOption = new Option(textoOpcion, data.codigoBarras, true, true);
+                    $(newOption).data('ean', data.codigoBarras)
+                               .data('nombre', data.nombre)
+                               .data('categoria', data.categoria)
+                               .data('unidad', data.unidadMedida);
+
+                    $('#selProductoCatalogo').append(newOption).trigger('change');
+                    tempEan.value = data.codigoBarras;
+                    badgeUnidad.textContent = data.unidadMedida;
+                    if (avisoEanNoExiste) avisoEanNoExiste.classList.add("d-none");
+
+                    // Cerrar modal
+                    const bsModal = bootstrap.Modal.getInstance(modalNuevoAlimentoEl);
+                    if (bsModal) bsModal.hide();
+
+                    // Foco inmediato al campo de cantidad para continuar la carga fluida
+                    tempCantidad.focus();
+                    tempCantidad.select();
+
+                } catch (err) {
+                    modalNuevoAlimentoAlerta.textContent = "Error de comunicación con el servidor: " + err.message;
+                    modalNuevoAlimentoAlerta.classList.remove("d-none");
+                } finally {
+                    btnGuardarModalAlimento.disabled = false;
+                    btnGuardarModalSpinner.classList.add("d-none");
+                    btnGuardarModalIcon.classList.remove("d-none");
                 }
             });
 

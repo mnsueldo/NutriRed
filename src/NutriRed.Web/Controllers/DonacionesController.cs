@@ -14,17 +14,20 @@ public class DonacionesController : Controller
 {
     private readonly IDonacionService _donacionService;
     private readonly IProductoService _productoService;
+    private readonly ICategoriaService _categoriaService;
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly ILogger<DonacionesController> _logger;
 
     public DonacionesController(
         IDonacionService donacionService,
         IProductoService productoService,
+        ICategoriaService categoriaService,
         UserManager<ApplicationUser> userManager,
         ILogger<DonacionesController> logger)
     {
         _donacionService = donacionService;
         _productoService = productoService;
+        _categoriaService = categoriaService;
         _userManager = userManager;
         _logger = logger;
     }
@@ -234,13 +237,67 @@ public class DonacionesController : Controller
     }
 
     /// <summary>
-    /// Recarga defensiva del catálogo de productos activos para los desplegables y autocompletado.
+    /// Recarga defensiva del catálogo de productos y categorías activas para los desplegables y modales.
     /// </summary>
     private async Task CargarProductosEnViewBagAsync()
     {
-        var result = await _productoService.ObtenerTodosAsync(soloActivos: true);
-        ViewBag.Productos = result.Success && result.Data != null 
-            ? result.Data.ToList() 
+        var prodResult = await _productoService.ObtenerTodosAsync(soloActivos: true);
+        ViewBag.Productos = prodResult.Success && prodResult.Data != null 
+            ? prodResult.Data.ToList() 
             : new List<Producto>();
+
+        var catResult = await _categoriaService.ObtenerTodasAsync(soloActivas: true);
+        ViewBag.Categorias = catResult.Success && catResult.Data != null
+            ? catResult.Data.ToList()
+            : new List<Categoria>();
+    }
+
+    /// <summary>
+    /// Alta rápida de alimento desde el modal de recepción de donaciones (vía AJAX).
+    /// </summary>
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> CrearProductoRapido([FromBody] CrearProductoRapidoViewModel model)
+    {
+        if (model == null || string.IsNullOrWhiteSpace(model.CodigoBarras) || string.IsNullOrWhiteSpace(model.Nombre))
+        {
+            return Json(new { success = false, message = "El código de barras y el nombre del alimento son obligatorios." });
+        }
+
+        if (model.CategoriaId <= 0)
+        {
+            return Json(new { success = false, message = "Debe seleccionar una categoría válida." });
+        }
+
+        var producto = new Producto
+        {
+            CodigoBarras = model.CodigoBarras.Trim(),
+            Nombre = model.Nombre.Trim(),
+            CategoriaId = model.CategoriaId,
+            UnidadMedida = model.UnidadMedida,
+            StockMinimo = model.StockMinimo > 0 ? model.StockMinimo : 10,
+            Activo = true
+        };
+
+        var result = await _productoService.CrearAsync(producto);
+        if (!result.Success || result.Data == null)
+        {
+            return Json(new { success = false, message = result.ErrorMessage ?? "No se pudo registrar el alimento en el catálogo." });
+        }
+
+        var catResult = await _categoriaService.ObtenerPorIdAsync(result.Data.CategoriaId);
+        var categoriaNombre = catResult.Success && catResult.Data != null ? catResult.Data.Nombre : "General";
+
+        return Json(new
+        {
+            success = true,
+            id = result.Data.Id,
+            codigoBarras = result.Data.CodigoBarras,
+            nombre = result.Data.Nombre,
+            categoria = categoriaNombre,
+            categoriaId = result.Data.CategoriaId,
+            unidadMedida = result.Data.UnidadMedida.ToString(),
+            message = $"Alimento '{result.Data.Nombre}' incorporado al catálogo exitosamente."
+        });
     }
 }

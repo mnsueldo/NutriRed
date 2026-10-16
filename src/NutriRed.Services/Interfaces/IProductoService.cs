@@ -13,4 +13,5 @@ public interface IProductoService
     Task<OperationResult<Producto>> ActualizarAsync(Producto producto);
     Task<OperationResult> DesactivarAsync(int id);
     Task<OperationResult> ActivarAsync(int id);
+    Task<OperationResult> EliminarAsync(int id);
 }

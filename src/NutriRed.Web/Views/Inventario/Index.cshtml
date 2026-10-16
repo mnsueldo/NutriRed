@@ -216,7 +216,15 @@
                                         @(item.NombreProducto.Length > 2 ? item.NombreProducto.Substring(0, 2).ToUpper() : "AL")
                                     </div>
                                     <div>
-                                        <div class="fw-bold text-dark" style="font-size: 0.95rem;">@item.NombreProducto</div>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <span class="fw-bold text-dark" style="font-size: 0.95rem;">@item.NombreProducto</span>
+                                            @if (!item.Activo)
+                                            {
+                                                <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill px-2 py-0" style="font-size: 0.7rem;" title="Alimento desactivado en el catálogo">
+                                                    <i class="bi bi-slash-circle me-1"></i>Inactivo
+                                                </span>
+                                            }
+                                        </div>
                                         <div class="mt-1">
                                             <span class="badge bg-light text-secondary border font-monospace px-2 py-1" style="font-size: 0.78rem;">
                                                 <i class="bi bi-upc me-1"></i>@item.CodigoBarras
@@ -313,11 +321,51 @@
                                         <i class="bi bi-clock-history me-1"></i>Historial
                                     </a>
 
-                                    @if (dias <= 0)
+                                    @if (dias <= 0 && item.StockVencido > 0)
                                     {
                                         <a asp-action="RegistrarMerma" asp-route-productoId="@item.ProductoId" class="btn btn-sm btn-danger rounded-pill px-3 fw-semibold shadow-sm" title="Registrar baja por vencimiento inmediato">
                                             <i class="bi bi-trash-fill me-1"></i>Dar de baja
                                         </a>
+                                    }
+
+                                    @if (User.IsInRole("Administrador"))
+                                    {
+                                        <div class="dropdown d-inline-block">
+                                            <button class="btn btn-sm btn-outline-secondary rounded-circle shadow-none p-1" style="width: 32px; height: 32px;" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Más opciones de gestión">
+                                                <i class="bi bi-three-dots-vertical"></i>
+                                            </button>
+                                            <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 rounded-3">
+                                                <li>
+                                                    <a class="dropdown-item small" asp-controller="Productos" asp-action="Edit" asp-route-id="@item.ProductoId">
+                                                        <i class="bi bi-pencil me-2 text-primary"></i>Editar en Catálogo
+                                                    </a>
+                                                </li>
+                                                <li>
+                                                    <form asp-controller="Productos" asp-action="CambiarEstado" method="post" class="d-inline"
+                                                          onsubmit="return confirm('¿Está seguro de que desea @(item.Activo ? "desactivar (baja lógica)" : "reactivar") el alimento \'@item.NombreProducto\'?');">
+                                                        @Html.AntiForgeryToken()
+                                                        <input type="hidden" name="id" value="@item.ProductoId" />
+                                                        <input type="hidden" name="nuevoEstado" value="@(!item.Activo ? "true" : "false")" />
+                                                        <input type="hidden" name="returnUrl" value="/Inventario" />
+                                                        <button type="submit" class="dropdown-item small text-warning-emphasis">
+                                                            <i class="bi @(item.Activo ? "bi-toggle-on" : "bi-toggle-off") me-2"></i>@(item.Activo ? "Desactivar (Baja lógica)" : "Activar en catálogo")
+                                                        </button>
+                                                    </form>
+                                                </li>
+                                                <li><hr class="dropdown-divider my-1"></li>
+                                                <li>
+                                                    <form asp-controller="Productos" asp-action="Delete" method="post" class="d-inline"
+                                                          onsubmit="return confirm('¿Está seguro de eliminar el alimento \'@item.NombreProducto\'?\n\n- Si no posee movimientos históricos, se borrará físicamente.\n- Si posee historial de lotes o entregas, el sistema protegerá la trazabilidad.');">
+                                                        @Html.AntiForgeryToken()
+                                                        <input type="hidden" name="id" value="@item.ProductoId" />
+                                                        <input type="hidden" name="returnUrl" value="/Inventario" />
+                                                        <button type="submit" class="dropdown-item small text-danger">
+                                                            <i class="bi bi-trash3 me-2"></i>Eliminar alimento
+                                                        </button>
+                                                    </form>
+                                                </li>
+                                            </ul>
+                                        </div>
                                     }
                                 </div>
                             </td>

@@ -42,3 +42,12 @@ public class LoteItemViewModel
         _ => $"Vence en {DiasParaVencer} días"
     };
 }
+
+public class CrearProductoRapidoViewModel
+{
+    public string CodigoBarras { get; set; } = string.Empty;
+    public string Nombre { get; set; } = string.Empty;
+    public int CategoriaId { get; set; }
+    public UnidadMedida UnidadMedida { get; set; } = UnidadMedida.Unidades;
+    public decimal StockMinimo { get; set; } = 10;
+}

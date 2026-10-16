@@ -30,6 +30,7 @@ public class InventarioService : IInventarioService
                         Categoria = p.Categoria != null ? p.Categoria.Nombre : "Sin Categoría",
                         StockMinimo = p.StockMinimo,
                         UnidadMedida = p.UnidadMedida,
+                        Activo = p.Activo,
 
                         // Lotes disponibles con existencias físicas en depósito
                         CantidadLotesActivos = p.Lotes.Count(l => l.Estado == EstadoLote.Disponible && l.CantidadDisponible > 0),

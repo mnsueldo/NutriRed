@@ -38,6 +38,9 @@ public class StockProductoDto
 
     // Identificador para el filtro y la insignia FEFO ("Vencido", "Alerta", "Optimo", "SinStock")
     public string EstadoFEFO { get; set; } = "Optimo";
+
+    // Indicador de alta/baja lógica en catálogo
+    public bool Activo { get; set; } = true;
 }
 
 public class AjusteMermaRequest

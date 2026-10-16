@@ -218,7 +218,7 @@ public class ProductosController : Controller
     [HttpPost]
     [Authorize(Roles = "Administrador")]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> CambiarEstado(int id, bool nuevoEstado)
+    public async Task<IActionResult> CambiarEstado(int id, bool nuevoEstado, string? returnUrl = null)
     {
         var result = nuevoEstado 
             ? await _productoService.ActivarAsync(id) 
@@ -233,6 +233,36 @@ public class ProductosController : Controller
             TempData["Exito"] = nuevoEstado 
                 ? "El alimento ha sido reactivado en el catálogo." 
                 : "El alimento ha sido desactivado (baja lógica) preservando sus lotes históricos.";
+        }
+
+        if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
+        {
+            return Redirect(returnUrl);
+        }
+
+        return RedirectToAction(nameof(Index));
+    }
+
+    // POST: /Productos/Delete/5
+    [HttpPost]
+    [Authorize(Roles = "Administrador")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Delete(int id, string? returnUrl = null)
+    {
+        var result = await _productoService.EliminarAsync(id);
+
+        if (!result.Success)
+        {
+            TempData["Error"] = result.ErrorMessage;
+        }
+        else
+        {
+            TempData["Exito"] = "El alimento ha sido eliminado físicamente del catálogo exitosamente.";
+        }
+
+        if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
+        {
+            return Redirect(returnUrl);
         }
 
         return RedirectToAction(nameof(Index));
