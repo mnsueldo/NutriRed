@@ -21,10 +21,120 @@ import java.util.concurrent.TimeUnit
 object NutriRedApiClient {
 
     private const val TAG = "NutriRedApiClient"
+    private const val PREFS_NAME = "NutriRedNetworkPrefs"
+    private const val KEY_CUSTOM_URL = "custom_server_url"
 
-    // IP local de la PC para probar desde el celular físico conectado a la misma red Wi-Fi:
+    private var sharedPreferences: android.content.SharedPreferences? = null
+
+    // URL descubierta y confirmada que funciona activamente
+    @Volatile
+    var activeBaseUrl: String? = null
+
+    // URL configurada manualmente por el usuario en la app (ej: "http://192.168.100.42:5137/api/")
+    @Volatile
+    var customBaseUrl: String? = null
+
+    // 192.168.100.42 es la IP de la máquina de desarrollo en la red Wi-Fi
+    // 10.0.2.2 es el alias del emulador oficial Android Studio hacia el localhost anfitrión
     var baseUrl: String = "http://192.168.100.42:5137/api/"
-    // Nota: Para emulador oficial de Android Studio usar "http://10.0.2.2:5137/api/"
+    var fallbackUrl: String = "http://10.0.2.2:5137/api/"
+    var isNetworkEnabled: Boolean = true
+    var ioDispatcher: kotlinx.coroutines.CoroutineDispatcher = Dispatchers.IO
+
+    private val defaultCandidates = listOf(
+        "http://192.168.100.42:5137/api/",
+        "http://10.0.2.2:5137/api/",
+        "http://10.0.3.2:5137/api/",
+        "http://localhost:5137/api/",
+        "http://127.0.0.1:5137/api/"
+    )
+
+    fun init(context: android.content.Context) {
+        if (sharedPreferences == null) {
+            sharedPreferences = context.applicationContext.getSharedPreferences(PREFS_NAME, android.content.Context.MODE_PRIVATE)
+            val savedUrl = sharedPreferences?.getString(KEY_CUSTOM_URL, null)
+            if (!savedUrl.isNullOrBlank()) {
+                val formatted = formatUrl(savedUrl)
+                customBaseUrl = formatted
+                activeBaseUrl = formatted
+                Log.i(TAG, "Cargada URL de servidor guardada desde SharedPreferences: $formatted")
+            }
+        }
+    }
+
+    fun setCustomServerUrl(urlOrHost: String?) {
+        val clean = urlOrHost?.trim() ?: ""
+        val formatted = if (clean.isBlank()) null else formatUrl(clean)
+        customBaseUrl = formatted
+        activeBaseUrl = formatted
+        sharedPreferences?.edit()?.let { editor ->
+            if (formatted != null) {
+                editor.putString(KEY_CUSTOM_URL, formatted)
+            } else {
+                editor.remove(KEY_CUSTOM_URL)
+            }
+            editor.apply()
+        }
+        Log.i(TAG, "URL de servidor configurada: $formatted")
+    }
+
+    fun formatUrl(input: String): String {
+        var clean = input.trim()
+        if (!clean.startsWith("http://") && !clean.startsWith("https://")) {
+            clean = if (clean.contains(":")) "http://$clean" else "http://$clean:5137"
+        }
+        clean = clean.trimEnd('/')
+        return if (clean.endsWith("/api")) "$clean/" else if (clean.endsWith("/api/")) clean else "$clean/api/"
+    }
+
+    fun getCandidateUrls(): List<String> {
+        val list = mutableListOf<String>()
+        customBaseUrl?.let { list.add(formatUrl(it)) }
+        activeBaseUrl?.let { list.add(formatUrl(it)) }
+        list.add(formatUrl(baseUrl))
+        list.add(formatUrl(fallbackUrl))
+        list.addAll(defaultCandidates.map { formatUrl(it) })
+        return list.distinct()
+    }
+
+    data class ConnectionCheckResult(
+        val success: Boolean,
+        val url: String,
+        val message: String
+    )
+
+    suspend fun testConnection(targetUrl: String? = null): ConnectionCheckResult = withContext(ioDispatcher) {
+        val urlsToTest = if (!targetUrl.isNullOrBlank()) {
+            listOf(formatUrl(targetUrl))
+        } else {
+            getCandidateUrls()
+        }
+
+        for (candidate in urlsToTest) {
+            try {
+                val req = Request.Builder().url("${candidate.trimEnd('/')}/categorias").get().build()
+                val resp = probeClient.newCall(req).execute()
+                resp.use { r ->
+                    if (r.isSuccessful || r.code == 401 || r.code == 403 || r.code == 404) {
+                        activeBaseUrl = candidate
+                        return@withContext ConnectionCheckResult(
+                            success = true,
+                            url = candidate,
+                            message = "Conexión exitosa al servidor .NET ($candidate)"
+                        )
+                    }
+                }
+            } catch (e: Exception) {
+                Log.d(TAG, "Prueba a $candidate no respondió: ${e.message}")
+            }
+        }
+
+        return@withContext ConnectionCheckResult(
+            success = false,
+            url = targetUrl ?: (activeBaseUrl ?: baseUrl),
+            message = "No se pudo conectar a ninguna dirección del backend. Verifique que la PC tenga iniciado el servidor y esté en la misma red Wi-Fi."
+        )
+    }
 
     private val json = Json {
         ignoreUnknownKeys = true
@@ -34,27 +144,67 @@ object NutriRedApiClient {
     }
 
     private val client = OkHttpClient.Builder()
-        .connectTimeout(5, TimeUnit.SECONDS)
+        .connectTimeout(3, TimeUnit.SECONDS)
         .readTimeout(10, TimeUnit.SECONDS)
         .writeTimeout(10, TimeUnit.SECONDS)
         .build()
 
+    private val probeClient = OkHttpClient.Builder()
+        .connectTimeout(2, TimeUnit.SECONDS)
+        .readTimeout(3, TimeUnit.SECONDS)
+        .build()
+
     private val JSON_MEDIA_TYPE = "application/json; charset=utf-8".toMediaType()
+
+    private fun executeWithFallback(requestBuilder: (String) -> Request): okhttp3.Response? {
+        if (!isNetworkEnabled) return null
+
+        // 1. Si ya tenemos una URL activa conocida, intentar con ella primero directamente
+        val active = activeBaseUrl
+        if (!active.isNullOrBlank()) {
+            try {
+                val req = requestBuilder(active.trimEnd('/'))
+                val resp = client.newCall(req).execute()
+                return resp
+            } catch (e: Exception) {
+                Log.w(TAG, "Fallo de conexión a activeBaseUrl ($active): ${e.message}. Probando candidatos...")
+                activeBaseUrl = null
+            }
+        }
+
+        // 2. Probar candidatos disponibles
+        val urlsToTry = getCandidateUrls()
+        for (candidate in urlsToTry) {
+            try {
+                val req = requestBuilder(candidate.trimEnd('/'))
+                val resp = client.newCall(req).execute()
+                activeBaseUrl = candidate
+                Log.i(TAG, "Conexión exitosa y fijada a activeBaseUrl: $candidate")
+                return resp
+            } catch (e: Exception) {
+                Log.w(TAG, "Intento de conexión a $candidate falló: ${e.message}")
+            }
+        }
+        return null
+    }
 
     // ==========================================
     // PRODUCTOS (Catálogo y Escaneo de Código de Barras)
     // ==========================================
 
-    suspend fun getProductByBarcode(barcode: String): Product? = withContext(Dispatchers.IO) {
-        val url = "${baseUrl.trimEnd('/')}/productos/barcode/${barcode.trim()}"
+    suspend fun getProductByBarcode(barcode: String): Product? = withContext(ioDispatcher) {
+        val cleanBarcode = barcode.trim()
         try {
-            val request = Request.Builder().url(url).get().build()
-            client.newCall(request).execute().use { response ->
-                if (!response.isSuccessful) {
-                    Log.w(TAG, "getProductByBarcode HTTP ${response.code} para $barcode")
+            val response = executeWithFallback { base ->
+                Request.Builder().url("$base/productos/barcode/$cleanBarcode").get().build()
+            } ?: return@withContext null
+
+            response.use { resp ->
+                if (!resp.isSuccessful) {
+                    Log.w(TAG, "getProductByBarcode HTTP ${resp.code} para $cleanBarcode")
                     return@withContext null
                 }
-                val bodyStr = response.body?.string() ?: return@withContext null
+                val bodyStr = resp.body?.string() ?: return@withContext null
                 return@withContext json.decodeFromString<Product>(bodyStr)
             }
         } catch (e: Exception) {
@@ -63,16 +213,18 @@ object NutriRedApiClient {
         }
     }
 
-    suspend fun getAllProducts(): List<Product> = withContext(Dispatchers.IO) {
-        val url = "${baseUrl.trimEnd('/')}/productos"
+    suspend fun getAllProducts(): List<Product> = withContext(ioDispatcher) {
         try {
-            val request = Request.Builder().url(url).get().build()
-            client.newCall(request).execute().use { response ->
-                if (!response.isSuccessful) {
-                    Log.w(TAG, "getAllProducts HTTP ${response.code}")
+            val response = executeWithFallback { base ->
+                Request.Builder().url("$base/productos").get().build()
+            } ?: return@withContext emptyList()
+
+            response.use { resp ->
+                if (!resp.isSuccessful) {
+                    Log.w(TAG, "getAllProducts HTTP ${resp.code}")
                     return@withContext emptyList()
                 }
-                val bodyStr = response.body?.string() ?: return@withContext emptyList()
+                val bodyStr = resp.body?.string() ?: return@withContext emptyList()
                 return@withContext json.decodeFromString<List<Product>>(bodyStr)
             }
         } catch (e: Exception) {
@@ -81,13 +233,16 @@ object NutriRedApiClient {
         }
     }
 
-    suspend fun searchProducts(query: String): List<Product> = withContext(Dispatchers.IO) {
-        val url = "${baseUrl.trimEnd('/')}/productos/search?q=${java.net.URLEncoder.encode(query.trim(), "UTF-8")}"
+    suspend fun searchProducts(query: String): List<Product> = withContext(ioDispatcher) {
+        val encodedQuery = java.net.URLEncoder.encode(query.trim(), "UTF-8")
         try {
-            val request = Request.Builder().url(url).get().build()
-            client.newCall(request).execute().use { response ->
-                if (!response.isSuccessful) return@withContext emptyList()
-                val bodyStr = response.body?.string() ?: return@withContext emptyList()
+            val response = executeWithFallback { base ->
+                Request.Builder().url("$base/productos/search?q=$encodedQuery").get().build()
+            } ?: return@withContext emptyList()
+
+            response.use { resp ->
+                if (!resp.isSuccessful) return@withContext emptyList()
+                val bodyStr = resp.body?.string() ?: return@withContext emptyList()
                 return@withContext json.decodeFromString<List<Product>>(bodyStr)
             }
         } catch (e: Exception) {
@@ -100,16 +255,18 @@ object NutriRedApiClient {
     // CATEGORÍAS (Clasificación de Alimentos)
     // ==========================================
 
-    suspend fun getAllCategories(): List<Category> = withContext(Dispatchers.IO) {
-        val url = "${baseUrl.trimEnd('/')}/categorias"
+    suspend fun getAllCategories(): List<Category> = withContext(ioDispatcher) {
         try {
-            val request = Request.Builder().url(url).get().build()
-            client.newCall(request).execute().use { response ->
-                if (!response.isSuccessful) {
-                    Log.w(TAG, "getAllCategories HTTP ${response.code}")
+            val response = executeWithFallback { base ->
+                Request.Builder().url("$base/categorias").get().build()
+            } ?: return@withContext emptyList()
+
+            response.use { resp ->
+                if (!resp.isSuccessful) {
+                    Log.w(TAG, "getAllCategories HTTP ${resp.code}")
                     return@withContext emptyList()
                 }
-                val bodyStr = response.body?.string() ?: return@withContext emptyList()
+                val bodyStr = resp.body?.string() ?: return@withContext emptyList()
                 return@withContext json.decodeFromString<List<Category>>(bodyStr)
             }
         } catch (e: Exception) {
@@ -128,8 +285,7 @@ object NutriRedApiClient {
         val category: String? = null
     )
 
-    suspend fun createProduct(product: Product): Product? = withContext(Dispatchers.IO) {
-        val url = "${baseUrl.trimEnd('/')}/productos"
+    suspend fun createProduct(product: Product): Product? = withContext(ioDispatcher) {
         try {
             val reqPayload = CrearProductoRequest(
                 barcode = product.barcode,
@@ -140,13 +296,17 @@ object NutriRedApiClient {
                 category = product.category
             )
             val jsonBody = json.encodeToString(reqPayload).toRequestBody(JSON_MEDIA_TYPE)
-            val request = Request.Builder().url(url).post(jsonBody).build()
-            client.newCall(request).execute().use { response ->
-                if (!response.isSuccessful) {
-                    Log.w(TAG, "createProduct HTTP ${response.code}")
+
+            val response = executeWithFallback { base ->
+                Request.Builder().url("$base/productos").post(jsonBody).build()
+            } ?: return@withContext null
+
+            response.use { resp ->
+                if (!resp.isSuccessful) {
+                    Log.w(TAG, "createProduct HTTP ${resp.code}")
                     return@withContext null
                 }
-                val bodyStr = response.body?.string() ?: return@withContext null
+                val bodyStr = resp.body?.string() ?: return@withContext null
                 return@withContext json.decodeFromString<Product>(bodyStr)
             }
         } catch (e: Exception) {
@@ -159,13 +319,16 @@ object NutriRedApiClient {
     // DONANTES (Búsqueda y Registro)
     // ==========================================
 
-    suspend fun findDonorByDocument(documentNumber: String): Donor? = withContext(Dispatchers.IO) {
-        val url = "${baseUrl.trimEnd('/')}/donantes/buscar?documento=${documentNumber.trim()}"
+    suspend fun findDonorByDocument(documentNumber: String): Donor? = withContext(ioDispatcher) {
+        val cleanDoc = documentNumber.trim()
         try {
-            val request = Request.Builder().url(url).get().build()
-            client.newCall(request).execute().use { response ->
-                if (!response.isSuccessful) return@withContext null
-                val bodyStr = response.body?.string() ?: return@withContext null
+            val response = executeWithFallback { base ->
+                Request.Builder().url("$base/donantes/buscar?documento=$cleanDoc").get().build()
+            } ?: return@withContext null
+
+            response.use { resp ->
+                if (!resp.isSuccessful) return@withContext null
+                val bodyStr = resp.body?.string() ?: return@withContext null
                 return@withContext json.decodeFromString<Donor>(bodyStr)
             }
         } catch (e: Exception) {
@@ -174,13 +337,15 @@ object NutriRedApiClient {
         }
     }
 
-    suspend fun getAllDonors(): List<Donor> = withContext(Dispatchers.IO) {
-        val url = "${baseUrl.trimEnd('/')}/donantes"
+    suspend fun getAllDonors(): List<Donor> = withContext(ioDispatcher) {
         try {
-            val request = Request.Builder().url(url).get().build()
-            client.newCall(request).execute().use { response ->
-                if (!response.isSuccessful) return@withContext emptyList()
-                val bodyStr = response.body?.string() ?: return@withContext emptyList()
+            val response = executeWithFallback { base ->
+                Request.Builder().url("$base/donantes").get().build()
+            } ?: return@withContext emptyList()
+
+            response.use { resp ->
+                if (!resp.isSuccessful) return@withContext emptyList()
+                val bodyStr = resp.body?.string() ?: return@withContext emptyList()
                 return@withContext json.decodeFromString<List<Donor>>(bodyStr)
             }
         } catch (e: Exception) {
@@ -198,8 +363,7 @@ object NutriRedApiClient {
         val email: String?
     )
 
-    suspend fun saveDonor(donor: Donor): Donor? = withContext(Dispatchers.IO) {
-        val url = "${baseUrl.trimEnd('/')}/donantes"
+    suspend fun saveDonor(donor: Donor): Donor? = withContext(ioDispatcher) {
         try {
             val reqPayload = GuardarDonanteRequest(
                 type = donor.type.name,
@@ -209,10 +373,14 @@ object NutriRedApiClient {
                 email = donor.email
             )
             val jsonBody = json.encodeToString(reqPayload).toRequestBody(JSON_MEDIA_TYPE)
-            val request = Request.Builder().url(url).post(jsonBody).build()
-            client.newCall(request).execute().use { response ->
-                if (!response.isSuccessful) return@withContext null
-                val bodyStr = response.body?.string() ?: return@withContext null
+
+            val response = executeWithFallback { base ->
+                Request.Builder().url("$base/donantes").post(jsonBody).build()
+            } ?: return@withContext null
+
+            response.use { resp ->
+                if (!resp.isSuccessful) return@withContext null
+                val bodyStr = resp.body?.string() ?: return@withContext null
                 return@withContext json.decodeFromString<Donor>(bodyStr)
             }
         } catch (e: Exception) {
@@ -222,11 +390,11 @@ object NutriRedApiClient {
     }
 
     // ==========================================
-    // DONACIONES (Recepción de Alimentos y Stock)
+    // DONACIONES (Registro Oficial y Descarga de Comprobante)
     // ==========================================
 
     @Serializable
-    data class DonacionItemApiRequest(
+    private data class RegistrarDonacionItemRequest(
         val productBarcode: String,
         val productName: String,
         val quantity: Double,
@@ -238,31 +406,30 @@ object NutriRedApiClient {
     )
 
     @Serializable
-    data class RegistrarDonacionApiRequest(
-        val donorType: String? = null,
-        val documentNumber: String? = null,
-        val donorName: String? = null,
-        val phone: String? = null,
-        val email: String? = null,
-        val volunteerId: String = "VOL-01",
-        val volunteerName: String = "Voluntario Recepción",
-        val items: List<DonacionItemApiRequest>
+    private data class RegistrarDonacionApiRequest(
+        val donorType: String?,
+        val documentNumber: String?,
+        val donorName: String?,
+        val phone: String?,
+        val email: String?,
+        val volunteerId: String,
+        val volunteerName: String,
+        val items: List<RegistrarDonacionItemRequest>
     )
 
     @Serializable
-    data class RegistrarDonacionResponse(
+    private data class RegistrarDonacionResponse(
         val success: Boolean,
-        val id: Int? = null,
+        val id: Int,
         val donationCode: String? = null,
         val timestamp: String? = null,
         val message: String? = null
     )
 
-    suspend fun submitDonation(donation: Donation): Donation? = withContext(Dispatchers.IO) {
-        val url = "${baseUrl.trimEnd('/')}/donaciones"
+    suspend fun submitDonation(donation: Donation): Donation? = withContext(ioDispatcher) {
         try {
             val itemsPayload = donation.items.map { item ->
-                DonacionItemApiRequest(
+                RegistrarDonacionItemRequest(
                     productBarcode = item.productBarcode,
                     productName = item.productName,
                     quantity = item.quantity,
@@ -286,14 +453,25 @@ object NutriRedApiClient {
             )
 
             val jsonBody = json.encodeToString(reqPayload).toRequestBody(JSON_MEDIA_TYPE)
-            val request = Request.Builder().url(url).post(jsonBody).build()
-            client.newCall(request).execute().use { response ->
-                if (!response.isSuccessful) {
-                    val err = response.body?.string()
-                    Log.w(TAG, "submitDonation falló HTTP ${response.code}: $err")
-                    return@withContext null
+
+            val response = executeWithFallback { base ->
+                Request.Builder().url("$base/donaciones").post(jsonBody).build()
+            } ?: executeWithFallback { base ->
+                Request.Builder().url("$base/donaciones/registrar").post(jsonBody).build()
+            } ?: return@withContext null
+
+            response.use { resp ->
+                if (!resp.isSuccessful) {
+                    val err = resp.body?.string() ?: ""
+                    Log.w(TAG, "submitDonation falló HTTP ${resp.code}: $err")
+                    val parsedMsg = try {
+                        val obj = json.decodeFromString<RegistrarDonacionResponse>(err)
+                        obj.message
+                    } catch (_: Exception) { null }
+                    val finalMsg = parsedMsg ?: if (err.isNotBlank() && err.length < 250) err else "Error HTTP ${resp.code} al registrar donación."
+                    throw IllegalStateException(finalMsg)
                 }
-                val bodyStr = response.body?.string() ?: return@withContext null
+                val bodyStr = resp.body?.string() ?: return@withContext null
                 val res = json.decodeFromString<RegistrarDonacionResponse>(bodyStr)
                 return@withContext donation.copy(
                     id = res.id,
@@ -301,8 +479,11 @@ object NutriRedApiClient {
                     timestamp = res.timestamp ?: donation.timestamp
                 )
             }
+        } catch (e: IllegalStateException) {
+            // Propagar el error de validación de negocio al ViewModel para mostrarlo en pantalla
+            throw e
         } catch (e: Exception) {
-            Log.e(TAG, "Error en submitDonation: ${e.message}")
+            Log.e(TAG, "Error de red en submitDonation: ${e.message}")
             return@withContext null
         }
     }
@@ -311,16 +492,18 @@ object NutriRedApiClient {
     // ENTREGAS (Despacho con Firma Digital)
     // ==========================================
 
-    suspend fun getPreparedPackagesResult(): Result<List<FoodPackage>> = withContext(Dispatchers.IO) {
-        val url = "${baseUrl.trimEnd('/')}/entregas/paquetes-preparados"
+    suspend fun getPreparedPackagesResult(): Result<List<FoodPackage>> = withContext(ioDispatcher) {
         try {
-            val request = Request.Builder().url(url).get().build()
-            client.newCall(request).execute().use { response ->
-                if (!response.isSuccessful) {
-                    Log.w(TAG, "getPreparedPackages HTTP ${response.code}")
-                    return@withContext Result.failure(Exception("HTTP ${response.code}"))
+            val response = executeWithFallback { base ->
+                Request.Builder().url("$base/entregas/paquetes-preparados").get().build()
+            } ?: return@withContext Result.failure(Exception("No se pudo conectar con el servidor"))
+
+            response.use { resp ->
+                if (!resp.isSuccessful) {
+                    Log.w(TAG, "getPreparedPackages HTTP ${resp.code}")
+                    return@withContext Result.failure(Exception("HTTP ${resp.code}"))
                 }
-                val bodyStr = response.body?.string() ?: "[]"
+                val bodyStr = resp.body?.string() ?: "[]"
                 val packages = json.decodeFromString<List<FoodPackage>>(bodyStr)
                 return@withContext Result.success(packages)
             }
@@ -333,6 +516,27 @@ object NutriRedApiClient {
     suspend fun getPreparedPackages(): List<FoodPackage> =
         getPreparedPackagesResult().getOrDefault(emptyList())
 
+    suspend fun getPackageByQr(packageCode: String): FoodPackage? = withContext(ioDispatcher) {
+        val cleanCode = packageCode.trim()
+        try {
+            val response = executeWithFallback { base ->
+                Request.Builder().url("$base/entregas/paquete/$cleanCode").get().build()
+            } ?: return@withContext null
+
+            response.use { resp ->
+                if (!resp.isSuccessful) {
+                    Log.w(TAG, "getPackageByQr HTTP ${resp.code} para $cleanCode")
+                    return@withContext null
+                }
+                val bodyStr = resp.body?.string() ?: return@withContext null
+                return@withContext json.decodeFromString<FoodPackage>(bodyStr)
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error buscando paquete por QR: ${e.message}")
+            return@withContext null
+        }
+    }
+
     @Serializable
     private data class ConfirmarEntregaRequest(
         val packageId: String?,
@@ -344,16 +548,6 @@ object NutriRedApiClient {
         val volunteerId: String = "VOL-01"
     )
 
-    @Serializable
-    private data class ConfirmarEntregaResponse(
-        val success: Boolean,
-        val message: String? = null,
-        val packageCode: String? = null,
-        val deliveredAt: String? = null,
-        val receiverDni: String? = null,
-        val receiverName: String? = null
-    )
-
     suspend fun confirmDelivery(
         packageId: String,
         packageCode: String,
@@ -361,8 +555,7 @@ object NutriRedApiClient {
         receiverName: String,
         signatureBase64: String,
         volunteerId: String
-    ): Boolean = withContext(Dispatchers.IO) {
-        val url = "${baseUrl.trimEnd('/')}/entregas/confirmar"
+    ): Boolean = withContext(ioDispatcher) {
         try {
             val reqPayload = ConfirmarEntregaRequest(
                 packageId = packageId,
@@ -374,9 +567,13 @@ object NutriRedApiClient {
                 volunteerId = volunteerId
             )
             val jsonBody = json.encodeToString(reqPayload).toRequestBody(JSON_MEDIA_TYPE)
-            val request = Request.Builder().url(url).post(jsonBody).build()
-            client.newCall(request).execute().use { response ->
-                return@withContext response.isSuccessful
+
+            val response = executeWithFallback { base ->
+                Request.Builder().url("$base/entregas/confirmar").post(jsonBody).build()
+            } ?: return@withContext false
+
+            response.use { resp ->
+                return@withContext resp.isSuccessful
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error en confirmDelivery: ${e.message}")
@@ -396,8 +593,7 @@ object NutriRedApiClient {
         packageCode: String,
         reason: String,
         volunteerName: String = "Voluntario Móvil"
-    ): Boolean = withContext(Dispatchers.IO) {
-        val url = "${baseUrl.trimEnd('/')}/entregas/fallida"
+    ): Boolean = withContext(ioDispatcher) {
         try {
             val reqPayload = EntregaFallidaApiRequest(
                 packageCode = packageCode.trim(),
@@ -405,13 +601,17 @@ object NutriRedApiClient {
                 volunteerName = volunteerName.trim()
             )
             val jsonBody = json.encodeToString(reqPayload).toRequestBody(JSON_MEDIA_TYPE)
-            val request = Request.Builder().url(url).post(jsonBody).build()
-            client.newCall(request).execute().use { response ->
-                if (!response.isSuccessful) {
-                    val err = response.body?.string()
-                    Log.w(TAG, "registerFailedDelivery HTTP ${response.code}: $err")
+
+            val response = executeWithFallback { base ->
+                Request.Builder().url("$base/entregas/fallida").post(jsonBody).build()
+            } ?: return@withContext false
+
+            response.use { resp ->
+                if (!resp.isSuccessful) {
+                    val err = resp.body?.string()
+                    Log.w(TAG, "registerFailedDelivery HTTP ${resp.code}: $err")
                 }
-                return@withContext response.isSuccessful
+                return@withContext resp.isSuccessful
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error en registerFailedDelivery: ${e.message}")
@@ -437,15 +637,18 @@ object NutriRedApiClient {
         val user: User? = null
     )
 
-    suspend fun login(email: String, password: String): Result<User> = withContext(Dispatchers.IO) {
-        val url = "${baseUrl.trimEnd('/')}/auth/login"
+    suspend fun login(email: String, password: String): Result<User> = withContext(ioDispatcher) {
         try {
             val reqPayload = LoginRequest(email = email.trim(), password = password.trim())
             val jsonBody = json.encodeToString(reqPayload).toRequestBody(JSON_MEDIA_TYPE)
-            val request = Request.Builder().url(url).post(jsonBody).build()
-            client.newCall(request).execute().use { response ->
-                val bodyStr = response.body?.string() ?: ""
-                if (response.isSuccessful) {
+
+            val response = executeWithFallback { base ->
+                Request.Builder().url("$base/auth/login").post(jsonBody).build()
+            } ?: return@withContext Result.failure(Exception("No se pudo conectar al servidor local en $baseUrl ni $fallbackUrl"))
+
+            response.use { resp ->
+                val bodyStr = resp.body?.string() ?: ""
+                if (resp.isSuccessful) {
                     val loginRes = json.decodeFromString<LoginResponse>(bodyStr)
                     val user = loginRes.user ?: User(email = email, fullName = "Voluntario")
                     return@withContext Result.success(user)
@@ -454,7 +657,7 @@ object NutriRedApiClient {
                         val errObj = json.decodeFromString<LoginResponse>(bodyStr)
                         errObj.message ?: "Credenciales inválidas."
                     } catch (_: Exception) {
-                        "Error HTTP ${response.code} al iniciar sesión."
+                        "Error HTTP ${resp.code} al iniciar sesión."
                     }
                     return@withContext Result.failure(Exception(msg))
                 }

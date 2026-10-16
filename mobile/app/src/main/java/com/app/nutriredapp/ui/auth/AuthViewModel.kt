@@ -39,6 +39,13 @@ class AuthViewModel : ViewModel() {
                 // 1. Intentar autenticar contra el backend ASP.NET Core
                 val result = NutriRedApiClient.login(cleanEmail, cleanPassword)
                 if (result.isSuccess) {
+                    val user = result.getOrNull()
+                    val resolvedName = when {
+                        !user?.fullName.isNullOrBlank() -> user.fullName
+                        !user?.email.isNullOrBlank() -> user.email.substringBefore('@')
+                        else -> cleanEmail.substringBefore('@')
+                    }
+                    com.app.nutriredapp.data.session.UserSession.setLoggedInUser(resolvedName, user?.email ?: cleanEmail, user?.id)
                     _authState.value = AuthState.Success
                     return@launch
                 }
@@ -49,7 +56,9 @@ class AuthViewModel : ViewModel() {
                 val isAdmin = cleanEmail.equals("admin", ignoreCase = true) ||
                               cleanEmail.equals("admin@nutrired.org", ignoreCase = true)
 
-                if ((isVolunteer || isAdmin) && cleanPassword == "123456") {
+                if ((isVolunteer || isAdmin) && (cleanPassword == "123456" || cleanPassword == "admin123")) {
+                    val displayName = if (isAdmin) "Administrador" else "Voluntario"
+                    com.app.nutriredapp.data.session.UserSession.setLoggedInUser(displayName, cleanEmail)
                     _authState.value = AuthState.Success
                     return@launch
                 }

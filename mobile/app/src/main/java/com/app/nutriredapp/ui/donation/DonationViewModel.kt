@@ -74,13 +74,11 @@ class DonationViewModel(
             it.copy(
                 donorType = type,
                 donorError = null,
-                // Si es anónimo, limpiamos los campos y errores
                 documentNumber = if (type == DonorType.ANONYMOUS) "" else it.documentNumber,
                 donorName = if (type == DonorType.ANONYMOUS) "Anónimo" else it.donorName
             )
         }
         if (type == DonorType.ANONYMOUS) {
-            // Avanzar automáticamente o dejar listo para continuar con 1 toque
             _uiState.update { it.copy(isDonorExisting = true) }
         }
     }
@@ -328,10 +326,8 @@ class DonationViewModel(
         val (expMonth, expYear) = if (expDateStr.contains("/")) {
             val parts = expDateStr.split("/")
             if (parts.size == 2) {
-                // Formato MM/AAAA
                 Pair(parts[0].toIntOrNull(), parts[1].toIntOrNull())
             } else if (parts.size == 3) {
-                // Formato DD/MM/AAAA
                 Pair(parts[1].toIntOrNull(), parts[2].toIntOrNull())
             } else {
                 Pair(null, null)
@@ -392,7 +388,6 @@ class DonationViewModel(
         _uiState.update {
             it.copy(
                 items = it.items + newItem,
-                // Limpiar formulario de ítem para el siguiente
                 currentBarcode = "",
                 currentProductName = "",
                 currentQuantity = "1",
@@ -464,14 +459,14 @@ class DonationViewModel(
 
                 val firstItem = state.items.firstOrNull()
                 val newDonation = Donation(
-                    donationCode = "", // Se genera en el repository
+                    donationCode = "",
                     barcode = firstItem?.productBarcode ?: "",
                     name = firstItem?.productName ?: "Donación de alimentos",
                     quantity = state.items.sumOf { it.quantity }.toInt(),
                     donorId = donorToSave.id,
                     donor = donorToSave,
-                    volunteerId = "VOL-101",
-                    volunteerName = "Voluntario Receptor",
+                    volunteerId = com.app.nutriredapp.data.session.UserSession.userId.value,
+                    volunteerName = com.app.nutriredapp.data.session.UserSession.userName.value,
                     timestamp = nowFormatted,
                     items = state.items
                 )
@@ -497,6 +492,11 @@ class DonationViewModel(
     }
 
     fun resetForNewDonation() {
-        _uiState.value = DonationUiState(catalogProducts = _uiState.value.catalogProducts)
+        _uiState.value = DonationUiState(
+            catalogProducts = _uiState.value.catalogProducts,
+            categories = _uiState.value.categories,
+            selectedCategoryId = _uiState.value.selectedCategoryId,
+            selectedCategoryName = _uiState.value.selectedCategoryName
+        )
     }
 }

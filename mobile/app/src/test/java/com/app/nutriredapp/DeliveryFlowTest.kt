@@ -25,12 +25,16 @@ class DeliveryFlowTest {
     @Before
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
+        com.app.nutriredapp.data.network.NutriRedApiClient.isNetworkEnabled = false
+        com.app.nutriredapp.data.network.NutriRedApiClient.ioDispatcher = testDispatcher
         repository = DeliveryRepository(testDispatcher)
         viewModel = DeliveryViewModel(repository)
     }
 
     @After
     fun tearDown() {
+        com.app.nutriredapp.data.network.NutriRedApiClient.isNetworkEnabled = true
+        com.app.nutriredapp.data.network.NutriRedApiClient.ioDispatcher = Dispatchers.IO
         Dispatchers.resetMain()
     }
 

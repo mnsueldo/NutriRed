@@ -45,7 +45,9 @@ public class DonacionesApiController : ControllerBase
 
         // Auto-registrar en el catálogo cualquier alimento nuevo cargado desde la app móvil
         var categorias = await _categoriaService.ObtenerTodasAsync();
-        var catDefault = categorias.Data?.FirstOrDefault(c => c.Activo) ?? categorias.Data?.FirstOrDefault();
+        var listaCategorias = categorias.Data?.Where(c => c.Activo).ToList() ?? new List<Categoria>();
+        var catDefault = listaCategorias.FirstOrDefault(c => c.Nombre.Contains("otro", StringComparison.OrdinalIgnoreCase) || c.Nombre.Contains("vario", StringComparison.OrdinalIgnoreCase))
+            ?? listaCategorias.FirstOrDefault();
 
         foreach (var itm in request.Items)
         {
@@ -66,24 +68,25 @@ public class DonacionesApiController : ControllerBase
                 var normCatName = Normalizar(itm.CategoryName);
 
                 // Asignar categoría: elegida por el usuario en móvil (por ID o por nombre normalizado) o comodín 'Otros'
-                var catElegida = categorias.Data?.FirstOrDefault(c => itm.CategoryId.HasValue && c.Id == itm.CategoryId.Value && c.Activo)
-                    ?? (!string.IsNullOrWhiteSpace(itm.CategoryName) ? categorias.Data?.FirstOrDefault(c => c.Activo && Normalizar(c.Nombre) == normCatName) : null)
-                    ?? (!string.IsNullOrWhiteSpace(itm.CategoryName) ? categorias.Data?.FirstOrDefault(c => c.Activo && c.Nombre.Contains(itm.CategoryName.Trim(), StringComparison.OrdinalIgnoreCase)) : null)
-                    ?? categorias.Data?.FirstOrDefault(c => c.Activo && (c.Nombre.Contains("otro", StringComparison.OrdinalIgnoreCase) || c.Nombre.Contains("vario", StringComparison.OrdinalIgnoreCase)))
+                var catElegida = listaCategorias.FirstOrDefault(c => itm.CategoryId.HasValue && c.Id == itm.CategoryId.Value)
+                    ?? (!string.IsNullOrWhiteSpace(itm.CategoryName) ? listaCategorias.FirstOrDefault(c => Normalizar(c.Nombre) == normCatName) : null)
+                    ?? (!string.IsNullOrWhiteSpace(itm.CategoryName) ? listaCategorias.FirstOrDefault(c => c.Nombre.Contains(itm.CategoryName.Trim(), StringComparison.OrdinalIgnoreCase)) : null)
                     ?? catDefault;
+
+                int catIdFinal = catElegida?.Id ?? catDefault?.Id ?? 27;
 
                 var nuevoProd = new Producto
                 {
                     CodigoBarras = ean,
                     Nombre = !string.IsNullOrWhiteSpace(itm.ProductName) ? itm.ProductName.Trim() : $"Alimento {ean}",
-                    CategoriaId = catElegida?.Id ?? 1,
+                    CategoriaId = catIdFinal,
                     UnidadMedida = uMedida,
                     StockMinimo = 10,
                     Activo = true
                 };
 
                 var resCrear = await _productoService.CrearAsync(nuevoProd);
-                _logger.LogInformation("Alimento auto-creado en Supabase desde donación móvil: '{Nombre}' (EAN: {Ean}, Cat: {Cat}) - Éxito: {Success}", nuevoProd.Nombre, ean, catElegida?.Nombre, resCrear.Success);
+                _logger.LogInformation("Alimento auto-creado en Supabase desde donación móvil: '{Nombre}' (EAN: {Ean}, CatId: {CatId}) - Éxito: {Success}", nuevoProd.Nombre, ean, catIdFinal, resCrear.Success);
             }
         }
 
@@ -226,20 +229,40 @@ public class DonacionesApiController : ControllerBase
 
         var clean = fechaStr.Trim();
 
-        // Formato MM/yyyy (ej: "11/2026") -> último día del mes
+        // 1. Formato MM/yyyy (ej: "11/2026") -> último día del mes
         if (DateTime.TryParseExact(clean, "MM/yyyy", CultureInfo.InvariantCulture, DateTimeStyles.None, out var my))
         {
             int ultimoDia = DateTime.DaysInMonth(my.Year, my.Month);
             return new DateTime(my.Year, my.Month, ultimoDia, 23, 59, 59, DateTimeKind.Utc);
         }
 
-        // Formato dd/MM/yyyy (ej: "15/11/2026")
+        // 2. Formato M/yyyy (ej: "5/2026")
+        if (DateTime.TryParseExact(clean, "M/yyyy", CultureInfo.InvariantCulture, DateTimeStyles.None, out var singleM))
+        {
+            int ultimoDia = DateTime.DaysInMonth(singleM.Year, singleM.Month);
+            return new DateTime(singleM.Year, singleM.Month, ultimoDia, 23, 59, 59, DateTimeKind.Utc);
+        }
+
+        // 3. Formato MM/yy (ej: "11/26")
+        if (DateTime.TryParseExact(clean, "MM/yy", CultureInfo.InvariantCulture, DateTimeStyles.None, out var shortY))
+        {
+            int ultimoDia = DateTime.DaysInMonth(shortY.Year, shortY.Month);
+            return new DateTime(shortY.Year, shortY.Month, ultimoDia, 23, 59, 59, DateTimeKind.Utc);
+        }
+
+        // 4. Formato dd/MM/yyyy (ej: "15/11/2026")
         if (DateTime.TryParseExact(clean, "dd/MM/yyyy", CultureInfo.InvariantCulture, DateTimeStyles.None, out var dmy))
         {
             return DateTime.SpecifyKind(dmy, DateTimeKind.Utc);
         }
 
-        // Formato ISO estándar yyyy-MM-dd
+        // 5. Formato d/M/yyyy (ej: "5/5/2026")
+        if (DateTime.TryParseExact(clean, "d/M/yyyy", CultureInfo.InvariantCulture, DateTimeStyles.None, out var shortDmy))
+        {
+            return DateTime.SpecifyKind(shortDmy, DateTimeKind.Utc);
+        }
+
+        // 6. Formato ISO estándar yyyy-MM-dd
         if (DateTime.TryParse(clean, CultureInfo.InvariantCulture, DateTimeStyles.None, out var iso))
         {
             return DateTime.SpecifyKind(iso, DateTimeKind.Utc);

@@ -20,6 +20,7 @@ data class DeliveryUiState(
     val errorMessage: String? = null,
     val isLoading: Boolean = false,
     val isSubmitting: Boolean = false,
+    val isQrScanning: Boolean = false,
     val completedPackage: FoodPackage? = null,
     val failedDeliveryMessage: String? = null
 )
@@ -38,8 +39,17 @@ class DeliveryViewModel(
     fun loadPackages() {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
-            val packages = repository.getPreparedPackages()
-            _uiState.update { it.copy(preparedPackages = packages, isLoading = false) }
+            try {
+                val pkgs = repository.getPreparedPackages()
+                _uiState.update { it.copy(preparedPackages = pkgs, isLoading = false) }
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        errorMessage = "Error al cargar los paquetes: ${e.message}"
+                    )
+                }
+            }
         }
     }
 
@@ -47,9 +57,10 @@ class DeliveryViewModel(
         _uiState.update {
             it.copy(
                 selectedPackage = pkg,
-                receiverDni = "",
-                receiverName = pkg.familyTitularName, // Sugiere el nombre del titular para facilitar
+                receiverDni = pkg.familyTitularDni,
+                receiverName = pkg.familyTitularName,
                 hasSignature = false,
+                signatureBase64 = null,
                 errorMessage = null,
                 completedPackage = null
             )
@@ -63,9 +74,37 @@ class DeliveryViewModel(
                 receiverDni = "",
                 receiverName = "",
                 hasSignature = false,
+                signatureBase64 = null,
                 errorMessage = null,
-                completedPackage = null
+                completedPackage = null,
+                isQrScanning = false
             )
+        }
+    }
+
+    fun setQrScanning(active: Boolean) {
+        _uiState.update { it.copy(isQrScanning = active, errorMessage = null) }
+    }
+
+    fun onQrScanned(rawCode: String) {
+        // Limpiar el código por si el QR contiene una URL completa (ej: https://.../entregas/paquete/PKG-2026-00001)
+        val cleanCode = rawCode.trim().substringAfterLast('/').substringAfterLast('=')
+        if (cleanCode.isBlank()) return
+
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true, errorMessage = null, isQrScanning = false) }
+            val pkg = repository.getPackageByQr(cleanCode)
+            if (pkg != null) {
+                selectPackage(pkg)
+                _uiState.update { it.copy(isLoading = false) }
+            } else {
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        errorMessage = "No se encontró el paquete con código QR '$cleanCode' o no está habilitado para entrega."
+                    )
+                }
+            }
         }
     }
 
@@ -85,27 +124,24 @@ class DeliveryViewModel(
         val state = _uiState.value
         val pkg = state.selectedPackage ?: return
 
-        // 1. Validar DNI
         if (state.receiverDni.isBlank()) {
-            _uiState.update { it.copy(errorMessage = "Ingrese el DNI de quien retira el paquete.") }
+            _uiState.update { it.copy(errorMessage = "El DNI del receptor es obligatorio.") }
             return
         }
 
-        // 2. Validar coincidencia de identidad con titular familiar (RF-3.5)
+        // Validación de coincidencia de identidad con titular familiar (RF-3.5)
         if (state.receiverDni.trim() != pkg.familyTitularDni.trim()) {
-            _uiState.update { 
-                it.copy(errorMessage = "Discrepancia de identidad: El DNI ingresado no coincide con el titular registrado (${pkg.familyTitularDni}).") 
+            _uiState.update {
+                it.copy(errorMessage = "Discrepancia de identidad: El DNI ingresado no coincide con el titular registrado (${pkg.familyTitularDni}).")
             }
             return
         }
 
-        // 3. Validar nombre
         if (state.receiverName.isBlank()) {
-            _uiState.update { it.copy(errorMessage = "Ingrese el nombre completo del receptor.") }
+            _uiState.update { it.copy(errorMessage = "El Nombre del receptor es obligatorio.") }
             return
         }
 
-        // 4. Validar firma digital (RF-3.5)
         if (!state.hasSignature) {
             _uiState.update { it.copy(errorMessage = "Firma digital vacía: Debe firmar en pantalla para confirmar.") }
             return
@@ -119,16 +155,16 @@ class DeliveryViewModel(
                 receiverDni = state.receiverDni,
                 receiverName = state.receiverName,
                 signatureBase64 = state.signatureBase64 ?: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMgAAABkCAYAAADDhn8LAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAFTSURBVHhe7cExAQAAAMKg9U9tDQ8gAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgIsBFecAAafqH7MAAAAASUVORK5CYII=",
-                volunteerId = "VOL-101",
-                volunteerName = "Voluntario de Entrega"
+                volunteerId = com.app.nutriredapp.data.session.UserSession.userId.value,
+                volunteerName = com.app.nutriredapp.data.session.UserSession.userName.value
             )
 
-            result.onSuccess { delivered ->
+            result.onSuccess { updatedPkg ->
                 _uiState.update {
                     it.copy(
                         isSubmitting = false,
-                        completedPackage = delivered,
-                        selectedPackage = null
+                        completedPackage = updatedPkg,
+                        errorMessage = null
                     )
                 }
                 loadPackages()
@@ -159,8 +195,8 @@ class DeliveryViewModel(
                 packageId = pkg.id,
                 packageCode = pkg.packageCode,
                 reason = reason.trim(),
-                volunteerId = "VOL-101",
-                volunteerName = "Voluntario de Entrega"
+                volunteerId = com.app.nutriredapp.data.session.UserSession.userId.value,
+                volunteerName = com.app.nutriredapp.data.session.UserSession.userName.value
             )
 
             result.onSuccess {

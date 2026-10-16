@@ -181,7 +181,7 @@ class ProductRepository {
             if (remote.isNotEmpty()) {
                 memoryCategories.clear()
                 memoryCategories.addAll(remote)
-                Log.d(TAG, "Categorías sincronizadas desde Supabase: ${remote.size}")
+                Log.d(TAG, "Categorías sincronizadas desde API: ${remote.size}")
                 return@withContext remote
             }
         } catch (e: Exception) {

@@ -162,7 +162,7 @@ fun DonorStep(
             )
         }
 
-        Spacer(modifier = Modifier.weight(1f, fill = false))
+        Spacer(modifier = Modifier.height(20.dp))
 
         AccessibleButton(
             text = "CONTINUAR A ALIMENTOS",
@@ -170,6 +170,8 @@ fun DonorStep(
             iconAfterText = true,
             onClick = { viewModel.validateAndProceedToItems() }
         )
+
+        Spacer(modifier = Modifier.height(48.dp))
     }
 }
 
@@ -226,7 +228,8 @@ fun ItemsStep(
     modifier: Modifier = Modifier
 ) {
     var showCatalogDialog by remember { mutableStateOf(false) }
-    val unitOptions = listOf("Unidades", "Kilos", "Litros")
+    var isCustomUnitSelected by remember { mutableStateOf(false) }
+    val unitOptions = listOf("kg", "gramos", "litros", "unidades", "paquetes", "latas", "otros")
 
     Column(
         modifier = modifier
@@ -366,28 +369,44 @@ fun ItemsStep(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    Box(modifier = Modifier.weight(1f)) {
+                    Box(modifier = Modifier.weight(0.85f)) {
                         AccessibleTextField(
                             value = uiState.currentQuantity,
                             onValueChange = { viewModel.onQuantityChanged(it) },
                             label = "Cantidad *",
                             placeholder = "1",
-                            leadingIcon = Icons.Rounded.Numbers,
+                            leadingIcon = null,
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
                         )
                     }
 
-                    Box(modifier = Modifier.weight(1f)) {
+                    Box(modifier = Modifier.weight(1.55f)) {
                         AccessibleDropdownField(
                             label = "Unidad *",
-                            selectedValue = uiState.currentUnitOfMeasure,
+                            selectedValue = if (isCustomUnitSelected && uiState.currentUnitOfMeasure != "otros") "otros" else uiState.currentUnitOfMeasure,
                             options = unitOptions,
                             onOptionSelected = { option ->
-                                viewModel.onUnitOfMeasureChanged(option)
+                                if (option == "otros") {
+                                    isCustomUnitSelected = true
+                                    viewModel.onUnitOfMeasureChanged("otros")
+                                } else {
+                                    isCustomUnitSelected = false
+                                    viewModel.onUnitOfMeasureChanged(option)
+                                }
                             },
-                            leadingIcon = Icons.Rounded.Scale
+                            leadingIcon = null
                         )
                     }
+                }
+
+                if (isCustomUnitSelected) {
+                    AccessibleTextField(
+                        value = if (uiState.currentUnitOfMeasure == "otros") "" else uiState.currentUnitOfMeasure,
+                        onValueChange = { viewModel.onUnitOfMeasureChanged(it.ifBlank { "otros" }) },
+                        label = "Especifique la unidad (no aplica)",
+                        placeholder = "Ej. botellas, sobres, frascos...",
+                        leadingIcon = Icons.Rounded.Edit
+                    )
                 }
 
                 // FEFO: Vencimiento simplificado en Mes y Año con desplegables
@@ -756,6 +775,7 @@ fun SummaryStep(
             text = "CONFIRMAR Y GUARDAR DONACIÓN",
             icon = Icons.Rounded.CheckCircle,
             onClick = { viewModel.confirmDonation() },
+            isLoading = uiState.isSubmitting,
             enabled = !uiState.isSubmitting
         )
 

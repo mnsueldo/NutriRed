@@ -129,15 +129,28 @@ public class EntregasApiController : ControllerBase
     [HttpPost("no-concretada")]
     public async Task<IActionResult> RegistrarEntregaFallida([FromBody] EntregaFallidaApiRequest request)
     {
-        if (request == null || string.IsNullOrWhiteSpace(request.PackageCode) || string.IsNullOrWhiteSpace(request.MotivoNoEntrega))
+        if (request == null)
+        {
+            return BadRequest(new { success = false, message = "Datos de entrega fallida inválidos." });
+        }
+
+        var codigo = !string.IsNullOrWhiteSpace(request.PackageCode)
+            ? request.PackageCode.Trim()
+            : request.PackageId?.Trim();
+
+        var motivo = !string.IsNullOrWhiteSpace(request.MotivoNoEntrega)
+            ? request.MotivoNoEntrega.Trim()
+            : request.Reason?.Trim();
+
+        if (string.IsNullOrWhiteSpace(codigo) || string.IsNullOrWhiteSpace(motivo))
         {
             return BadRequest(new { success = false, message = "El código de paquete y el motivo son obligatorios." });
         }
 
         var serviceRequest = new RegistrarEntregaFallidaRequest
         {
-            CodigoSeguimiento = request.PackageCode.Trim(),
-            MotivoNoEntrega = request.MotivoNoEntrega.Trim(),
+            CodigoSeguimiento = codigo,
+            MotivoNoEntrega = motivo,
             VoluntarioDespachoId = !string.IsNullOrWhiteSpace(request.VolunteerName)
                 ? request.VolunteerName.Trim()
                 : (!string.IsNullOrWhiteSpace(request.VolunteerId) ? request.VolunteerId.Trim() : "Voluntario Móvil")
@@ -152,8 +165,8 @@ public class EntregasApiController : ControllerBase
         return Ok(new
         {
             success = true,
-            message = $"Intento fallido registrado: {request.MotivoNoEntrega}",
-            package_code = request.PackageCode,
+            message = $"Intento fallido registrado: {motivo}",
+            package_code = codigo,
             status = "CANCELADO"
         });
     }
@@ -208,8 +221,10 @@ public class ConfirmarEntregaApiRequest
 
 public class EntregaFallidaApiRequest
 {
-    public string PackageCode { get; set; } = string.Empty;
-    public string MotivoNoEntrega { get; set; } = string.Empty;
+    public string? PackageCode { get; set; }
+    public string? PackageId { get; set; }
+    public string? MotivoNoEntrega { get; set; }
+    public string? Reason { get; set; }
     public string? VolunteerId { get; set; } = "VOL-01";
     public string? VolunteerName { get; set; } = "Voluntario";
 }

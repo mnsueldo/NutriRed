@@ -13,16 +13,23 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.asAndroidPath
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.graphics.asAndroidPath
 import androidx.compose.ui.unit.sp
 import java.io.ByteArrayOutputStream
 
@@ -62,17 +69,21 @@ fun SignaturePad(
     val paths = remember { mutableStateListOf<Path>() }
     var currentPath by remember { mutableStateOf<Path?>(null) }
     var drawTrigger by remember { mutableIntStateOf(0) }
+    val haptic = LocalHapticFeedback.current
 
     Column(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
+        val shape = RoundedCornerShape(12.dp)
+
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(180.dp)
-                .background(Color(0xFFFCFCFC), RoundedCornerShape(12.dp))
-                .border(BorderStroke(2.dp, MaterialTheme.colorScheme.primary), RoundedCornerShape(12.dp))
+                .clip(shape) // Asegura que la firma NO se salga del recuadro
+                .background(Color(0xFFFCFCFC), shape)
+                .border(BorderStroke(2.dp, MaterialTheme.colorScheme.primary), shape)
                 .pointerInput(Unit) {
                     detectDragGestures(
                         onDragStart = { offset ->
@@ -112,8 +123,7 @@ fun SignaturePad(
                     strokeWidth = 3f
                 )
 
-                // Para forzar recomposición cuando cambie drawTrigger
-                if (drawTrigger >= 0) { /* trigger */ }
+                if (drawTrigger >= 0) { /* forzar recomposición */ }
 
                 paths.forEach { path ->
                     drawPath(
@@ -147,10 +157,15 @@ fun SignaturePad(
         ) {
             OutlinedButton(
                 onClick = {
+                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                     paths.clear()
                     currentPath = null
                     drawTrigger++
                     onSignatureChanged(false, null)
+                },
+                modifier = Modifier.semantics {
+                    contentDescription = "Botón para borrar la firma actual y volver a firmar"
+                    role = Role.Button
                 },
                 shape = RoundedCornerShape(8.dp),
                 contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp)

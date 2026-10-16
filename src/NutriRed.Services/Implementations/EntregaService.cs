@@ -51,7 +51,7 @@ public class EntregaService : IEntregaService
                 return OperationResult<PaquetePendienteDespachoDto>.Fail("El código QR no puede estar vacío.");
             }
 
-            var codigoNormalizado = codigoSeguimiento.Trim();
+            var (norm, varCode, isNum, numId) = ParsearCodigoBusqueda(codigoSeguimiento);
 
             var paquete = await _context.Paquetes
                 .AsNoTracking()
@@ -63,11 +63,14 @@ public class EntregaService : IEntregaService
                     .ThenInclude(d => d.Lote)
                 .Include(p => p.Detalles)
                     .ThenInclude(d => d.ProductoSustituido)
-                .FirstOrDefaultAsync(p => p.CodigoSeguimiento == codigoNormalizado);
+                .FirstOrDefaultAsync(p => 
+                    EF.Functions.ILike(p.CodigoSeguimiento, norm) ||
+                    EF.Functions.ILike(p.CodigoSeguimiento, varCode) ||
+                    (isNum && p.Id == numId));
 
             if (paquete == null)
             {
-                return OperationResult<PaquetePendienteDespachoDto>.Fail($"No se encontró ningún paquete con el código QR '{codigoNormalizado}'.");
+                return OperationResult<PaquetePendienteDespachoDto>.Fail($"No se encontró ningún paquete con el código QR '{norm}'.");
             }
 
             // Regla de Negocio (Pág. 10 del PDF):
@@ -94,7 +97,7 @@ public class EntregaService : IEntregaService
                 return OperationResult<ComprobanteEntregaDto>.Fail("El código de seguimiento es obligatorio.");
             }
 
-            var codigoNormalizado = request.CodigoSeguimiento.Trim();
+            var (norm, varCode, isNum, numId) = ParsearCodigoBusqueda(request.CodigoSeguimiento);
 
             var paquete = await _context.Paquetes
                 .Include(p => p.FamiliaBeneficiaria)
@@ -104,11 +107,14 @@ public class EntregaService : IEntregaService
                     .ThenInclude(d => d.Lote)
                 .Include(p => p.Detalles)
                     .ThenInclude(d => d.ProductoSustituido)
-                .FirstOrDefaultAsync(p => p.CodigoSeguimiento == codigoNormalizado);
+                .FirstOrDefaultAsync(p => 
+                    EF.Functions.ILike(p.CodigoSeguimiento, norm) ||
+                    EF.Functions.ILike(p.CodigoSeguimiento, varCode) ||
+                    (isNum && p.Id == numId));
 
             if (paquete == null)
             {
-                return OperationResult<ComprobanteEntregaDto>.Fail($"El paquete con código '{codigoNormalizado}' no existe.");
+                return OperationResult<ComprobanteEntregaDto>.Fail($"El paquete con código '{norm}' no existe.");
             }
 
             // Regla de Negocio (Pág. 10 del PDF):
@@ -224,17 +230,20 @@ public class EntregaService : IEntregaService
                 return OperationResult.Fail("Debe ingresar el motivo por el cual no se concretó la entrega (ej. Ausente, Rechazado).");
             }
 
-            var codigoNormalizado = request.CodigoSeguimiento.Trim();
+            var (norm, varCode, isNum, numId) = ParsearCodigoBusqueda(request.CodigoSeguimiento);
 
             var paquete = await _context.Paquetes
                 .Include(p => p.FamiliaBeneficiaria)
                 .Include(p => p.Detalles)
                     .ThenInclude(d => d.Lote)
-                .FirstOrDefaultAsync(p => p.CodigoSeguimiento == codigoNormalizado);
+                .FirstOrDefaultAsync(p => 
+                    EF.Functions.ILike(p.CodigoSeguimiento, norm) ||
+                    EF.Functions.ILike(p.CodigoSeguimiento, varCode) ||
+                    (isNum && p.Id == numId));
 
             if (paquete == null)
             {
-                return OperationResult.Fail($"El paquete con código '{codigoNormalizado}' no existe.");
+                return OperationResult.Fail($"El paquete con código '{norm}' no existe.");
             }
 
             if (paquete.Estado != EstadoPaquete.Preparado)
@@ -470,4 +479,21 @@ public class EntregaService : IEntregaService
             }).ToList()
         };
     }
+
+    private static (string normalizado, string variante, bool isNumeric, int numericId) ParsearCodigoBusqueda(string codigo)
+    {
+        var normalizado = codigo.Trim();
+        bool isNumeric = int.TryParse(normalizado, out int numericId);
+        string variante = normalizado;
+        if (normalizado.StartsWith("PAQ-", StringComparison.OrdinalIgnoreCase))
+        {
+            variante = "PKG-" + normalizado.Substring(4);
+        }
+        else if (normalizado.StartsWith("PKG-", StringComparison.OrdinalIgnoreCase))
+        {
+            variante = "PAQ-" + normalizado.Substring(4);
+        }
+        return (normalizado, variante, isNumeric, numericId);
+    }
 }
+

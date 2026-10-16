@@ -60,6 +60,8 @@ public class ProductosApiController : ControllerBase
             unitOfMeasure = p.UnidadMedida.ToString().ToLower(),
             unit_of_measure = p.UnidadMedida.ToString().ToLower(),
             category = p.Categoria?.Nombre ?? "General",
+            categoryId = p.CategoriaId,
+            category_id = p.CategoriaId,
             stockActual = stockDisponible,
             stockMinimo = p.StockMinimo,
             activo = p.Activo
@@ -87,6 +89,8 @@ public class ProductosApiController : ControllerBase
             unitOfMeasure = p.UnidadMedida.ToString().ToLower(),
             unit_of_measure = p.UnidadMedida.ToString().ToLower(),
             category = p.Categoria?.Nombre ?? "General",
+            categoryId = p.CategoriaId,
+            category_id = p.CategoriaId,
             stockActual = p.Lotes?.Sum(l => l.CantidadDisponible) ?? 0,
             stockMinimo = p.StockMinimo
         });
@@ -119,7 +123,9 @@ public class ProductosApiController : ControllerBase
                 name = p.Nombre,
                 unitOfMeasure = p.UnidadMedida.ToString().ToLower(),
                 unit_of_measure = p.UnidadMedida.ToString().ToLower(),
-                category = p.Categoria?.Nombre ?? "General"
+                category = p.Categoria?.Nombre ?? "General",
+                categoryId = p.CategoriaId,
+                category_id = p.CategoriaId
             });
 
         return Ok(filtrados);
@@ -185,7 +191,7 @@ public class ProductosApiController : ControllerBase
         }
 
         // 6. Último recurso absoluto
-        int categoriaId = catValida?.Id ?? listaCategorias.FirstOrDefault(c => c.Activo)?.Id ?? 1;
+        int categoriaId = catValida?.Id ?? listaCategorias.FirstOrDefault(c => c.Activo)?.Id ?? 27;
 
         // Parsear UnidadMedida flexible (unidades, kilos/kg, litros)
         var uStr = (dto.UnitOfMeasure ?? "unidades").Trim().ToLowerInvariant();

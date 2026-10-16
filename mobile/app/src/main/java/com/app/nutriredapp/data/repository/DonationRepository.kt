@@ -22,8 +22,12 @@ class DonationRepository {
                 Log.d(TAG, "Donación registrada con éxito en backend .NET con comprobante: ${remoteResult.donationCode}")
                 return@withContext remoteResult
             }
+        } catch (e: IllegalStateException) {
+            // Rechazo de negocio explícito del backend (ej: FEFO vencido, campo obligatorio inválido)
+            Log.e(TAG, "Rechazo de validación en backend: ${e.message}")
+            throw e
         } catch (e: Exception) {
-            Log.e(TAG, "Error enviando donación a API: ${e.message}", e)
+            Log.e(TAG, "Error de conectividad enviando donación a API: ${e.message}", e)
         }
 
         // 2. Fallback de contingencia local si no hay conexión

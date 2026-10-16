@@ -17,12 +17,17 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
+import androidx.compose.ui.focus.onFocusEvent
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 /**
  * Botón de alto contraste y área de toque ampliada (mínimo 64dp)
@@ -36,6 +41,7 @@ fun AccessibleButton(
     icon: ImageVector? = null,
     iconAfterText: Boolean = false,
     enabled: Boolean = true,
+    isLoading: Boolean = false,
     containerColor: Color = MaterialTheme.colorScheme.primary,
     contentColor: Color = MaterialTheme.colorScheme.onPrimary,
     minHeight: Dp = 68.dp
@@ -52,13 +58,28 @@ fun AccessibleButton(
             disabledContainerColor = Color.LightGray,
             disabledContentColor = Color.DarkGray
         ),
-        enabled = enabled,
+        enabled = enabled && !isLoading,
         contentPadding = PaddingValues(horizontal = 20.dp, vertical = 14.dp)
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center
-        ) {
+        if (isLoading) {
+            CircularProgressIndicator(
+                modifier = Modifier.size(28.dp),
+                color = contentColor,
+                strokeWidth = 3.dp
+            )
+            Spacer(modifier = Modifier.width(12.dp))
+            Text(
+                text = "Procesando...",
+                fontSize = 20.sp,
+                lineHeight = 26.sp,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center
+            )
+        } else {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
+            ) {
             if (icon != null && !iconAfterText) {
                 Icon(
                     imageVector = icon,
@@ -85,11 +106,13 @@ fun AccessibleButton(
         }
     }
 }
+}
 
 /**
  * Campo de texto accesible con tipografía grande (20sp), etiquetas visibles
  * y soporte explícito para lectores de pantalla e iconos de error multimodales.
  */
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 fun AccessibleTextField(
     value: String,
@@ -105,8 +128,13 @@ fun AccessibleTextField(
     singleLine: Boolean = true,
     visualTransformation: VisualTransformation = VisualTransformation.None
 ) {
+    val coroutineScope = rememberCoroutineScope()
+    val bringIntoViewRequester = remember { BringIntoViewRequester() }
+
     Column(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier
+            .fillMaxWidth()
+            .bringIntoViewRequester(bringIntoViewRequester),
         verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
         Text(
@@ -121,6 +149,15 @@ fun AccessibleTextField(
             onValueChange = onValueChange,
             modifier = Modifier
                 .fillMaxWidth()
+                .then(if (singleLine) Modifier.height(64.dp) else Modifier.heightIn(min = 64.dp))
+                .onFocusEvent { focusState ->
+                    if (focusState.isFocused) {
+                        coroutineScope.launch {
+                            delay(250)
+                            bringIntoViewRequester.bringIntoView()
+                        }
+                    }
+                }
                 .semantics {
                     contentDescription = "$label. ${errorMessage ?: ""}"
                 },
@@ -196,7 +233,7 @@ fun AccessibleDropdownField(
 
     Column(
         modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(4.dp)
+        verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
         if (!label.isNullOrBlank()) {
             Text(
@@ -220,7 +257,8 @@ fun AccessibleDropdownField(
                 maxLines = 1,
                 modifier = Modifier
                     .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
-                    .fillMaxWidth(),
+                    .fillMaxWidth()
+                    .height(64.dp),
                 leadingIcon = leadingIcon?.let {
                     {
                         Icon(
@@ -234,7 +272,7 @@ fun AccessibleDropdownField(
                     ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
                 },
                 textStyle = TextStyle(
-                    fontSize = 17.sp,
+                    fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface
                 ),

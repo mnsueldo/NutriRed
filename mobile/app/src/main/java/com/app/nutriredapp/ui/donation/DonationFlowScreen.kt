@@ -46,6 +46,12 @@ fun DonationFlowScreen(
     val uiState by viewModel.uiState.collectAsState()
     val cameraPermissionState = rememberPermissionState(Manifest.permission.CAMERA)
 
+    DisposableEffect(Unit) {
+        onDispose {
+            viewModel.resetForNewDonation()
+        }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -60,10 +66,16 @@ fun DonationFlowScreen(
                     IconButton(
                         onClick = {
                             when (uiState.currentStep) {
-                                DonationStep.DONOR -> onBackToHome()
+                                DonationStep.DONOR -> {
+                                    viewModel.resetForNewDonation()
+                                    onBackToHome()
+                                }
                                 DonationStep.ITEMS -> viewModel.goToStep(DonationStep.DONOR)
                                 DonationStep.SUMMARY -> viewModel.goToStep(DonationStep.ITEMS)
-                                DonationStep.RECEIPT -> onBackToHome()
+                                DonationStep.RECEIPT -> {
+                                    viewModel.resetForNewDonation()
+                                    onBackToHome()
+                                }
                             }
                         }
                     ) {
@@ -85,11 +97,14 @@ fun DonationFlowScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
+                .consumeWindowInsets(paddingValues)
+                .imePadding()
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .verticalScroll(rememberScrollState())
+                    .padding(bottom = 48.dp)
             ) {
                 // Indicador cognitivo de pasos (WCAG)
                 if (uiState.currentStep != DonationStep.RECEIPT) {
@@ -132,7 +147,10 @@ fun DonationFlowScreen(
                         ReceiptStep(
                             uiState = uiState,
                             onNewDonation = { viewModel.resetForNewDonation() },
-                            onBackToHome = onBackToHome
+                            onBackToHome = {
+                                viewModel.resetForNewDonation()
+                                onBackToHome()
+                            }
                         )
                     }
                 }

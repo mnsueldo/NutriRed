@@ -29,7 +29,7 @@ data class DonationUiState(
     // Carga de producto / lote en curso
     val currentBarcode: String = "",
     val currentProductName: String = "",
-    val currentUnitOfMeasure: String = "Unidades",
+    val currentUnitOfMeasure: String = "unidades",
     val currentQuantity: String = "1",
     val currentExpirationMonth: String = "", // Formato MM (ej. 10)
     val currentExpirationYear: String = "",  // Formato AAAA (ej. 2026)

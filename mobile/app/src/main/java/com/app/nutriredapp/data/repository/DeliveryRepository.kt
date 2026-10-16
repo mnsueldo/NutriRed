@@ -17,11 +17,11 @@ class DeliveryRepository(
 
     private val TAG = "DeliveryRepository"
 
-    // Paquetes preparados precargados en depósito para despacho (contingencia local)
+    // Paquetes en memoria para soporte offline y funcionamiento en depósitos
     private val memoryPackages = mutableListOf(
         FoodPackage(
-            id = "PKG-001",
-            packageCode = "PAQ-2026-0001",
+            id = "1",
+            packageCode = "PKG-2026-00001",
             familyId = "FAM-101",
             familyTitularName = "Carlos Martínez",
             familyTitularDni = "32111222",
@@ -35,8 +35,8 @@ class DeliveryRepository(
             status = PackageStatus.PREPARADO
         ),
         FoodPackage(
-            id = "PKG-002",
-            packageCode = "PAQ-2026-0002",
+            id = "2",
+            packageCode = "PKG-2026-00002",
             familyId = "FAM-102",
             familyTitularName = "María Gómez",
             familyTitularDni = "28999888",
@@ -50,8 +50,8 @@ class DeliveryRepository(
             status = PackageStatus.PREPARADO
         ),
         FoodPackage(
-            id = "PKG-003",
-            packageCode = "PAQ-2026-0003",
+            id = "3",
+            packageCode = "PKG-2026-00003",
             familyId = "FAM-103",
             familyTitularName = "Ana Rodríguez",
             familyTitularDni = "35444555",
@@ -66,14 +66,31 @@ class DeliveryRepository(
         )
     )
 
+    private fun matchesCode(pkg: FoodPackage, target: String): Boolean {
+        val cleanTarget = target.trim()
+        if (pkg.id.equals(cleanTarget, ignoreCase = true) || pkg.packageCode.equals(cleanTarget, ignoreCase = true)) {
+            return true
+        }
+        val normTarget = cleanTarget.replace("PAQ-", "PKG-", ignoreCase = true)
+        val normCode = pkg.packageCode.replace("PAQ-", "PKG-", ignoreCase = true)
+        if (normCode.equals(normTarget, ignoreCase = true)) {
+            return true
+        }
+        val targetDigits = cleanTarget.filter { it.isDigit() }.trimStart('0')
+        val codeDigits = pkg.packageCode.filter { it.isDigit() }.trimStart('0')
+        if (targetDigits.isNotEmpty() && codeDigits.isNotEmpty() && targetDigits == codeDigits) {
+            return true
+        }
+        return false
+    }
+
     suspend fun getPreparedPackages(): List<FoodPackage> = withContext(dispatcher) {
         // 1. Intentar consultar paquetes preparados desde la API central ASP.NET Core
         try {
             val remoteResult = NutriRedApiClient.getPreparedPackagesResult()
             if (remoteResult.isSuccess) {
                 val remote = remoteResult.getOrNull() ?: emptyList()
-                Log.d(TAG, "Paquetes preparados obtenidos de la API .NET (Supabase): ${remote.size}")
-                // Si la API contestó exitosamente, esa es la verdad del backend (incluso si está vacía porque ya se entregaron todos)
+                Log.d(TAG, "Paquetes preparados obtenidos de la API .NET: ${remote.size}")
                 memoryPackages.clear()
                 memoryPackages.addAll(remote)
                 return@withContext remote
@@ -92,13 +109,31 @@ class DeliveryRepository(
     }
 
     suspend fun savePackage(pkg: FoodPackage): Result<FoodPackage> = withContext(dispatcher) {
-        val idx = memoryPackages.indexOfFirst { it.id == pkg.id || it.packageCode == pkg.packageCode }
+        val idx = memoryPackages.indexOfFirst { matchesCode(it, pkg.id) || matchesCode(it, pkg.packageCode) }
         if (idx == -1) memoryPackages.add(pkg) else memoryPackages[idx] = pkg
         Result.success(pkg)
     }
 
     suspend fun getPackageById(id: String): FoodPackage? = withContext(dispatcher) {
-        memoryPackages.find { it.id == id || it.packageCode.equals(id, ignoreCase = true) }
+        memoryPackages.find { matchesCode(it, id) }
+    }
+
+    suspend fun getPackageByQr(packageCode: String): FoodPackage? = withContext(dispatcher) {
+        val clean = packageCode.trim()
+        // 1. Consultar en la API del backend
+        try {
+            val remote = NutriRedApiClient.getPackageByQr(clean)
+            if (remote != null) {
+                val idx = memoryPackages.indexOfFirst { matchesCode(it, remote.id) || matchesCode(it, remote.packageCode) }
+                if (idx != -1) memoryPackages[idx] = remote else memoryPackages.add(remote)
+                return@withContext remote
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "Error buscando paquete por QR en API: ${e.message}")
+        }
+
+        // 2. Buscar en memoria local si ya fue obtenido o en contingencia
+        return@withContext memoryPackages.find { matchesCode(it, clean) }
     }
 
     suspend fun confirmDelivery(
@@ -110,11 +145,14 @@ class DeliveryRepository(
         volunteerName: String
     ): Result<FoodPackage> = withContext(dispatcher) {
         val index = memoryPackages.indexOfFirst { it.id == packageId || it.packageCode.equals(packageId, ignoreCase = true) }
-        if (index == -1) {
-            return@withContext Result.failure(IllegalArgumentException("El paquete no existe."))
+        val current = if (index != -1) memoryPackages[index] else {
+            NutriRedApiClient.getPackageByQr(packageId)
         }
 
-        val current = memoryPackages[index]
+        if (current == null) {
+            return@withContext Result.failure(IllegalArgumentException("El paquete no existe en el sistema."))
+        }
+
         if (current.status == PackageStatus.ENTREGADO) {
             return@withContext Result.failure(IllegalStateException("Este paquete ya ha sido entregado previamente."))
         }
@@ -147,7 +185,11 @@ class DeliveryRepository(
             hasSignature = true
         )
 
-        memoryPackages[index] = updated
+        if (index != -1) {
+            memoryPackages[index] = updated
+        } else {
+            memoryPackages.add(updated)
+        }
         return@withContext Result.success(updated)
     }
 
@@ -159,7 +201,7 @@ class DeliveryRepository(
         volunteerName: String = "Voluntario Móvil"
     ): Result<FoodPackage> = withContext(dispatcher) {
         val index = memoryPackages.indexOfFirst {
-            it.id == packageId || it.packageCode.equals(packageId, ignoreCase = true) || it.packageCode.equals(packageCode, ignoreCase = true)
+            matchesCode(it, packageId) || matchesCode(it, packageCode)
         }
 
         // 1. Intentar registrar en la API central ASP.NET Core
