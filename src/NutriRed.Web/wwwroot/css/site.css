@@ -97,6 +97,14 @@ main {
   padding: 0.5rem 0.85rem;
   border-radius: 8px;
   transition: all 0.2s ease-in-out;
+  display: inline-flex;
+  align-items: center;
+  line-height: 1.5;
+}
+
+.navbar-nutrired .nav-link.dropdown-toggle::after {
+  margin-left: 0.35rem;
+  vertical-align: middle;
 }
 
 .navbar-nutrired .nav-link:hover,
