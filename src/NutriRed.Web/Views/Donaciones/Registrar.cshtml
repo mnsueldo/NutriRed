@@ -1,17 +1,102 @@
 @model NutriRed.Web.Models.RegistrarDonacionViewModel
 @using NutriRed.Domain.Entities
 @using NutriRed.Domain.Enums
+@using Microsoft.EntityFrameworkCore
+@inject NutriRed.Data.NutriRedDbContext DbContext
 
 @{
     ViewData["Title"] = "Recepción Física de Donación";
     var productos = ViewBag.Productos as List<Producto> ?? new List<Producto>();
     var categorias = ViewBag.Categorias as List<Categoria> ?? new List<Categoria>();
     var hoyMasUno = DateTime.Today.AddDays(1).ToString("yyyy-MM-dd");
+
+    // Consulta de donantes registrados para autocompletado instantáneo (Opción 1)
+    var donantesRegistrados = await DbContext.Donantes
+        .AsNoTracking()
+        .Where(d => d.Activo && d.Tipo != TipoDonante.Anonimo && d.NumeroDocumento != null && d.NumeroDocumento != "")
+        .OrderBy(d => d.NombreRazonSocial)
+        .ToListAsync();
+
+    var tieneItemsServidor = Model.Items != null && Model.Items.Any();
 }
 
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
 
+<style>
+    /* Tarjetas táctiles de Tipo de Donante */
+    .donor-type-card {
+        border: 1.5px solid var(--nr-border-subtle, #e2e8f0);
+        background-color: #ffffff;
+        color: var(--nr-secondary, #475569);
+        transition: all 0.18s ease-in-out;
+        cursor: pointer;
+    }
+    .donor-type-card:hover {
+        border-color: var(--nr-emerald-primary, #059669);
+        background-color: var(--nr-emerald-light, #ecfdf5);
+    }
+    .btn-check:checked + .donor-type-card {
+        border-color: var(--nr-emerald-primary, #059669);
+        background-color: var(--nr-emerald-light, #ecfdf5);
+        color: var(--nr-emerald-primary, #059669);
+        box-shadow: 0 2px 8px rgba(5, 150, 105, 0.15);
+    }
+
+    /* Animación Flash al insertar o consolidar una fila en la tabla (Opción 3) */
+    @@keyframes nrRowFlash {
+        0% { background-color: rgba(5, 150, 105, 0.24); }
+        100% { background-color: transparent; }
+    }
+    .nr-row-flash > td {
+        animation: nrRowFlash 1.4s ease-out;
+    }
+
+    /* Inputs inline compactos dentro de la tabla */
+    .input-inline-table {
+        border: 1px solid transparent;
+        background-color: transparent;
+        transition: all 0.15s ease;
+    }
+    .input-inline-table:hover,
+    .input-inline-table:focus {
+        border-color: #cbd5e1;
+        background-color: #ffffff;
+    }
+
+    /* Soporte Modo Oscuro y Alto Contraste */
+    body.dark-mode .donor-type-card {
+        background-color: #1f2937;
+        border-color: #374151;
+        color: #d1d5db;
+    }
+    body.dark-mode .btn-check:checked + .donor-type-card {
+        background-color: rgba(5, 150, 105, 0.2);
+        border-color: #34d399;
+        color: #34d399;
+    }
+    body.dark-mode .input-inline-table:hover,
+    body.dark-mode .input-inline-table:focus {
+        background-color: #111827;
+        border-color: #4b5563;
+        color: #f9fafb;
+    }
+    body.high-contrast .btn-check:checked + .donor-type-card {
+        background-color: #ffff00 !important;
+        color: #000000 !important;
+        border-color: #ffffff !important;
+    }
+
+    @@media (min-width: 992px) {
+        .sticky-donor-panel {
+            position: sticky;
+            top: 5.2rem;
+            z-index: 10;
+        }
+    }
+</style>
+
+<!-- Encabezado de Página -->
 <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
     <div>
         <nav aria-label="breadcrumb">
@@ -24,120 +109,268 @@
         <h2 class="fw-bold mb-1">
             <i class="bi bi-box2-heart text-success me-2"></i>Recepción de Donaciones
         </h2>
-        <p class="text-muted mb-0">Ingreso de mercadería donada, trazabilidad por lote y validación de vencimiento.</p>
+        <p class="text-muted mb-0">Ingreso ágil de mercadería donada, trazabilidad por lote y control preventivo FEFO.</p>
     </div>
-    <a asp-action="Index" class="btn btn-outline-secondary rounded-pill px-3 fw-semibold">
-        <i class="bi bi-arrow-left me-1"></i> Volver al historial
-    </a>
+    <div class="d-flex align-items-center gap-2">
+        <span id="badgeBorradorActivo" class="badge bg-emerald-light text-success border border-success border-opacity-25 rounded-pill px-3 py-2 d-none">
+            <i class="bi bi-cloud-check-fill me-1"></i> Borrador autoguardado
+        </span>
+        <a asp-action="Index" class="btn btn-outline-secondary rounded-pill px-3 fw-semibold">
+            <i class="bi bi-arrow-left me-1"></i> Volver al historial
+        </a>
+    </div>
+</div>
+
+<!-- Aviso de Borrador Recuperado (Opción 4) -->
+<div id="alertaBorradorRecuperado" class="alert alert-success border-0 shadow-sm rounded-4 d-none mb-4 py-2 px-3 d-flex align-items-center justify-content-between flex-wrap gap-2">
+    <div class="d-flex align-items-center gap-2 small">
+        <i class="bi bi-arrow-counterclockwise fs-5 text-success"></i>
+        <span><strong>Recepción en curso recuperada:</strong> Se restauraron automáticamente los alimentos y datos que estabas cargando.</span>
+    </div>
+    <button type="button" id="btnDescartarBorrador" class="btn btn-sm btn-outline-danger rounded-pill px-3 py-0 fw-semibold">
+        <i class="bi bi-trash3 me-1"></i> Descartar borrador
+    </button>
 </div>
 
 <form asp-action="Registrar" method="post" id="formDonacion">
     @Html.AntiForgeryToken()
     <div asp-validation-summary="ModelOnly" class="alert alert-danger mb-4 shadow-sm border-start border-4 border-danger rounded-3" role="alert"></div>
 
-    <div class="row g-4">
-        <!-- 1. IDENTIFICACIÓN DEL DONANTE -->
-        <div class="col-lg-12">
-            <div class="card border-0 shadow-sm rounded-4 overflow-hidden bg-white">
-                <div class="card-header border-bottom p-3 px-4 bg-white d-flex align-items-center justify-content-between">
-                    <span class="fw-bold text-dark fs-6">
-                        <i class="bi bi-person-vcard text-primary me-2"></i>1. Datos del Donante
-                    </span>
-                    <span class="badge bg-secondary bg-opacity-10 text-secondary rounded-pill px-3 py-1">Cabecera de donación</span>
-                </div>
-                <div class="card-body p-4">
-                    <div class="row g-3">
-                        <div class="col-md-4">
-                            <label asp-for="TipoDonante" class="form-label fw-semibold"></label>
-                            <select asp-for="TipoDonante" class="form-select" id="selectTipoDonante">
-                                <option value="@((int)TipoDonante.Individuo)">Individuo (Persona física)</option>
-                                <option value="@((int)TipoDonante.Institucion)">Institución / Empresa donante</option>
-                                <option value="@((int)TipoDonante.Anonimo)">Donante anónimo</option>
-                            </select>
-                            <span asp-validation-for="TipoDonante" class="text-danger small"></span>
-                        </div>
+    <!-- LAYOUT OPERATIVO EN 2 COLUMNAS (Opción 4) -->
+    <div class="row g-4 align-items-start">
 
-                        <div class="col-md-4" id="grpDocumento">
-                            <label asp-for="NumeroDocumento" class="form-label fw-semibold" id="lblDocumento">DNI del donante</label>
-                            <input asp-for="NumeroDocumento" class="form-control font-mono" id="inputDocumento" placeholder="Ej: 30123456 ó 30-71234567-8" />
-                            <span asp-validation-for="NumeroDocumento" class="text-danger small"></span>
-                        </div>
+        <!-- ===================================================================
+             COLUMNA IZQUIERDA (STICKY): 1. DONANTE + RESUMEN + CONFIRMACIÓN
+             =================================================================== -->
+        <div class="col-xl-4 col-lg-5">
+            <div class="sticky-donor-panel d-flex flex-column gap-3">
 
-                        <div class="col-md-4" id="grpNombre">
-                            <label asp-for="NombreRazonSocial" class="form-label fw-semibold" id="lblNombre">Nombre y Apellido</label>
-                            <input asp-for="NombreRazonSocial" class="form-control" id="inputNombre" placeholder="Nombre completo o Razón Social" />
-                            <span asp-validation-for="NombreRazonSocial" class="text-danger small"></span>
-                        </div>
-
-                        <div class="col-md-3" id="grpTelefono">
-                            <label asp-for="Telefono" class="form-label fw-semibold"></label>
-                            <div class="input-group">
-                                <span class="input-group-text bg-light text-muted"><i class="bi bi-telephone"></i></span>
-                                <input asp-for="Telefono" class="form-control" id="inputTelefono" placeholder="Teléfono de contacto" />
-                            </div>
-                            <span asp-validation-for="Telefono" class="text-danger small"></span>
-                        </div>
-
-                        <div class="col-md-3" id="grpEmail">
-                            <label asp-for="Email" class="form-label fw-semibold"></label>
-                            <div class="input-group">
-                                <span class="input-group-text bg-light text-muted"><i class="bi bi-envelope"></i></span>
-                                <input asp-for="Email" class="form-control" id="inputEmail" placeholder="correo@ejemplo.com" />
-                            </div>
-                            <span asp-validation-for="Email" class="text-danger small"></span>
-                        </div>
-
-                        <div class="col-md-3">
-                            <label asp-for="VoluntarioReceptorId" class="form-label fw-semibold"></label>
-                            <div class="input-group">
-                                <span class="input-group-text bg-light text-success"><i class="bi bi-person-check-fill"></i></span>
-                                <input asp-for="VoluntarioReceptorId" class="form-control bg-light text-dark fw-semibold" readonly />
-                            </div>
-                            <span asp-validation-for="VoluntarioReceptorId" class="text-danger small"></span>
-                            <small class="text-muted d-block mt-1" style="font-size: 0.75rem;">
-                                <i class="bi bi-shield-lock-fill text-secondary me-1"></i>Asignado al operador en sesión
-                            </small>
-                        </div>
-
-                        <div class="col-md-3">
-                            <label asp-for="Observaciones" class="form-label fw-semibold"></label>
-                            <input asp-for="Observaciones" class="form-control" placeholder="Ej: Embalaje cerrado, flete propio" />
-                            <span asp-validation-for="Observaciones" class="text-danger small"></span>
-                        </div>
+                <!-- TARJETA 1: IDENTIFICACIÓN DEL DONANTE (Opción 1) -->
+                <div class="card border-0 shadow-sm rounded-4 overflow-hidden bg-white">
+                    <div class="card-header border-bottom p-3 px-4 bg-white d-flex align-items-center justify-content-between">
+                        <span class="fw-bold text-dark fs-6">
+                            <i class="bi bi-person-vcard text-primary me-2"></i>1. Datos del Donante
+                        </span>
+                        <span class="badge bg-secondary bg-opacity-10 text-secondary rounded-pill px-2 py-1 small">Cabecera</span>
                     </div>
 
-                    <div id="alertaAnonimo" class="alert alert-info border-0 mt-3 d-none mb-0 rounded-3">
-                        <i class="bi bi-info-circle-fill me-2"></i>
-                        Se ha seleccionado <strong>Donante Anónimo</strong>. La donación se asentará automáticamente sin vincular datos fiscales.
+                    <div class="card-body p-3 p-xl-4">
+                        <!-- Selector oculto sincronizado + Tarjetas Táctiles (btn-check) -->
+                        <label asp-for="TipoDonante" class="form-label small fw-bold text-uppercase text-muted mb-2" style="letter-spacing: 0.03em;">Tipo de Donante</label>
+                        <select asp-for="TipoDonante" class="d-none" id="selectTipoDonante">
+                            <option value="@((int)TipoDonante.Individuo)">Individuo</option>
+                            <option value="@((int)TipoDonante.Institucion)">Institución</option>
+                            <option value="@((int)TipoDonante.Anonimo)">Anónimo</option>
+                        </select>
+
+                        <div class="row g-2 mb-3" role="radiogroup" aria-label="Seleccionar tipo de donante">
+                            <div class="col-4">
+                                <input type="radio" class="btn-check radio-tipo-donante" name="RadioTipoDonanteUI" id="tipoIndividuo" value="1"
+                                       @(Model.TipoDonante == TipoDonante.Individuo ? "checked" : "")>
+                                <label class="donor-type-card w-100 rounded-3 p-2 text-center d-flex flex-column align-items-center justify-content-center h-100" for="tipoIndividuo">
+                                    <i class="bi bi-person-fill fs-5 mb-1"></i>
+                                    <span class="fw-bold d-block" style="font-size: 0.78rem;">Individuo</span>
+                                    <small class="text-muted" style="font-size: 0.65rem;">Persona física</small>
+                                </label>
+                            </div>
+                            <div class="col-4">
+                                <input type="radio" class="btn-check radio-tipo-donante" name="RadioTipoDonanteUI" id="tipoInstitucion" value="2"
+                                       @(Model.TipoDonante == TipoDonante.Institucion ? "checked" : "")>
+                                <label class="donor-type-card w-100 rounded-3 p-2 text-center d-flex flex-column align-items-center justify-content-center h-100" for="tipoInstitucion">
+                                    <i class="bi bi-buildings-fill fs-5 mb-1"></i>
+                                    <span class="fw-bold d-block" style="font-size: 0.78rem;">Institución</span>
+                                    <small class="text-muted" style="font-size: 0.65rem;">Empresa / ONG</small>
+                                </label>
+                            </div>
+                            <div class="col-4">
+                                <input type="radio" class="btn-check radio-tipo-donante" name="RadioTipoDonanteUI" id="tipoAnonimo" value="3"
+                                       @(Model.TipoDonante == TipoDonante.Anonimo ? "checked" : "")>
+                                <label class="donor-type-card w-100 rounded-3 p-2 text-center d-flex flex-column align-items-center justify-content-center h-100" for="tipoAnonimo">
+                                    <i class="bi bi-incognito fs-5 mb-1"></i>
+                                    <span class="fw-bold d-block" style="font-size: 0.78rem;">Anónimo</span>
+                                    <small class="text-muted" style="font-size: 0.65rem;">Sin datos</small>
+                                </label>
+                            </div>
+                        </div>
+                        <span asp-validation-for="TipoDonante" class="text-danger small d-block mb-2"></span>
+
+                        <!-- Bloque Colapsable de Datos del Donante Identificado -->
+                        <div id="camposDonanteIdentificado">
+                            <!-- Buscador de Donantes Frecuentes / Registrados -->
+                            @if (donantesRegistrados.Any())
+                            {
+                                <div class="mb-3 p-2 bg-light rounded-3 border border-secondary border-opacity-10">
+                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <label for="selDonanteFrecuente" class="form-label small fw-semibold text-success mb-0">
+                                            <i class="bi bi-lightning-charge-fill me-1"></i>Autocompletar donante registrado
+                                        </label>
+                                        <button type="button" id="btnLimpiarDonante" class="btn btn-link btn-sm p-0 text-decoration-none text-muted d-none" style="font-size: 0.75rem;">
+                                            <i class="bi bi-eraser me-1"></i>Limpiar
+                                        </button>
+                                    </div>
+                                    <select id="selDonanteFrecuente" class="form-select form-select-sm">
+                                        <option value="">Buscar por nombre, DNI o CUIT...</option>
+                                        @foreach (var don in donantesRegistrados)
+                                        {
+                                            <option value="@don.Id"
+                                                    data-tipo="@((int)don.Tipo)"
+                                                    data-doc="@don.NumeroDocumento"
+                                                    data-nombre="@don.NombreRazonSocial"
+                                                    data-tel="@(don.Telefono ?? "")"
+                                                    data-email="@(don.Email ?? "")">
+                                                @don.NombreRazonSocial — [@don.NumeroDocumento] (@(don.Tipo == TipoDonante.Institucion ? "Institución" : "Individuo"))
+                                            </option>
+                                        }
+                                    </select>
+                                </div>
+                            }
+
+                            <div class="row g-2">
+                                <div class="col-12" id="grpDocumento">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <label asp-for="NumeroDocumento" class="form-label small fw-semibold mb-1" id="lblDocumento">DNI del Donante *</label>
+                                        <span id="badgeDonanteDetectado" class="badge bg-emerald-light text-success rounded-pill d-none" style="font-size: 0.68rem;">
+                                            <i class="bi bi-check-circle-fill me-1"></i>Donante registrado
+                                        </span>
+                                    </div>
+                                    <div class="input-group input-group-sm">
+                                        <span class="input-group-text bg-light text-muted"><i class="bi bi-card-heading"></i></span>
+                                        <input asp-for="NumeroDocumento" class="form-control font-mono" id="inputDocumento" placeholder="Ej: 30123456 ó 30-71234567-8" />
+                                    </div>
+                                    <span asp-validation-for="NumeroDocumento" class="text-danger small"></span>
+                                </div>
+
+                                <div class="col-12" id="grpNombre">
+                                    <label asp-for="NombreRazonSocial" class="form-label small fw-semibold mb-1" id="lblNombre">Nombre y Apellido *</label>
+                                    <div class="input-group input-group-sm">
+                                        <span class="input-group-text bg-light text-muted"><i class="bi bi-person-badge"></i></span>
+                                        <input asp-for="NombreRazonSocial" class="form-control" id="inputNombre" placeholder="Nombre completo o Razón Social" />
+                                    </div>
+                                    <span asp-validation-for="NombreRazonSocial" class="text-danger small"></span>
+                                </div>
+
+                                <div class="col-sm-6" id="grpTelefono">
+                                    <label asp-for="Telefono" class="form-label small fw-semibold mb-1">Teléfono</label>
+                                    <div class="input-group input-group-sm">
+                                        <span class="input-group-text bg-light text-muted"><i class="bi bi-telephone"></i></span>
+                                        <input asp-for="Telefono" class="form-control" id="inputTelefono" placeholder="Opcional" />
+                                    </div>
+                                    <span asp-validation-for="Telefono" class="text-danger small"></span>
+                                </div>
+
+                                <div class="col-sm-6" id="grpEmail">
+                                    <label asp-for="Email" class="form-label small fw-semibold mb-1">Email</label>
+                                    <div class="input-group input-group-sm">
+                                        <span class="input-group-text bg-light text-muted"><i class="bi bi-envelope"></i></span>
+                                        <input asp-for="Email" class="form-control" id="inputEmail" placeholder="correo@ejemplo.com" />
+                                    </div>
+                                    <span asp-validation-for="Email" class="text-danger small"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Banner Modo Anónimo (Colapsa los campos anteriores) -->
+                        <div id="alertaAnonimo" class="alert alert-info border-0 mb-0 py-2 px-3 d-none rounded-3 small">
+                            <div class="d-flex align-items-center gap-2">
+                                <i class="bi bi-incognito fs-5 text-info"></i>
+                                <div>
+                                    <strong>Donante Anónimo seleccionado.</strong>
+                                    <div class="text-muted" style="font-size: 0.78rem;">La recepción se asentará directamente sin requerir datos fiscales ni personales.</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr class="my-3 text-muted opacity-25" />
+
+                        <!-- Operador y Observaciones -->
+                        <div class="row g-2">
+                            <div class="col-12">
+                                <label asp-for="VoluntarioReceptorId" class="form-label small fw-semibold mb-1">Operador Receptor</label>
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text bg-light text-success"><i class="bi bi-shield-check"></i></span>
+                                    <input asp-for="VoluntarioReceptorId" class="form-control bg-light text-dark fw-semibold" readonly />
+                                </div>
+                            </div>
+
+                            <div class="col-12">
+                                <label asp-for="Observaciones" class="form-label small fw-semibold mb-1">Observaciones de Recepción</label>
+                                <input asp-for="Observaciones" class="form-control form-control-sm" id="inputObservaciones" placeholder="Ej: Pallets cerrados, entrega en puerta..." />
+                                <span asp-validation-for="Observaciones" class="text-danger small"></span>
+                            </div>
+                        </div>
                     </div>
                 </div>
+
+                <!-- TARJETA 2: RESUMEN EN VIVO Y CONFIRMACIÓN (Opciones 3 y 4) -->
+                <div class="card border-0 shadow-sm rounded-4 overflow-hidden bg-white">
+                    <div class="card-body p-3 p-xl-4">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <span class="fw-bold text-dark small text-uppercase" style="letter-spacing: 0.04em;">
+                                <i class="bi bi-clipboard2-data text-success me-1"></i>Resumen de Recepción
+                            </span>
+                            <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-2 py-1 font-mono small" id="resumenCantLotes">0 lotes</span>
+                        </div>
+
+                        <!-- Desglose Multimedida en Vivo -->
+                        <div class="row g-2 mb-3 text-center">
+                            <div class="col-4">
+                                <div class="p-2 rounded-3 bg-light border">
+                                    <span class="d-block font-mono fw-bold text-dark fs-6" id="resumenUnidades">0</span>
+                                    <small class="text-muted d-block" style="font-size: 0.7rem;">Unidades</small>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="p-2 rounded-3 bg-light border">
+                                    <span class="d-block font-mono fw-bold text-dark fs-6" id="resumenKilos">0</span>
+                                    <small class="text-muted d-block" style="font-size: 0.7rem;">Kilos</small>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="p-2 rounded-3 bg-light border">
+                                    <span class="d-block font-mono fw-bold text-dark fs-6" id="resumenLitros">0</span>
+                                    <small class="text-muted d-block" style="font-size: 0.7rem;">Litros</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" id="btnConfirmarDonacion" class="btn btn-success rounded-pill py-2 fw-bold shadow-sm">
+                                <i class="bi bi-check2-circle me-1"></i> Confirmar y Emitir Comprobante
+                            </button>
+                            <a asp-action="Index" class="btn btn-sm btn-outline-secondary rounded-pill fw-semibold">
+                                Cancelar
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </div>
 
-        <!-- 2. ALIMENTOS Y LOTES (DETALLE DE LA DONACIÓN) -->
-        <div class="col-lg-12">
+        <!-- ===================================================================
+             COLUMNA DERECHA: 2. ESTACIÓN DE CARGA RÁPIDA + TABLA INTERACTIVA 2.0
+             =================================================================== -->
+        <div class="col-xl-8 col-lg-7">
             <div class="card border-0 shadow-sm rounded-4 overflow-hidden bg-white">
-                <div class="card-header border-bottom p-3 px-4 bg-white d-flex align-items-center justify-content-between">
-                    <span class="fw-bold text-dark fs-6">
-                        <i class="bi bi-boxes text-success me-2"></i>2. Detalle de Alimentos Recibidos
-                    </span>
-                    <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-3 py-1">Control de caducidad FEFO</span>
+                <div class="card-header border-bottom p-3 px-4 bg-white d-flex align-items-center justify-content-between flex-wrap gap-2">
+                    <div>
+                        <span class="fw-bold text-dark fs-6">
+                            <i class="bi bi-boxes text-success me-2"></i>2. Detalle de Alimentos Recibidos
+                        </span>
+                        <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-2 py-1 ms-1 small">Control de Vencimientos</span>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-success rounded-pill px-3 py-1 fw-bold shadow-sm" id="btnAbrirModalNuevoAlimento" title="Dar de alta un nuevo alimento en catálogo">
+                        <i class="bi bi-plus-circle-fill me-1"></i> + Registrar Nuevo Alimento
+                    </button>
                 </div>
-                <div class="card-body p-4">
-                    <!-- Barra de Entrada Rápida de Alimento con Select2 -->
-                    <div class="p-3 bg-light rounded-4 border mb-4">
-                        <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
-                            <h6 class="fw-bold mb-0 text-secondary">
-                                <i class="bi bi-plus-circle me-1 text-success"></i> Incorporar Alimento a la Recepción
-                            </h6>
-                            <button type="button" class="btn btn-sm btn-success rounded-pill px-3 py-1 fw-bold shadow-sm" id="btnAbrirModalNuevoAlimento" title="Dar de alta un nuevo alimento en catálogo">
-                                <i class="bi bi-plus-circle-fill me-1"></i> + Registrar Nuevo Alimento
-                            </button>
-                        </div>
+
+                <div class="card-body p-3 p-xl-4">
+                    <!-- ESTACIÓN DE CARGA COMPACTA + SEMÁFORO FEFO EN VIVO (Opción 2) -->
+                    <div class="p-3 bg-light rounded-4 border mb-4" id="panelCargaAlimento">
                         <div class="row g-2 align-items-end">
-                            <!-- Buscador Inteligente Select2 -->
-                            <div class="col-lg-4 col-md-6">
-                                <label class="form-label small fw-semibold text-muted mb-1">Seleccionar o escanear alimento</label>
+                            <!-- 1. Buscador Inteligente Select2 -->
+                            <div class="col-md-4 col-12">
+                                <label class="form-label small fw-semibold text-muted mb-1 text-truncate d-block">Seleccionar o escanear alimento</label>
                                 <select id="selProductoCatalogo" class="form-select select2-search">
                                     <option value="">Escriba nombre o código de barras (EAN)...</option>
                                     @foreach (var prod in productos)
@@ -153,99 +386,181 @@
                                 </select>
                             </div>
 
-                            <div class="col-lg-2 col-md-3 col-sm-6">
+                            <!-- 2. Código EAN-13 Directo -->
+                            <div class="col-md-2 col-6">
                                 <label class="form-label small fw-semibold text-muted mb-1 text-nowrap">Código EAN-13</label>
                                 <input type="text" id="tempEan" class="form-control font-mono" placeholder="779..." />
                                 <div id="avisoEanNoExiste" class="mt-1 d-none small">
-                                    <span class="text-danger fw-semibold"><i class="bi bi-exclamation-circle me-1"></i>No está en catálogo.</span>
-                                    <button type="button" class="btn btn-xs btn-outline-success ms-1 py-0 px-2 rounded-pill fw-semibold shadow-none" id="btnCrearDesdeEan">
+                                    <span class="text-danger fw-semibold d-block" style="font-size: 0.72rem;"><i class="bi bi-exclamation-circle me-1"></i>No catalogado</span>
+                                    <button type="button" class="btn btn-xs btn-outline-success mt-1 py-0 px-2 rounded-pill fw-semibold shadow-none" id="btnCrearDesdeEan" style="font-size: 0.72rem;">
                                         <i class="bi bi-plus"></i> Alta rápida
                                     </button>
                                 </div>
                             </div>
 
-                            <!-- Cantidad Entera con Badge Dinámico de Unidad (Propuesta 1) -->
-                            <div class="col-lg-2 col-md-3 col-sm-6">
+                            <!-- 3. Cantidad con Badge de Unidad -->
+                            <div class="col-md-2 col-6">
                                 <label class="form-label small fw-semibold text-muted mb-1 d-flex justify-content-between align-items-center">
                                     <span>Cantidad</span>
-                                    <span id="badgeUnidadDonacion" class="badge bg-secondary-subtle text-secondary border rounded-pill px-2">Unidades</span>
+                                    <span id="badgeUnidadDonacion" class="badge bg-secondary-subtle text-secondary border rounded-pill px-2" style="font-size: 0.68rem;">Unidades</span>
                                 </label>
-                                <input type="number" id="tempCantidad" class="form-control font-mono" min="1" step="1" value="10" placeholder="Ej: 10" />
+                                <input type="number" id="tempCantidad" class="form-control font-mono fw-bold" min="1" step="1" value="10" placeholder="Ej: 10" />
                             </div>
 
-                            <div class="col-lg-2 col-md-4 col-sm-6">
-                                <div class="d-flex justify-content-between align-items-center mb-1">
-                                    <label class="form-label small fw-semibold text-muted mb-0">Fecha vencimiento</label>
-                                    <div class="d-inline-flex gap-1" title="Atajos rápidos de caducidad">
-                                        <button type="button" class="btn btn-outline-secondary py-0 px-1 rounded-2 btn-atajo-venc" style="font-size: 0.68rem;" data-months="1">+1m</button>
-                                        <button type="button" class="btn btn-outline-secondary py-0 px-1 rounded-2 btn-atajo-venc" style="font-size: 0.68rem;" data-months="3">+3m</button>
-                                        <button type="button" class="btn btn-outline-secondary py-0 px-1 rounded-2 btn-atajo-venc" style="font-size: 0.68rem;" data-months="6">+6m</button>
-                                        <button type="button" class="btn btn-outline-secondary py-0 px-1 rounded-2 btn-atajo-venc" style="font-size: 0.68rem;" data-months="12">+1a</button>
+                            <!-- 4. Fecha de Vencimiento: Solo Botón Mes/Año (Opción A) -->
+                            <div class="col-md-4 col-12">
+                                <label class="form-label small fw-semibold text-muted mb-1">Vencimiento (Mes/Año)</label>
+                                <div class="input-group">
+                                    <input type="text" id="displayVencimiento" class="form-control bg-white px-2" readonly placeholder="Seleccionar Mes/Año..." style="cursor: pointer; font-size: 0.82rem;" title="Haga clic para elegir Mes y Año" />
+                                    <input type="hidden" id="tempVencimiento" value="@DateTime.Today.AddMonths(3).ToString("yyyy-MM-dd")" />
+                                    <button type="button" class="btn btn-outline-secondary dropdown-toggle px-2 shadow-none" style="font-size: 0.82rem;" data-bs-toggle="dropdown" aria-expanded="false" id="btnDropdownMesAnio">
+                                        <i class="bi bi-calendar-month text-success me-1"></i>
+                                        <span class="fw-semibold">Mes/Año</span>
+                                    </button>
+                                    <div class="dropdown-menu dropdown-menu-end p-3 shadow-lg border-0 rounded-4" style="width: 290px; z-index: 1050;">
+                                        <div class="d-flex align-items-center justify-content-between mb-2 pb-1 border-bottom">
+                                            <span class="small fw-bold text-dark"><i class="bi bi-calendar-check text-success me-1"></i>Vto. por Mes y Año</span>
+                                            <span class="badge bg-light text-muted border" style="font-size: 0.65rem;">Fin de mes</span>
+                                        </div>
+                                        <p class="text-muted small mb-2" style="font-size: 0.74rem;">Fija el último día del mes según el envase (ej: <em>"11/2026"</em>).</p>
+                                        <div class="row g-2 mb-3">
+                                            <div class="col-7">
+                                                <label class="small text-muted mb-1" style="font-size: 0.72rem;">Mes</label>
+                                                <select id="selVencMes" class="form-select form-select-sm font-mono">
+                                                    <option value="1">01 - Enero</option>
+                                                    <option value="2">02 - Febrero</option>
+                                                    <option value="3">03 - Marzo</option>
+                                                    <option value="4">04 - Abril</option>
+                                                    <option value="5">05 - Mayo</option>
+                                                    <option value="6">06 - Junio</option>
+                                                    <option value="7">07 - Julio</option>
+                                                    <option value="8">08 - Agosto</option>
+                                                    <option value="9">09 - Septiembre</option>
+                                                    <option value="10">10 - Octubre</option>
+                                                    <option value="11">11 - Noviembre</option>
+                                                    <option value="12">12 - Diciembre</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-5">
+                                                <label class="small text-muted mb-1" style="font-size: 0.72rem;">Año</label>
+                                                <select id="selVencAnio" class="form-select form-select-sm font-mono">
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <button type="button" id="btnAplicarMesAnio" class="btn btn-sm btn-success w-100 rounded-pill fw-bold shadow-sm">
+                                            <i class="bi bi-check2 me-1"></i> Fijar fecha (Fin de mes)
+                                        </button>
                                     </div>
                                 </div>
-                                <input type="date" id="tempVencimiento" class="form-control" min="@hoyMasUno" value="@DateTime.Today.AddMonths(3).ToString("yyyy-MM-dd")" />
+                            </div>
+                        </div>
+
+                        <!-- Sub-barra de Aceleración: Lote + Píldoras de Cantidad + Semáforo de Vencimiento en Vivo + Botón Agregar -->
+                        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mt-3 pt-2 border-top border-secondary border-opacity-10">
+                            <div class="d-flex flex-wrap align-items-center gap-2">
+                                <!-- Lote de Fábrica Opcional -->
+                                <div class="input-group input-group-sm" style="width: 175px;" title="Número de lote impreso en el envase (opcional)">
+                                    <span class="input-group-text bg-white text-muted border-end-0"><i class="bi bi-upc"></i></span>
+                                    <input type="text" id="tempLote" class="form-control font-mono border-start-0" placeholder="Lote Fab. (Auto)" maxlength="50" />
+                                </div>
+
+                                <!-- Atajos Rápidos de Cantidad por Bulto -->
+                                <div class="d-inline-flex align-items-center gap-1 bg-white border rounded-pill px-2 py-1">
+                                    <small class="text-muted fw-semibold me-1" style="font-size: 0.7rem;">Cant:</small>
+                                    <button type="button" class="btn btn-xs btn-light border-0 rounded-pill px-2 py-0 fw-semibold btn-atajo-cant" data-add="5" style="font-size: 0.72rem;" title="Sumar 5">+5</button>
+                                    <button type="button" class="btn btn-xs btn-light border-0 rounded-pill px-2 py-0 fw-semibold btn-atajo-cant" data-add="10" style="font-size: 0.72rem;" title="Sumar 10">+10</button>
+                                    <button type="button" class="btn btn-xs btn-light border-0 rounded-pill px-2 py-0 fw-semibold btn-atajo-cant" data-add="25" style="font-size: 0.72rem;" title="Sumar 25">+25</button>
+                                    <button type="button" class="btn btn-xs btn-light border-0 rounded-pill px-2 py-0 fw-semibold btn-atajo-cant" data-add="50" style="font-size: 0.72rem;" title="Sumar 50">+50</button>
+                                </div>
+
+                                <!-- Píldora de Semáforo de Caducidad en Tiempo Real -->
+                                <span id="previewFefoVivo" class="badge badge-fefo-optimo rounded-pill px-3 py-1 d-inline-flex align-items-center gap-1" style="font-size: 0.75rem;">
+                                    <i class="bi bi-shield-check"></i>
+                                    <span id="previewFefoTexto">Óptimo</span>
+                                </span>
                             </div>
 
-                            <div class="col-lg-2 col-md-4 col-sm-6">
-                                <label class="form-label small fw-semibold text-muted mb-1">Lote Fab. (Opcional)</label>
-                                <input type="text" id="tempLote" class="form-control font-mono" placeholder="Auto..." />
-                            </div>
-
-                            <div class="col-12 text-end mt-3">
-                                <button type="button" id="btnAgregarFila" class="btn btn-success rounded-pill px-4 fw-semibold shadow-sm">
-                                    <i class="bi bi-cart-plus me-1"></i> Agregar a la Lista
-                                </button>
-                            </div>
+                            <button type="button" id="btnAgregarFila" class="btn btn-success rounded-pill px-4 py-1 fw-bold shadow-sm">
+                                <i class="bi bi-cart-plus me-1"></i> Agregar a la Lista
+                            </button>
                         </div>
                     </div>
 
-                    <!-- Tabla de Detalle -->
-                    <div class="table-responsive">
+                    <!-- Barra de Herramientas sobre la Tabla -->
+                    <div class="d-flex justify-content-between align-items-center mb-2 px-1">
+                        <span class="small fw-semibold text-muted">
+                            <i class="bi bi-list-check me-1"></i>Lotes cargados en esta recepción (<span id="contadorFilasTxt">0</span>)
+                        </span>
+                        <button type="button" id="btnVaciarLista" class="btn btn-sm btn-outline-danger border-0 rounded-pill px-3 py-0 small fw-semibold d-none">
+                            <i class="bi bi-trash3 me-1"></i> Vaciar lista
+                        </button>
+                    </div>
+
+                    <!-- TABLA DE RECEPCIÓN INTERACTIVA 2.0 (Opción 3) -->
+                    <div class="table-responsive border rounded-4 overflow-hidden">
                         <table class="table table-hover align-middle mb-0" id="tablaDetalles">
-                            <thead class="table-light text-secondary text-uppercase small fw-bold">
+                            <thead class="table-light text-secondary text-uppercase small fw-bold" style="font-size: 0.74rem;">
                                 <tr>
-                                    <th class="ps-4 text-nowrap">EAN</th>
-                                    <th>Alimento</th>
-                                    <th>Categoría</th>
-                                    <th>Lote Asignado</th>
-                                    <th>Vencimiento</th>
-                                    <th class="text-end" style="min-width: 170px;">Cantidad</th>
-                                    <th class="text-center pe-4" style="width: 80px;">Quitar</th>
+                                    <th class="ps-3">Alimento / EAN</th>
+                                    <th style="width: 145px;">Lote Asignado</th>
+                                    <th style="width: 210px;">Vencimiento & Estado</th>
+                                    <th class="text-end" style="width: 175px;">Cantidad</th>
+                                    <th class="text-center pe-3" style="width: 60px;">Quitar</th>
                                 </tr>
                             </thead>
                             <tbody id="cuerpoTablaDetalles">
-                                @if (Model.Items != null && Model.Items.Any())
+                                @if (tieneItemsServidor)
                                 {
-                                    for (int i = 0; i < Model.Items.Count; i++)
+                                    for (int i = 0; i < Model.Items!.Count; i++)
                                     {
                                         var itm = Model.Items[i];
-                                        <tr data-row-id="@i" data-ean="@itm.CodigoBarras" data-venc="@itm.FechaVencimiento.ToString("yyyy-MM-dd")" data-lote="@(itm.NumeroLote ?? "")" data-unidad="@itm.UnidadMedida">
+                                        var vencStr = itm.FechaVencimiento.ToString("yyyy-MM-dd");
+                                        <tr data-row-id="@i"
+                                            data-ean="@itm.CodigoBarras"
+                                            data-nombre="@itm.NombreProducto"
+                                            data-categoria="@itm.Categoria"
+                                            data-venc="@vencStr"
+                                            data-lote="@(itm.NumeroLote ?? "")"
+                                            data-unidad="@itm.UnidadMedida">
                                             <input type="hidden" name="Items.Index" value="@i" />
                                             <input type="hidden" name="Items[@i].CodigoBarras" value="@itm.CodigoBarras" />
                                             <input type="hidden" name="Items[@i].NombreProducto" value="@itm.NombreProducto" />
                                             <input type="hidden" name="Items[@i].Categoria" value="@itm.Categoria" />
                                             <input type="hidden" name="Items[@i].UnidadMedida" value="@itm.UnidadMedida" />
                                             <input type="hidden" name="Items[@i].Cantidad" value="@itm.Cantidad" />
-                                            <input type="hidden" name="Items[@i].FechaVencimiento" value="@itm.FechaVencimiento.ToString("yyyy-MM-dd")" />
+                                            <input type="hidden" name="Items[@i].FechaVencimiento" value="@vencStr" />
                                             <input type="hidden" name="Items[@i].NumeroLote" value="@itm.NumeroLote" />
 
-                                            <td class="ps-4 text-nowrap"><span class="code-tag font-mono rounded-3 text-nowrap">@itm.CodigoBarras</span></td>
-                                            <td class="fw-semibold text-dark">@itm.NombreProducto</td>
-                                            <td><span class="badge bg-light text-secondary border rounded-pill px-3 py-1">@itm.Categoria</span></td>
-                                            <td><span class="font-mono small text-muted">@(string.IsNullOrWhiteSpace(itm.NumeroLote) ? "(Automático)" : itm.NumeroLote)</span></td>
+                                            <td class="ps-3">
+                                                <div class="fw-semibold text-dark">@itm.NombreProducto</div>
+                                                <div class="d-flex align-items-center gap-2 mt-1">
+                                                    <span class="code-tag font-mono rounded-2 px-1" style="font-size: 0.72rem;">@itm.CodigoBarras</span>
+                                                    <span class="badge bg-light text-secondary border rounded-pill px-2 py-0" style="font-size: 0.68rem;">@itm.Categoria</span>
+                                                </div>
+                                            </td>
                                             <td>
-                                                <span class="badge @itm.ClaseFefo rounded-pill px-2 py-1">
-                                                    @itm.FechaVencimiento.ToString("dd/MM/yyyy") (@itm.TextoFefo)
-                                                </span>
+                                                <input type="text" class="form-control form-control-sm font-mono input-inline-table input-lote-fila"
+                                                       value="@itm.NumeroLote" placeholder="(Automático)" maxlength="50" title="Click para editar el lote" />
+                                            </td>
+                                            <td>
+                                                <div class="d-flex flex-column gap-1">
+                                                    <input type="date" class="form-control form-control-sm font-mono input-inline-table input-venc-fila py-0"
+                                                           min="@hoyMasUno" value="@vencStr" title="Editar fecha de vencimiento" />
+                                                    <span class="badge @itm.ClaseFefo rounded-pill px-2 py-1 badge-fefo-fila align-self-start" style="font-size: 0.68rem;">
+                                                        @itm.TextoFefo
+                                                    </span>
+                                                </div>
                                             </td>
                                             <td class="text-end">
                                                 <div class="d-inline-flex align-items-center justify-content-end gap-1">
                                                     <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 rounded-2 btn-step-cant" data-delta="-1" title="Restar 1">-</button>
-                                                    <span class="fw-bold text-success px-2 span-cantidad-fila">@itm.Cantidad.ToString("N0") @itm.UnidadMedida</span>
+                                                    <input type="number" class="form-control form-control-sm text-center font-mono fw-bold text-success input-cant-fila px-1"
+                                                           value="@itm.Cantidad" min="1" step="1" style="width: 68px;" aria-label="Cantidad" />
                                                     <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 rounded-2 btn-step-cant" data-delta="1" title="Sumar 1">+</button>
                                                 </div>
+                                                <small class="text-muted d-block me-1" style="font-size: 0.68rem;">@itm.UnidadMedida</small>
                                             </td>
-                                            <td class="text-center pe-4">
+                                            <td class="text-center pe-3">
                                                 <button type="button" class="btn btn-sm btn-outline-danger border-0 rounded-3 btn-quitar" title="Eliminar fila">
                                                     <i class="bi bi-trash3"></i>
                                                 </button>
@@ -256,33 +571,34 @@
                             </tbody>
                             <tfoot class="table-light fw-bold">
                                 <tr>
-                                    <td colspan="5" class="text-end ps-4">Total de unidades recibidas:</td>
-                                    <td class="text-end text-success fs-6" id="totalCantidadTxt">0</td>
+                                    <td colspan="3" class="ps-3">
+                                        <div class="d-flex flex-wrap align-items-center gap-2 small">
+                                            <span class="text-secondary">Totales por medida:</span>
+                                            <span class="badge bg-white text-dark border rounded-pill px-2 py-1 font-mono" id="tfootUnidades">0 Unid.</span>
+                                            <span class="badge bg-white text-dark border rounded-pill px-2 py-1 font-mono" id="tfootKilos">0 Kg</span>
+                                            <span class="badge bg-white text-dark border rounded-pill px-2 py-1 font-mono" id="tfootLitros">0 Lts</span>
+                                        </div>
+                                    </td>
+                                    <td class="text-end text-success fs-6 font-mono" id="totalCantidadTxt">0</td>
                                     <td></td>
                                 </tr>
                             </tfoot>
                         </table>
                     </div>
 
-                    <div id="sinItemsAviso" class="text-center py-4 text-muted @(Model.Items != null && Model.Items.Any() ? "d-none" : "")">
-                        <i class="bi bi-cart-x fs-2 d-block mb-1 text-secondary opacity-50"></i>
-                        Aún no has agregado ningún alimento a la recepción.
+                    <div id="sinItemsAviso" class="text-center py-5 text-muted @(tieneItemsServidor ? "d-none" : "")">
+                        <i class="bi bi-upc-scan fs-1 d-block mb-2 text-secondary opacity-50"></i>
+                        <div class="fw-semibold text-dark">Aún no has agregado alimentos a la recepción</div>
+                        <small class="text-muted">Selecciona un producto arriba o escanea su código EAN-13 y presiona <kbd class="bg-light text-dark border">Enter</kbd>.</small>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- BOTÓN FINAL DE REGISTRO -->
-        <div class="col-lg-12 d-flex justify-content-end gap-2 pb-5">
-            <a asp-action="Index" class="btn btn-outline-secondary rounded-pill px-4 fw-semibold">Cancelar</a>
-            <button type="submit" id="btnConfirmarDonacion" class="btn btn-success rounded-pill btn-lg px-5 fw-semibold shadow-sm">
-                <i class="bi bi-check2-circle me-2"></i> Confirmar y Emitir Comprobante
-            </button>
-        </div>
     </div>
 </form>
 
-<!-- MODAL: ALTA RÁPIDA DE ALIMENTO (OPCIÓN 1) -->
+<!-- MODAL: ALTA RÁPIDA DE ALIMENTO -->
 <div class="modal fade" id="modalNuevoAlimento" tabindex="-1" aria-labelledby="modalNuevoAlimentoLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content rounded-4 border-0 shadow">
@@ -355,33 +671,65 @@
 
     <script>
         document.addEventListener("DOMContentLoaded", function () {
+            const DRAFT_STORAGE_KEY = "nutrired_recepcion_draft_v1";
+            const tieneItemsServidor = @(tieneItemsServidor ? "true" : "false");
+            const hoyMasUnoStr = "@hoyMasUno";
             let rowCounter = @(Model.Items?.Count ?? 0);
 
+            // Referencias DOM - Donante (Opción 1)
             const selectTipoDonante = document.getElementById("selectTipoDonante");
-            const grpDocumento = document.getElementById("grpDocumento");
-            const grpNombre = document.getElementById("grpNombre");
-            const grpTelefono = document.getElementById("grpTelefono");
-            const grpEmail = document.getElementById("grpEmail");
+            const radiosTipoDonante = document.querySelectorAll(".radio-tipo-donante");
+            const camposDonanteIdentificado = document.getElementById("camposDonanteIdentificado");
             const lblDocumento = document.getElementById("lblDocumento");
             const lblNombre = document.getElementById("lblNombre");
             const inputDocumento = document.getElementById("inputDocumento");
             const inputNombre = document.getElementById("inputNombre");
+            const inputTelefono = document.getElementById("inputTelefono");
+            const inputEmail = document.getElementById("inputEmail");
+            const inputObservaciones = document.getElementById("inputObservaciones");
             const alertaAnonimo = document.getElementById("alertaAnonimo");
+            const badgeDonanteDetectado = document.getElementById("badgeDonanteDetectado");
+            const btnLimpiarDonante = document.getElementById("btnLimpiarDonante");
 
-            const selCatalogo = document.getElementById("selProductoCatalogo");
+            // Referencias DOM - Estación de Carga (Opción 2)
             const tempEan = document.getElementById("tempEan");
             const tempCantidad = document.getElementById("tempCantidad");
             const tempVencimiento = document.getElementById("tempVencimiento");
             const tempLote = document.getElementById("tempLote");
             const btnAgregar = document.getElementById("btnAgregarFila");
             const badgeUnidad = document.getElementById("badgeUnidadDonacion");
+            const previewFefoVivo = document.getElementById("previewFefoVivo");
+            const previewFefoTexto = document.getElementById("previewFefoTexto");
 
+            // Referencias DOM - Tabla y Resumen (Opciones 3 y 4)
             const cuerpoTabla = document.getElementById("cuerpoTablaDetalles");
             const totalCantidadTxt = document.getElementById("totalCantidadTxt");
             const sinItemsAviso = document.getElementById("sinItemsAviso");
             const formDonacion = document.getElementById("formDonacion");
+            const contadorFilasTxt = document.getElementById("contadorFilasTxt");
+            const btnVaciarLista = document.getElementById("btnVaciarLista");
+            const resumenCantLotes = document.getElementById("resumenCantLotes");
+            const resumenUnidades = document.getElementById("resumenUnidades");
+            const resumenKilos = document.getElementById("resumenKilos");
+            const resumenLitros = document.getElementById("resumenLitros");
+            const tfootUnidades = document.getElementById("tfootUnidades");
+            const tfootKilos = document.getElementById("tfootKilos");
+            const tfootLitros = document.getElementById("tfootLitros");
+            const badgeBorradorActivo = document.getElementById("badgeBorradorActivo");
+            const alertaBorradorRecuperado = document.getElementById("alertaBorradorRecuperado");
+            const btnDescartarBorrador = document.getElementById("btnDescartarBorrador");
 
-            // 0. Inicializar Select2 con el tema Bootstrap 5 y mensaje contextual de creación rápida
+            function notificarValidacion(msg, variante = "warning") {
+                if (window.NutriRedUI && typeof window.NutriRedUI.toast === "function") {
+                    window.NutriRedUI.toast(msg, variante, "Recepción de Donación");
+                } else {
+                    alert(msg);
+                }
+            }
+
+            // =========================================================================
+            // 0. INICIALIZAR SELECT2 (CATÁLOGO DE ALIMENTOS Y DONANTES FRECUENTES)
+            // =========================================================================
             $('#selProductoCatalogo').select2({
                 theme: 'bootstrap-5',
                 placeholder: 'Escriba nombre o código de barras (EAN)...',
@@ -402,44 +750,282 @@
                 }
             });
 
-            // 1. Manejo del tipo de donante
-            function actualizarTipoDonante() {
-                const tipo = parseInt(selectTipoDonante.value);
-                if (tipo === 3) { // Anónimo
-                    grpDocumento.classList.add("opacity-50");
-                    grpNombre.classList.add("opacity-50");
-                    grpTelefono.classList.add("opacity-50");
-                    grpEmail.classList.add("opacity-50");
+            if ($('#selDonanteFrecuente').length) {
+                $('#selDonanteFrecuente').select2({
+                    theme: 'bootstrap-5',
+                    placeholder: 'Buscar por nombre, DNI o CUIT...',
+                    allowClear: true,
+                    width: '100%'
+                });
+            }
+
+            // =========================================================================
+            // 1. CABECERA INTELIGENTE DE DONANTE (OPCIÓN 1)
+            // =========================================================================
+            function actualizarTipoDonante(guardar = true) {
+                const tipo = parseInt(selectTipoDonante.value, 10) || 1;
+
+                // Sincronizar radio buttons táctiles
+                radiosTipoDonante.forEach(r => {
+                    r.checked = (parseInt(r.value, 10) === tipo);
+                });
+
+                if (tipo === 3) { // Donante Anónimo: colapsar limpiamente todos los campos
+                    camposDonanteIdentificado.classList.add("d-none");
                     inputDocumento.disabled = true;
                     inputNombre.disabled = true;
+                    inputTelefono.disabled = true;
+                    inputEmail.disabled = true;
                     alertaAnonimo.classList.remove("d-none");
                 } else if (tipo === 2) { // Institución / Empresa
-                    grpDocumento.classList.remove("opacity-50");
-                    grpNombre.classList.remove("opacity-50");
-                    grpTelefono.classList.remove("opacity-50");
-                    grpEmail.classList.remove("opacity-50");
+                    camposDonanteIdentificado.classList.remove("d-none");
                     inputDocumento.disabled = false;
                     inputNombre.disabled = false;
-                    lblDocumento.textContent = "CUIT de la Empresa / Org.";
-                    lblNombre.textContent = "Razón Social";
+                    inputTelefono.disabled = false;
+                    inputEmail.disabled = false;
+                    lblDocumento.textContent = "CUIT de la Institución / Empresa *";
+                    lblNombre.textContent = "Razón Social *";
                     alertaAnonimo.classList.add("d-none");
                 } else { // Individuo
-                    grpDocumento.classList.remove("opacity-50");
-                    grpNombre.classList.remove("opacity-50");
-                    grpTelefono.classList.remove("opacity-50");
-                    grpEmail.classList.remove("opacity-50");
+                    camposDonanteIdentificado.classList.remove("d-none");
                     inputDocumento.disabled = false;
                     inputNombre.disabled = false;
-                    lblDocumento.textContent = "DNI del Donante";
-                    lblNombre.textContent = "Nombre y Apellido";
+                    inputTelefono.disabled = false;
+                    inputEmail.disabled = false;
+                    lblDocumento.textContent = "DNI del Donante *";
+                    lblNombre.textContent = "Nombre y Apellido *";
                     alertaAnonimo.classList.add("d-none");
+                }
+
+                if (guardar) guardarBorradorEnSesion();
+            }
+
+            radiosTipoDonante.forEach(radio => {
+                radio.addEventListener("change", function () {
+                    if (this.checked) {
+                        selectTipoDonante.value = this.value;
+                        actualizarTipoDonante(true);
+                    }
+                });
+            });
+
+            selectTipoDonante.addEventListener("change", () => actualizarTipoDonante(true));
+            actualizarTipoDonante(false);
+
+            // Autocompletar al elegir del desplegable de Donantes Frecuentes
+            $('#selDonanteFrecuente').on('change', function () {
+                const opt = $(this).find(':selected');
+                const doc = opt.data('doc');
+                if (doc) {
+                    const tipo = opt.data('tipo') || 1;
+                    selectTipoDonante.value = String(tipo);
+                    actualizarTipoDonante(false);
+
+                    inputDocumento.value = doc;
+                    inputNombre.value = opt.data('nombre') || '';
+                    inputTelefono.value = opt.data('tel') || '';
+                    inputEmail.value = opt.data('email') || '';
+
+                    if (badgeDonanteDetectado) badgeDonanteDetectado.classList.remove("d-none");
+                    if (btnLimpiarDonante) btnLimpiarDonante.classList.remove("d-none");
+                    guardarBorradorEnSesion();
+                } else {
+                    if (badgeDonanteDetectado) badgeDonanteDetectado.classList.add("d-none");
+                    if (btnLimpiarDonante) btnLimpiarDonante.classList.add("d-none");
+                }
+            });
+
+            // Autocompletar si el usuario tipea un DNI/CUIT que ya existe en la base
+            inputDocumento.addEventListener("change", function () {
+                const docIngresado = inputDocumento.value.trim();
+                if (!docIngresado || !$('#selDonanteFrecuente').length) return;
+
+                let matchOption = null;
+                $('#selDonanteFrecuente option').each(function () {
+                    if (String($(this).data('doc') || '').trim().toLowerCase() === docIngresado.toLowerCase()) {
+                        matchOption = $(this);
+                        return false;
+                    }
+                });
+
+                if (matchOption && !inputNombre.value.trim()) {
+                    $('#selDonanteFrecuente').val(matchOption.val()).trigger('change');
+                    notificarValidacion(`Datos autocompletados para ${matchOption.data('nombre')}.`, "info");
+                }
+                guardarBorradorEnSesion();
+            });
+
+            if (btnLimpiarDonante) {
+                btnLimpiarDonante.addEventListener("click", function () {
+                    $('#selDonanteFrecuente').val('').trigger('change');
+                    inputDocumento.value = "";
+                    inputNombre.value = "";
+                    inputTelefono.value = "";
+                    inputEmail.value = "";
+                    if (badgeDonanteDetectado) badgeDonanteDetectado.classList.add("d-none");
+                    btnLimpiarDonante.classList.add("d-none");
+                    inputDocumento.focus();
+                    guardarBorradorEnSesion();
+                });
+            }
+
+            [inputNombre, inputTelefono, inputEmail, inputObservaciones].forEach(inp => {
+                if (inp) inp.addEventListener("input", guardarBorradorEnSesion);
+            });
+
+            // =========================================================================
+            // 2. ESTACIÓN DE CARGA + SEMÁFORO FEFO EN VIVO (OPCIÓN 2)
+            // =========================================================================
+            function evaluarFefoFecha(fechaIsoStr) {
+                if (!fechaIsoStr) {
+                    return { valido: false, diffDias: 0, clase: "badge-fefo-critico", texto: "Sin fecha", textoCorto: "Sin fecha" };
+                }
+                const fechaVenc = new Date(fechaIsoStr + "T00:00:00");
+                const hoy = new Date();
+                hoy.setHours(0, 0, 0, 0);
+                const diffDias = Math.round((fechaVenc - hoy) / (1000 * 60 * 60 * 24));
+
+                if (diffDias <= 0) {
+                    return {
+                        valido: false,
+                        diffDias,
+                        clase: "badge-fefo-critico",
+                        texto: `No permitido (${diffDias === 0 ? "Vence hoy" : "Vencido"})`,
+                        textoCorto: "Vencido"
+                    };
+                } else if (diffDias <= 5) {
+                    return {
+                        valido: true,
+                        diffDias,
+                        clase: "badge-fefo-urgente",
+                        texto: `Crítico · ${diffDias} día(s)`,
+                        textoCorto: `${diffDias} días`
+                    };
+                } else if (diffDias <= 15) {
+                    return {
+                        valido: true,
+                        diffDias,
+                        clase: "badge-fefo-atencion",
+                        texto: `Atención · ${diffDias} días`,
+                        textoCorto: `${diffDias} días`
+                    };
+                } else {
+                    return {
+                        valido: true,
+                        diffDias,
+                        clase: "badge-fefo-optimo",
+                        texto: `Óptimo · ${diffDias} días`,
+                        textoCorto: `${diffDias} días`
+                    };
                 }
             }
 
-            selectTipoDonante.addEventListener("change", actualizarTipoDonante);
-            actualizarTipoDonante();
+            function actualizarPreviewFefoVivo() {
+                const info = evaluarFefoFecha(tempVencimiento.value);
+                previewFefoVivo.className = `badge ${info.clase} rounded-pill px-3 py-1 d-inline-flex align-items-center gap-1`;
+                previewFefoTexto.textContent = info.texto;
+            }
 
-            // 2. Selección de producto con Select2 sincroniza el EAN y la unidad de medida
+            // =========================================================================
+            // SELECTOR RÁPIDO MES / AÑO CON FIN DE MES (OPCIÓN A)
+            // =========================================================================
+            const displayVencimiento = document.getElementById("displayVencimiento");
+            const selVencMes = document.getElementById("selVencMes");
+            const selVencAnio = document.getElementById("selVencAnio");
+            const btnAplicarMesAnio = document.getElementById("btnAplicarMesAnio");
+            const btnDropdownMesAnio = document.getElementById("btnDropdownMesAnio");
+
+            const NOMBRES_MESES = [
+                "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+                "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+            ];
+
+            function actualizarDisplayVencimiento() {
+                if (!displayVencimiento || !tempVencimiento.value) return;
+                const partes = tempVencimiento.value.split("-");
+                if (partes.length === 3) {
+                    const yyyy = partes[0];
+                    const mmNum = parseInt(partes[1], 10);
+                    const dd = partes[2];
+                    const nombreMes = NOMBRES_MESES[mmNum - 1] || partes[1];
+                    displayVencimiento.value = `${nombreMes} ${yyyy} (${dd}/${partes[1]})`;
+                }
+            }
+
+            if (selVencAnio) {
+                const anioActual = new Date().getFullYear();
+                for (let y = anioActual; y <= anioActual + 6; y++) {
+                    const opt = document.createElement("option");
+                    opt.value = y;
+                    opt.textContent = y;
+                    selVencAnio.appendChild(opt);
+                }
+            }
+
+            function sincronizarMesAnioDesdeInput() {
+                if (!tempVencimiento.value || !selVencMes || !selVencAnio) return;
+                const partes = tempVencimiento.value.split("-");
+                if (partes.length === 3) {
+                    selVencAnio.value = parseInt(partes[0], 10);
+                    selVencMes.value = parseInt(partes[1], 10);
+                }
+                actualizarDisplayVencimiento();
+            }
+
+            function fijarFechaFinDeMes(anio, mes) {
+                // mes es 1..12. new Date(anio, mes, 0) calcula el último día del mes
+                const ultimoDia = new Date(anio, mes, 0);
+                const yyyy = ultimoDia.getFullYear();
+                const mm = String(ultimoDia.getMonth() + 1).padStart(2, '0');
+                const dd = String(ultimoDia.getDate()).padStart(2, '0');
+                tempVencimiento.value = `${yyyy}-${mm}-${dd}`;
+                actualizarDisplayVencimiento();
+                actualizarPreviewFefoVivo();
+            }
+
+            if (btnAplicarMesAnio) {
+                btnAplicarMesAnio.addEventListener("click", function () {
+                    const m = parseInt(selVencMes.value, 10);
+                    const a = parseInt(selVencAnio.value, 10);
+                    fijarFechaFinDeMes(a, m);
+
+                    if (btnDropdownMesAnio) {
+                        const bsDropdown = bootstrap.Dropdown.getInstance(btnDropdownMesAnio);
+                        if (bsDropdown) bsDropdown.hide();
+                    }
+                });
+            }
+
+            // Click en el input de texto también despliega el selector Mes/Año
+            if (displayVencimiento && btnDropdownMesAnio) {
+                displayVencimiento.addEventListener("click", function () {
+                    const bsDropdown = bootstrap.Dropdown.getOrCreateInstance(btnDropdownMesAnio);
+                    bsDropdown.toggle();
+                });
+            }
+
+            tempVencimiento.addEventListener("input", function () {
+                sincronizarMesAnioDesdeInput();
+                actualizarPreviewFefoVivo();
+            });
+            tempVencimiento.addEventListener("change", function () {
+                sincronizarMesAnioDesdeInput();
+                actualizarPreviewFefoVivo();
+            });
+            sincronizarMesAnioDesdeInput();
+            actualizarPreviewFefoVivo();
+
+            // Atajos rápidos de cantidad (+5, +10, +25, +50)
+            document.querySelectorAll(".btn-atajo-cant").forEach(btn => {
+                btn.addEventListener("click", function () {
+                    const add = parseInt(this.getAttribute("data-add"), 10) || 0;
+                    const actual = parseInt(tempCantidad.value, 10) || 0;
+                    tempCantidad.value = Math.max(1, actual + add);
+                    tempCantidad.focus();
+                });
+            });
+
+            // Selección de producto con Select2 sincroniza el EAN y la unidad
             $('#selProductoCatalogo').on('change', function () {
                 const selectedOpt = $(this).find(':selected');
                 const ean = selectedOpt.data('ean');
@@ -448,6 +1034,7 @@
                 if (ean) {
                     tempEan.value = ean;
                     badgeUnidad.textContent = unidad;
+                    if (avisoEanNoExiste) avisoEanNoExiste.classList.add("d-none");
                 } else {
                     badgeUnidad.textContent = 'Unidades';
                 }
@@ -467,7 +1054,7 @@
             const btnGuardarModalSpinner = document.getElementById("btnGuardarModalSpinner");
             const btnGuardarModalIcon = document.getElementById("btnGuardarModalIcon");
 
-            // 3. Escribir EAN sincroniza el selector Select2 y detecta alimentos no catalogados
+            // Escribir EAN sincroniza el selector Select2 y detecta alimentos no catalogados
             tempEan.addEventListener("input", function () {
                 const valor = tempEan.value.trim();
                 let encontrado = false;
@@ -492,8 +1079,6 @@
                     }
                 }
             });
-
-            const btnAbrirModalNuevoAlimentoPill = document.getElementById("btnAbrirModalNuevoAlimentoPill");
 
             // Función inteligente para abrir modal de alta rápida
             function abrirModalAltaRapida(valorInicial) {
@@ -532,28 +1117,18 @@
                 }, 400);
             }
 
-            // Click en botón principal destacado
             if (btnAbrirModalNuevoAlimento) {
                 btnAbrirModalNuevoAlimento.addEventListener("click", function () {
                     abrirModalAltaRapida(tempEan.value.trim());
                 });
             }
 
-            // Click en botón secundario junto al label
-            if (btnAbrirModalNuevoAlimentoPill) {
-                btnAbrirModalNuevoAlimentoPill.addEventListener("click", function () {
-                    abrirModalAltaRapida(tempEan.value.trim());
-                });
-            }
-
-            // Click en botón sugerido al tipear EAN inexistente
             if (btnCrearDesdeEan) {
                 btnCrearDesdeEan.addEventListener("click", function () {
                     abrirModalAltaRapida(tempEan.value.trim());
                 });
             }
 
-            // Click en botón integrado dentro del buscador Select2 cuando no hay resultados
             $(document).on('click', '#btnSelect2CrearNuevo', function () {
                 const searchField = $('.select2-container--open .select2-search__field');
                 const busqueda = (searchField.length ? searchField.val() : '').trim();
@@ -561,7 +1136,7 @@
                 abrirModalAltaRapida(busqueda);
             });
 
-            // Guardar producto nuevo vía AJAX (Opción 1)
+            // Guardar producto nuevo vía AJAX
             btnGuardarModalAlimento.addEventListener("click", async function () {
                 const ean = modalEan.value.trim();
                 const nombre = modalNombre.value.trim();
@@ -620,13 +1195,9 @@
                     if (!data.success) {
                         modalNuevoAlimentoAlerta.textContent = data.message || "Error al registrar el alimento.";
                         modalNuevoAlimentoAlerta.classList.remove("d-none");
-                        btnGuardarModalAlimento.disabled = false;
-                        btnGuardarModalSpinner.classList.add("d-none");
-                        btnGuardarModalIcon.classList.remove("d-none");
                         return;
                     }
 
-                    // Éxito: Agregar nueva opción al select y seleccionarla en Select2
                     const textoOpcion = `${data.nombre} (${data.categoria}) - [${data.codigoBarras}]`;
                     const newOption = new Option(textoOpcion, data.codigoBarras, true, true);
                     $(newOption).data('ean', data.codigoBarras)
@@ -639,14 +1210,12 @@
                     badgeUnidad.textContent = data.unidadMedida;
                     if (avisoEanNoExiste) avisoEanNoExiste.classList.add("d-none");
 
-                    // Cerrar modal
                     const bsModal = bootstrap.Modal.getInstance(modalNuevoAlimentoEl);
                     if (bsModal) bsModal.hide();
 
-                    // Foco inmediato al campo de cantidad para continuar la carga fluida
+                    notificarValidacion(`Alimento "${data.nombre}" creado y seleccionado.`, "success");
                     tempCantidad.focus();
                     tempCantidad.select();
-
                 } catch (err) {
                     modalNuevoAlimentoAlerta.textContent = "Error de comunicación con el servidor: " + err.message;
                     modalNuevoAlimentoAlerta.classList.remove("d-none");
@@ -657,14 +1226,14 @@
                 }
             });
 
-            // Bloquear ingreso de caracteres decimales (. y ,) en cantidad
+            // Bloquear ingreso de decimales en cantidad
             tempCantidad.addEventListener("keydown", function (e) {
                 if (e.key === '.' || e.key === ',' || e.key === 'e' || e.key === 'E' || e.key === '+' || e.key === '-') {
                     e.preventDefault();
                 }
             });
 
-            // Atajo de teclado: pulsar Enter en cualquier campo rápido para agregar a la lista
+            // Atajo Enter en cualquier campo de la estación de carga
             [tempCantidad, tempVencimiento, tempLote, tempEan].forEach(el => {
                 el.addEventListener("keypress", function (e) {
                     if (e.key === "Enter") {
@@ -674,47 +1243,122 @@
                 });
             });
 
-            // 4. Calcular totales enteros
-            function recalcularTotales() {
-                let total = 0;
+            // =========================================================================
+            // 3. TABLA INTERACTIVA 2.0 + RESUMEN MULTIMEDIDA (OPCIÓN 3)
+            // =========================================================================
+            function animarFila(tr) {
+                if (!tr) return;
+                tr.classList.remove("nr-row-flash");
+                void tr.offsetWidth; // reflow
+                tr.classList.add("nr-row-flash");
+            }
+
+            function recalcularTotales(guardar = true) {
+                let totalGeneral = 0;
+                let sumaUnidades = 0;
+                let sumaKilos = 0;
+                let sumaLitros = 0;
+
                 const filas = cuerpoTabla.querySelectorAll("tr");
                 filas.forEach(f => {
                     const cantInput = f.querySelector("input[name$='.Cantidad']");
-                    if (cantInput) {
-                        total += parseInt(cantInput.value, 10) || 0;
+                    const cant = parseInt(cantInput?.value, 10) || 0;
+                    const unidad = (f.dataset.unidad || "Unidades").toLowerCase();
+
+                    totalGeneral += cant;
+                    if (unidad.includes("kilo") || unidad === "kg") {
+                        sumaKilos += cant;
+                    } else if (unidad.includes("litro") || unidad === "lts") {
+                        sumaLitros += cant;
+                    } else {
+                        sumaUnidades += cant;
                     }
                 });
-                totalCantidadTxt.textContent = total.toLocaleString('es-AR');
 
-                if (filas.length > 0) {
+                const cantFilas = filas.length;
+                totalCantidadTxt.textContent = totalGeneral.toLocaleString('es-AR');
+                contadorFilasTxt.textContent = cantFilas;
+                resumenCantLotes.textContent = `${cantFilas} ${cantFilas === 1 ? 'lote' : 'lotes'}`;
+
+                resumenUnidades.textContent = sumaUnidades.toLocaleString('es-AR');
+                resumenKilos.textContent = sumaKilos.toLocaleString('es-AR');
+                resumenLitros.textContent = sumaLitros.toLocaleString('es-AR');
+
+                tfootUnidades.textContent = `${sumaUnidades.toLocaleString('es-AR')} Unid.`;
+                tfootKilos.textContent = `${sumaKilos.toLocaleString('es-AR')} Kg`;
+                tfootLitros.textContent = `${sumaLitros.toLocaleString('es-AR')} Lts`;
+
+                if (cantFilas > 0) {
                     sinItemsAviso.classList.add("d-none");
+                    btnVaciarLista.classList.remove("d-none");
                 } else {
                     sinItemsAviso.classList.remove("d-none");
+                    btnVaciarLista.classList.add("d-none");
                 }
+
+                if (guardar) guardarBorradorEnSesion();
             }
 
-            function notificarValidacion(msg, variante = "warning") {
-                if (window.NutriRedUI && typeof window.NutriRedUI.toast === "function") {
-                    window.NutriRedUI.toast(msg, variante, "Recepción de Donación");
-                } else {
-                    alert(msg);
-                }
+            function crearElementoFila(item, index) {
+                const infoFefo = evaluarFefoFecha(item.vencimiento);
+                const nuevaFila = document.createElement("tr");
+                nuevaFila.setAttribute("data-row-id", index);
+                nuevaFila.dataset.ean = item.ean;
+                nuevaFila.dataset.nombre = item.nombre;
+                nuevaFila.dataset.categoria = item.categoria;
+                nuevaFila.dataset.venc = item.vencimiento;
+                nuevaFila.dataset.lote = item.lote || "";
+                nuevaFila.dataset.unidad = item.unidad || "Unidades";
+
+                nuevaFila.innerHTML = `
+                    <input type="hidden" name="Items.Index" value="${index}" />
+                    <input type="hidden" name="Items[${index}].CodigoBarras" value="${item.ean}" />
+                    <input type="hidden" name="Items[${index}].NombreProducto" value="${item.nombre}" />
+                    <input type="hidden" name="Items[${index}].Categoria" value="${item.categoria}" />
+                    <input type="hidden" name="Items[${index}].UnidadMedida" value="${item.unidad}" />
+                    <input type="hidden" name="Items[${index}].Cantidad" value="${item.cantidad}" />
+                    <input type="hidden" name="Items[${index}].FechaVencimiento" value="${item.vencimiento}" />
+                    <input type="hidden" name="Items[${index}].NumeroLote" value="${item.lote || ''}" />
+
+                    <td class="ps-3">
+                        <div class="fw-semibold text-dark">${item.nombre}</div>
+                        <div class="d-flex align-items-center gap-2 mt-1">
+                            <span class="code-tag font-mono rounded-2 px-1" style="font-size: 0.72rem;">${item.ean}</span>
+                            <span class="badge bg-light text-secondary border rounded-pill px-2 py-0" style="font-size: 0.68rem;">${item.categoria}</span>
+                        </div>
+                    </td>
+                    <td>
+                        <input type="text" class="form-control form-control-sm font-mono input-inline-table input-lote-fila"
+                               value="${item.lote || ''}" placeholder="(Automático)" maxlength="50" title="Click para editar el lote" />
+                    </td>
+                    <td>
+                        <div class="d-flex flex-column gap-1">
+                            <input type="date" class="form-control form-control-sm font-mono input-inline-table input-venc-fila py-0"
+                                   min="${hoyMasUnoStr}" value="${item.vencimiento}" title="Editar fecha de vencimiento" />
+                            <span class="badge ${infoFefo.clase} rounded-pill px-2 py-1 badge-fefo-fila align-self-start" style="font-size: 0.68rem;">
+                                ${infoFefo.textoCorto}
+                            </span>
+                        </div>
+                    </td>
+                    <td class="text-end">
+                        <div class="d-inline-flex align-items-center justify-content-end gap-1">
+                            <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 rounded-2 btn-step-cant" data-delta="-1" title="Restar 1">-</button>
+                            <input type="number" class="form-control form-control-sm text-center font-mono fw-bold text-success input-cant-fila px-1"
+                                   value="${item.cantidad}" min="1" step="1" style="width: 68px;" aria-label="Cantidad" />
+                            <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 rounded-2 btn-step-cant" data-delta="1" title="Sumar 1">+</button>
+                        </div>
+                        <small class="text-muted d-block me-1" style="font-size: 0.68rem;">${item.unidad}</small>
+                    </td>
+                    <td class="text-center pe-3">
+                        <button type="button" class="btn btn-sm btn-outline-danger border-0 rounded-3 btn-quitar" title="Eliminar fila">
+                            <i class="bi bi-trash3"></i>
+                        </button>
+                    </td>
+                `;
+                return nuevaFila;
             }
 
-            // Atajos rápidos de fecha de vencimiento (+1m, +3m, +6m, +1a)
-            document.querySelectorAll(".btn-atajo-venc").forEach(btn => {
-                btn.addEventListener("click", function () {
-                    const meses = parseInt(this.getAttribute("data-months"), 10) || 3;
-                    const fecha = new Date();
-                    fecha.setMonth(fecha.getMonth() + meses);
-                    const yyyy = fecha.getFullYear();
-                    const mm = String(fecha.getMonth() + 1).padStart(2, '0');
-                    const dd = String(fecha.getDate()).padStart(2, '0');
-                    tempVencimiento.value = `${yyyy}-${mm}-${dd}`;
-                });
-            });
-
-            // 5. Agregar fila dinámicamente con cantidad entera estricta y consolidación
+            // Agregar fila dinámicamente con consolidación inteligente
             btnAgregar.addEventListener("click", function () {
                 const ean = tempEan.value.trim();
                 const cantidad = parseInt(tempCantidad.value, 10);
@@ -722,13 +1366,13 @@
                 const lote = tempLote.value.trim();
 
                 if (!ean) {
-                    notificarValidacion("Debe seleccionar o ingresar el código EAN de un producto.", "warning");
-                    tempEan.focus();
+                    notificarValidacion("Debe seleccionar o escanear el código EAN de un alimento.", "warning");
+                    $('#selProductoCatalogo').select2('open');
                     return;
                 }
 
                 if (!cantidad || isNaN(cantidad) || cantidad <= 0) {
-                    notificarValidacion("La cantidad debe ser un número entero mayor a 0 (sin decimales).", "warning");
+                    notificarValidacion("La cantidad debe ser un número entero mayor a 0.", "warning");
                     tempCantidad.focus();
                     return;
                 }
@@ -739,18 +1383,14 @@
                     return;
                 }
 
-                const fechaVenc = new Date(vencimiento + "T00:00:00");
-                const hoy = new Date();
-                hoy.setHours(0, 0, 0, 0);
-
-                if (fechaVenc <= hoy) {
+                const infoFefo = evaluarFefoFecha(vencimiento);
+                if (!infoFefo.valido) {
                     notificarValidacion("RF1: No se pueden recibir alimentos vencidos o que vencen en el día.", "danger");
                     tempVencimiento.focus();
                     return;
                 }
 
-                // Obtener datos del producto seleccionado
-                let nombre = "Alimento en Catálogo";
+                let nombre = "";
                 let categoria = "General";
                 let unidad = badgeUnidad.textContent || "Unidades";
 
@@ -759,9 +1399,25 @@
                     nombre = selectedOpt.data('nombre');
                     categoria = selectedOpt.data('categoria');
                     unidad = selectedOpt.data('unidad');
+                } else {
+                    // Verificar si el EAN existe en alguna opción del catálogo
+                    $('#selProductoCatalogo option').each(function () {
+                        if ($(this).data('ean') == ean) {
+                            nombre = $(this).data('nombre');
+                            categoria = $(this).data('categoria');
+                            unidad = $(this).data('unidad');
+                            return false;
+                        }
+                    });
                 }
 
-                // Verificar si ya existe una fila con el mismo EAN + Vencimiento + Lote para consolidar
+                if (!nombre) {
+                    notificarValidacion("El código EAN ingresado no figura en el catálogo. Regístrelo primero con '+ Alta rápida'.", "warning");
+                    abrirModalAltaRapida(ean);
+                    return;
+                }
+
+                // Verificar si ya existe una fila con igual EAN + Vencimiento + Lote para consolidar
                 const filaExistente = Array.from(cuerpoTabla.querySelectorAll("tr")).find(tr =>
                     tr.dataset.ean === ean &&
                     tr.dataset.venc === vencimiento &&
@@ -769,107 +1425,213 @@
                 );
 
                 if (filaExistente) {
-                    const inputCant = filaExistente.querySelector("input[name$='.Cantidad']");
-                    const spanCant = filaExistente.querySelector(".span-cantidad-fila");
-                    const nuevaCant = (parseInt(inputCant.value, 10) || 0) + cantidad;
-                    inputCant.value = nuevaCant;
-                    if (spanCant) {
-                        spanCant.textContent = `${nuevaCant.toLocaleString('es-AR')} ${unidad}`;
-                    }
+                    const inputHiddenCant = filaExistente.querySelector("input[name$='.Cantidad']");
+                    const inputVisibleCant = filaExistente.querySelector(".input-cant-fila");
+                    const nuevaCant = (parseInt(inputHiddenCant.value, 10) || 0) + cantidad;
+                    inputHiddenCant.value = nuevaCant;
+                    if (inputVisibleCant) inputVisibleCant.value = nuevaCant;
+                    animarFila(filaExistente);
                     notificarValidacion(`Se sumaron ${cantidad} ${unidad} al lote existente de ${nombre}.`, "info");
                 } else {
-                    // Cálculo de badge FEFO para la UI
-                    const diffDias = Math.round((fechaVenc - hoy) / (1000 * 60 * 60 * 24));
-                    let claseFefo = "badge-fefo-optimo";
-                    if (diffDias <= 5) claseFefo = "badge-fefo-urgente";
-                    else if (diffDias <= 15) claseFefo = "badge-fefo-atencion";
-
-                    const partesFecha = vencimiento.split("-");
-                    const fechaFormateada = `${partesFecha[2]}/${partesFecha[1]}/${partesFecha[0]}`;
-
-                    const nuevaFila = document.createElement("tr");
-                    nuevaFila.setAttribute("data-row-id", rowCounter);
-                    nuevaFila.dataset.ean = ean;
-                    nuevaFila.dataset.venc = vencimiento;
-                    nuevaFila.dataset.lote = lote;
-                    nuevaFila.dataset.unidad = unidad;
-
-                    nuevaFila.innerHTML = `
-                        <input type="hidden" name="Items.Index" value="${rowCounter}" />
-                        <input type="hidden" name="Items[${rowCounter}].CodigoBarras" value="${ean}" />
-                        <input type="hidden" name="Items[${rowCounter}].NombreProducto" value="${nombre}" />
-                        <input type="hidden" name="Items[${rowCounter}].Categoria" value="${categoria}" />
-                        <input type="hidden" name="Items[${rowCounter}].UnidadMedida" value="${unidad}" />
-                        <input type="hidden" name="Items[${rowCounter}].Cantidad" value="${cantidad}" />
-                        <input type="hidden" name="Items[${rowCounter}].FechaVencimiento" value="${vencimiento}" />
-                        <input type="hidden" name="Items[${rowCounter}].NumeroLote" value="${lote}" />
-
-                        <td class="ps-4 text-nowrap"><span class="code-tag font-mono rounded-3 text-nowrap">${ean}</span></td>
-                        <td class="fw-semibold text-dark">${nombre}</td>
-                        <td><span class="badge bg-light text-secondary border rounded-pill px-3 py-1">${categoria}</span></td>
-                        <td><span class="font-mono small text-muted">${lote ? lote : "(Automático)"}</span></td>
-                        <td>
-                            <span class="badge ${claseFefo} rounded-pill px-2 py-1">
-                                ${fechaFormateada} (${diffDias} días)
-                            </span>
-                        </td>
-                        <td class="text-end">
-                            <div class="d-inline-flex align-items-center justify-content-end gap-1">
-                                <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 rounded-2 btn-step-cant" data-delta="-1" title="Restar 1">-</button>
-                                <span class="fw-bold text-success px-2 span-cantidad-fila">${cantidad.toLocaleString('es-AR')} ${unidad}</span>
-                                <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 rounded-2 btn-step-cant" data-delta="1" title="Sumar 1">+</button>
-                            </div>
-                        </td>
-                        <td class="text-center pe-4">
-                            <button type="button" class="btn btn-sm btn-outline-danger border-0 rounded-3 btn-quitar" title="Eliminar fila">
-                                <i class="bi bi-trash3"></i>
-                            </button>
-                        </td>
-                    `;
+                    const nuevaFila = crearElementoFila({
+                        ean,
+                        nombre,
+                        categoria,
+                        unidad,
+                        cantidad,
+                        vencimiento,
+                        lote
+                    }, rowCounter);
 
                     cuerpoTabla.appendChild(nuevaFila);
+                    animarFila(nuevaFila);
                     rowCounter++;
                 }
 
-                // Reset de entradas temporales
+                // Reset de entradas temporales para el siguiente escaneo
                 tempLote.value = "";
                 tempCantidad.value = "10";
                 $('#selProductoCatalogo').val('').trigger('change');
                 tempEan.value = "";
 
-                recalcularTotales();
+                recalcularTotales(true);
             });
 
-            // 6. Eliminar fila o ajustar cantidad con +/-
+            // Eventos delegados en la tabla para edición inline (Cantidad, Lote, Vencimiento y Eliminar)
             cuerpoTabla.addEventListener("click", function (e) {
                 const btnStep = e.target.closest(".btn-step-cant");
                 if (btnStep) {
                     const tr = btnStep.closest("tr");
                     const delta = parseInt(btnStep.getAttribute("data-delta"), 10) || 0;
-                    const inputCant = tr.querySelector("input[name$='.Cantidad']");
-                    const spanCant = tr.querySelector(".span-cantidad-fila");
-                    const unidad = tr.dataset.unidad || "Unidades";
-                    if (inputCant) {
-                        const actual = parseInt(inputCant.value, 10) || 1;
+                    const inputHiddenCant = tr.querySelector("input[name$='.Cantidad']");
+                    const inputVisibleCant = tr.querySelector(".input-cant-fila");
+                    if (inputHiddenCant) {
+                        const actual = parseInt(inputHiddenCant.value, 10) || 1;
                         const nuevo = Math.max(1, actual + delta);
-                        inputCant.value = nuevo;
-                        if (spanCant) {
-                            spanCant.textContent = `${nuevo.toLocaleString('es-AR')} ${unidad}`;
-                        }
-                        recalcularTotales();
+                        inputHiddenCant.value = nuevo;
+                        if (inputVisibleCant) inputVisibleCant.value = nuevo;
+                        recalcularTotales(true);
                     }
                     return;
                 }
 
-                const btn = e.target.closest(".btn-quitar");
-                if (btn) {
-                    const tr = btn.closest("tr");
+                const btnQuitar = e.target.closest(".btn-quitar");
+                if (btnQuitar) {
+                    const tr = btnQuitar.closest("tr");
                     tr.remove();
-                    recalcularTotales();
+                    recalcularTotales(true);
                 }
             });
 
-            // 7. Validación antes del Submit
+            cuerpoTabla.addEventListener("input", function (e) {
+                const tr = e.target.closest("tr");
+                if (!tr) return;
+
+                // Edición directa de Cantidad en la fila
+                if (e.target.classList.contains("input-cant-fila")) {
+                    const val = Math.max(1, parseInt(e.target.value, 10) || 1);
+                    const inputHiddenCant = tr.querySelector("input[name$='.Cantidad']");
+                    if (inputHiddenCant) inputHiddenCant.value = val;
+                    recalcularTotales(true);
+                }
+
+                // Edición directa de Lote en la fila
+                if (e.target.classList.contains("input-lote-fila")) {
+                    const loteVal = e.target.value.trim();
+                    const inputHiddenLote = tr.querySelector("input[name$='.NumeroLote']");
+                    if (inputHiddenLote) inputHiddenLote.value = loteVal;
+                    tr.dataset.lote = loteVal;
+                    guardarBorradorEnSesion();
+                }
+
+                // Edición directa de Fecha de Vencimiento en la fila
+                if (e.target.classList.contains("input-venc-fila")) {
+                    const vencVal = e.target.value;
+                    const info = evaluarFefoFecha(vencVal);
+                    const badgeFila = tr.querySelector(".badge-fefo-fila");
+                    const inputHiddenVenc = tr.querySelector("input[name$='.FechaVencimiento']");
+
+                    if (badgeFila) {
+                        badgeFila.className = `badge ${info.clase} rounded-pill px-2 py-1 badge-fefo-fila align-self-start`;
+                        badgeFila.textContent = info.textoCorto;
+                    }
+                    if (info.valido && inputHiddenVenc) {
+                        inputHiddenVenc.value = vencVal;
+                        tr.dataset.venc = vencVal;
+                        guardarBorradorEnSesion();
+                    }
+                }
+            });
+
+            // Botón Vaciar Lista
+            if (btnVaciarLista) {
+                btnVaciarLista.addEventListener("click", function () {
+                    cuerpoTabla.innerHTML = "";
+                    recalcularTotales(true);
+                    notificarValidacion("Se vació la lista de alimentos en recepción.", "info");
+                });
+            }
+
+            // =========================================================================
+            // 4. AUTOGUARDADO DE BORRADOR EN SESSIONSTORAGE (OPCIÓN 4)
+            // =========================================================================
+            function guardarBorradorEnSesion() {
+                try {
+                    const items = Array.from(cuerpoTabla.querySelectorAll("tr")).map(tr => ({
+                        ean: tr.dataset.ean || "",
+                        nombre: tr.dataset.nombre || tr.querySelector(".fw-semibold")?.textContent?.trim() || "",
+                        categoria: tr.dataset.categoria || "General",
+                        unidad: tr.dataset.unidad || "Unidades",
+                        cantidad: parseInt(tr.querySelector("input[name$='.Cantidad']")?.value, 10) || 1,
+                        vencimiento: tr.querySelector("input[name$='.FechaVencimiento']")?.value || "",
+                        lote: tr.querySelector("input[name$='.NumeroLote']")?.value || ""
+                    }));
+
+                    const draft = {
+                        tipoDonante: selectTipoDonante.value,
+                        documento: inputDocumento.value,
+                        nombre: inputNombre.value,
+                        telefono: inputTelefono.value,
+                        email: inputEmail.value,
+                        observaciones: inputObservaciones ? inputObservaciones.value : "",
+                        items: items
+                    };
+
+                    if (items.length > 0 || draft.documento.trim() !== "" || draft.nombre.trim() !== "") {
+                        sessionStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draft));
+                        if (badgeBorradorActivo) badgeBorradorActivo.classList.remove("d-none");
+                    } else {
+                        sessionStorage.removeItem(DRAFT_STORAGE_KEY);
+                        if (badgeBorradorActivo) badgeBorradorActivo.classList.add("d-none");
+                    }
+                } catch (err) {
+                    console.warn("No se pudo guardar el borrador en sessionStorage:", err);
+                }
+            }
+
+            function restaurarBorradorSiExiste() {
+                if (tieneItemsServidor) return; // Si viene de un POST con errores del servidor, priorizar Model del servidor
+                try {
+                    const raw = sessionStorage.getItem(DRAFT_STORAGE_KEY);
+                    if (!raw) return;
+
+                    const draft = JSON.parse(raw);
+                    if (!draft) return;
+
+                    const tieneDatos = (draft.items && draft.items.length > 0) ||
+                                       (draft.documento && draft.documento.trim() !== "") ||
+                                       (draft.nombre && draft.nombre.trim() !== "");
+                    if (!tieneDatos) return;
+
+                    if (draft.tipoDonante) {
+                        selectTipoDonante.value = draft.tipoDonante;
+                        actualizarTipoDonante(false);
+                    }
+                    if (draft.documento) inputDocumento.value = draft.documento;
+                    if (draft.nombre) inputNombre.value = draft.nombre;
+                    if (draft.telefono) inputTelefono.value = draft.telefono;
+                    if (draft.email) inputEmail.value = draft.email;
+                    if (draft.observaciones && inputObservaciones) inputObservaciones.value = draft.observaciones;
+
+                    if (Array.isArray(draft.items) && draft.items.length > 0) {
+                        cuerpoTabla.innerHTML = "";
+                        draft.items.forEach(item => {
+                            const fila = crearElementoFila(item, rowCounter);
+                            cuerpoTabla.appendChild(fila);
+                            rowCounter++;
+                        });
+                    }
+
+                    if (alertaBorradorRecuperado) alertaBorradorRecuperado.classList.remove("d-none");
+                    if (badgeBorradorActivo) badgeBorradorActivo.classList.remove("d-none");
+                    recalcularTotales(false);
+                } catch (err) {
+                    console.warn("Error al restaurar borrador:", err);
+                }
+            }
+
+            if (btnDescartarBorrador) {
+                btnDescartarBorrador.addEventListener("click", function () {
+                    sessionStorage.removeItem(DRAFT_STORAGE_KEY);
+                    cuerpoTabla.innerHTML = "";
+                    selectTipoDonante.value = "1";
+                    inputDocumento.value = "";
+                    inputNombre.value = "";
+                    inputTelefono.value = "";
+                    inputEmail.value = "";
+                    if (inputObservaciones) inputObservaciones.value = "";
+                    if ($('#selDonanteFrecuente').length) $('#selDonanteFrecuente').val('').trigger('change');
+                    actualizarTipoDonante(false);
+                    recalcularTotales(false);
+                    alertaBorradorRecuperado.classList.add("d-none");
+                    if (badgeBorradorActivo) badgeBorradorActivo.classList.add("d-none");
+                    notificarValidacion("Borrador descartado. Formulario reiniciado.", "info");
+                });
+            }
+
+            // =========================================================================
+            // 5. VALIDACIÓN ANTES DEL SUBMIT
+            // =========================================================================
             formDonacion.addEventListener("submit", function (e) {
                 const filas = cuerpoTabla.querySelectorAll("tr");
                 if (filas.length === 0) {
@@ -878,18 +1640,34 @@
                     return false;
                 }
 
-                const tipo = parseInt(selectTipoDonante.value);
+                // Verificar que ninguna fila tenga fecha vencida
+                for (const tr of filas) {
+                    const venc = tr.querySelector("input[name$='.FechaVencimiento']")?.value;
+                    const info = evaluarFefoFecha(venc);
+                    if (!info.valido) {
+                        e.preventDefault();
+                        notificarValidacion("Uno de los lotes en la tabla tiene una fecha de vencimiento no permitida.", "danger");
+                        return false;
+                    }
+                }
+
+                const tipo = parseInt(selectTipoDonante.value, 10);
                 if (tipo !== 3) {
                     if (!inputDocumento.value.trim() || !inputNombre.value.trim()) {
                         e.preventDefault();
                         notificarValidacion("Datos de donante incompletos: Ingrese el Documento y Nombre/Razón Social antes de continuar.", "warning");
+                        if (!inputDocumento.value.trim()) inputDocumento.focus();
+                        else inputNombre.focus();
                         return false;
                     }
                 }
+
+                // Al superar las validaciones cliente, limpiamos el borrador para no repetirlo en la próxima recepción
+                sessionStorage.removeItem(DRAFT_STORAGE_KEY);
             });
 
-            recalcularTotales();
+            restaurarBorradorSiExiste();
+            recalcularTotales(false);
         });
     </script>
 }
-
