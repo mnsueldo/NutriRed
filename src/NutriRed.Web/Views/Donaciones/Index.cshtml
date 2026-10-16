@@ -179,9 +179,15 @@
                 {
                     @foreach (var donacion in Model.Donaciones)
                     {
-                        <tr>
+                        <tr class="@(donacion.EsAnulada ? "table-light text-muted opacity-75" : "")">
                             <td class="ps-4">
                                 <span class="code-tag font-mono fw-bold text-dark">@donacion.CodigoComprobante</span>
+                                @if (donacion.EsAnulada)
+                                {
+                                    <span class="badge bg-danger bg-opacity-10 text-danger border border-danger-subtle rounded-pill px-2 py-0 ms-1 fw-semibold" style="font-size: 0.72rem;">
+                                        <i class="bi bi-x-circle me-1"></i>ANULADA
+                                    </span>
+                                }
                             </td>
                             <td>
                                 <span class="d-block fw-semibold text-dark">@donacion.FechaHora.ToString("dd/MM/yyyy")</span>
@@ -219,10 +225,20 @@
                             <td>
                                 <small class="text-muted"><i class="bi bi-person me-1"></i>@donacion.VoluntarioReceptorId</small>
                             </td>
-                            <td class="text-end pe-4">
+                            <td class="text-end pe-4 text-nowrap">
                                 <a asp-action="Comprobante" asp-route-id="@donacion.DonacionId" class="btn btn-sm btn-outline-primary rounded-pill px-3 fw-semibold" title="Ver Comprobante Oficial">
                                     <i class="bi bi-receipt me-1"></i> Comprobante
                                 </a>
+
+                                @if (User.IsInRole("Administrador") && !donacion.EsAnulada)
+                                {
+                                    <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-2 py-1 fw-semibold ms-1 btn-abrir-anular"
+                                            data-id="@donacion.DonacionId"
+                                            data-codigo="@donacion.CodigoComprobante"
+                                            title="Anular donación y revertir existencias en depósito">
+                                        <i class="bi bi-x-circle me-1"></i>Anular
+                                    </button>
+                                }
                             </td>
                         </tr>
                     }
@@ -232,3 +248,60 @@
     </div>
     <partial name="_Paginacion" model="ViewBag.Paginacion as NutriRed.Web.Models.PaginacionViewModel" />
 </div>
+
+<!-- Modal para Confirmación y Registro de Motivo de Anulación -->
+<div class="modal fade" id="modalAnularDonacion" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0 shadow">
+            <form asp-action="Anular" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" id="anularDonacionId" />
+                <div class="modal-header border-0 pb-0">
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="rounded-circle bg-danger bg-opacity-10 text-danger p-2 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                            <i class="bi bi-exclamation-triangle-fill fs-5"></i>
+                        </div>
+                        <h5 class="modal-title fw-bold text-dark">Anular Donación</h5>
+                    </div>
+                    <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body py-3">
+                    <p class="text-secondary small mb-3">
+                        ¿Está seguro de que desea anular el comprobante <strong id="anularCodigoTxt" class="text-dark font-mono"></strong>?
+                    </p>
+                    <div class="alert alert-warning border-0 small rounded-3 mb-3">
+                        <i class="bi bi-info-circle me-1"></i> Esta acción <strong>revertirá a cero el stock disponible</strong> de estos lotes en el almacén. Solo se permitirá si los alimentos <strong>no han sido empaquetados ni entregados</strong>.
+                    </div>
+                    <div class="mb-3">
+                        <label for="anularMotivo" class="form-label small fw-semibold text-secondary">Motivo formal de la anulación *</label>
+                        <textarea name="motivo" id="anularMotivo" class="form-control rounded-3" rows="3" required placeholder="Ej: Error de tipeo en cantidades, comprobante duplicado por el voluntario..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-light rounded-pill px-3" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-danger rounded-pill px-4 fw-semibold shadow-sm">
+                        <i class="bi bi-x-circle me-1"></i> Confirmar Anulación
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            document.querySelectorAll('.btn-abrir-anular').forEach(btn => {
+                btn.addEventListener('click', function () {
+                    const id = this.dataset.id;
+                    const codigo = this.dataset.codigo;
+                    document.getElementById('anularDonacionId').value = id;
+                    document.getElementById('anularCodigoTxt').textContent = codigo;
+                    document.getElementById('anularMotivo').value = '';
+                    const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('modalAnularDonacion'));
+                    modal.show();
+                });
+            });
+        });
+    </script>
+}

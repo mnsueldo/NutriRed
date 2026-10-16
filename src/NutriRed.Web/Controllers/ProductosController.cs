@@ -268,6 +268,33 @@ public class ProductosController : Controller
         return RedirectToAction(nameof(Index));
     }
 
+    // POST: /Productos/EditarLote
+    [HttpPost]
+    [Authorize(Roles = "Administrador")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> EditarLote(int loteId, int productoId, string numeroLote, DateTime fechaVencimiento, string motivo)
+    {
+        if (loteId <= 0 || productoId <= 0)
+        {
+            TempData["Error"] = "Identificador de lote o producto no válido.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        var usuario = User.Identity?.Name ?? "administrador";
+        var result = await _inventarioService.EditarLoteAsync(loteId, numeroLote, fechaVencimiento, motivo, usuario);
+
+        if (!result.Success)
+        {
+            TempData["Error"] = result.ErrorMessage;
+        }
+        else
+        {
+            TempData["Exito"] = $"El lote '{numeroLote}' ha sido corregido exitosamente.";
+        }
+
+        return RedirectToAction(nameof(Detalles), new { id = productoId });
+    }
+
     private async Task CargarCategoriasSelectListAsync(int? categoriaSeleccionadaId = null)
     {
         var categoriasResult = await _categoriaService.ObtenerTodasAsync(soloActivas: true);

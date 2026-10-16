@@ -9,4 +9,5 @@ public interface IDonacionService
     Task<OperationResult<DonacionComprobanteDto>> ObtenerPorIdAsync(int id);
     Task<OperationResult<DonacionComprobanteDto>> ObtenerPorCodigoAsync(string codigoComprobante);
     Task<OperationResult<IEnumerable<DonacionComprobanteDto>>> ObtenerTodasAsync(DateTime? fechaDesde = null, DateTime? fechaHasta = null);
+    Task<OperationResult> AnularDonacionAsync(int donacionId, string motivo, string usuarioId);
 }

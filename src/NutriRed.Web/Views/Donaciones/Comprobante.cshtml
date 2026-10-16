@@ -53,6 +53,20 @@
 
 <!-- Hoja de Comprobante Oficial -->
 <div class="comprobante-hoja rounded-4 shadow-sm mb-5">
+    @if (Model.EsAnulada)
+    {
+        <div class="alert alert-danger border-0 rounded-3 shadow-sm p-3 mb-4 d-flex align-items-center gap-3">
+            <div class="rounded-circle bg-danger text-white p-2 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 44px; height: 44px;">
+                <i class="bi bi-x-octagon-fill fs-4"></i>
+            </div>
+            <div>
+                <h5 class="fw-bold mb-1 text-danger">ESTE COMPROBANTE HA SIDO ANULADO</h5>
+                <div class="small text-danger-emphasis">@Model.Observaciones</div>
+                <small class="text-muted d-block mt-1">Las existencias asociadas a esta recepción fueron revertidas y dadas de baja en el almacén.</small>
+            </div>
+        </div>
+    }
+
     <!-- Encabezado Institucional -->
     <div class="row align-items-center pb-4 border-bottom mb-4">
         <div class="col-sm-7">

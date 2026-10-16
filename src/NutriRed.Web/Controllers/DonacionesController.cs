@@ -236,6 +236,33 @@ public class DonacionesController : Controller
         return View(result.Data);
     }
 
+    // POST: Donaciones/Anular/5
+    [HttpPost]
+    [Authorize(Roles = "Administrador")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Anular(int id, string motivo)
+    {
+        if (id <= 0)
+        {
+            TempData["Error"] = "Identificador de donación no válido.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        var usuario = User.Identity?.Name ?? "administrador";
+        var result = await _donacionService.AnularDonacionAsync(id, motivo, usuario);
+
+        if (!result.Success)
+        {
+            TempData["Error"] = result.ErrorMessage;
+        }
+        else
+        {
+            TempData["Exito"] = "La donación ha sido anulada y las existencias de stock fueron revertidas correctamente.";
+        }
+
+        return RedirectToAction(nameof(Index));
+    }
+
     /// <summary>
     /// Recarga defensiva del catálogo de productos y categorías activas para los desplegables y modales.
     /// </summary>

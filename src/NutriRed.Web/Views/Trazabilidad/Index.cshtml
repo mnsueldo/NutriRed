@@ -45,6 +45,77 @@
             color: #ffffff;
             border-color: #0d6efd;
         }
+
+    /* Estilos del Diagrama Visual de Flujo de Trazabilidad */
+    .trace-chain {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 1rem;
+        padding: 1.25rem;
+        box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.02);
+    }
+
+    .trace-steps-wrapper {
+        display: flex;
+        align-items: stretch;
+        justify-content: space-between;
+        gap: 0.5rem;
+    }
+
+    .trace-node {
+        flex: 1;
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 0.75rem;
+        padding: 0.875rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        min-width: 140px;
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .trace-node:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.06);
+    }
+
+    .trace-connector {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    @@media (max-width: 991.98px) {
+        .trace-steps-wrapper {
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        .trace-connector {
+            transform: rotate(90deg);
+            margin: 0.25rem 0;
+        }
+    }
+
+    .nav-pills-custom .nav-link {
+        color: #4b5563;
+        background-color: #f1f5f9;
+        border: 1px solid #e2e8f0;
+        transition: all 0.2s ease-in-out;
+    }
+
+    .nav-pills-custom .nav-link:hover:not(.active) {
+        background-color: #e2e8f0;
+        color: #1e293b;
+    }
+
+    .nav-pills-custom .nav-link.active {
+        color: #ffffff;
+        background-color: #198754;
+        border-color: #198754;
+    }
 </style>
 
 <!-- Encabezado de Página -->
@@ -291,70 +362,234 @@
                     </div>
                 </div>
 
-                <!-- Seccion Colapsable: Tabla de Productos -->
+                <!-- Seccion Colapsable: Detalle de Productos y Cadena de Custodia -->
                 <div class="collapse mt-4 pt-3 border-top" id="@collapseId">
-                    <div class="d-flex align-items-center justify-content-between mb-3">
+                    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
                         <h6 class="fw-bold text-secondary mb-0 small text-uppercase" style="letter-spacing: 0.5px;">
-                            <i class="bi bi-list-check me-1 text-success"></i>Composición e Historial de Origen (Donantes)
+                            <i class="bi bi-diagram-3 me-1 text-success"></i>Cadena de Custodia e Historial (@entrega.Items.Count ítems)
                         </h6>
+
+                        <!-- Selector de Vista: Flujo Visual vs Tabla Clásica -->
+                        <ul class="nav nav-pills nav-pills-custom gap-1" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active py-1 px-3 small fw-semibold rounded-pill"
+                                        id="tab-flujo-@entrega.PaqueteId"
+                                        data-bs-toggle="pill"
+                                        data-bs-target="#panel-flujo-@entrega.PaqueteId"
+                                        type="button"
+                                        role="tab"
+                                        aria-controls="panel-flujo-@entrega.PaqueteId"
+                                        aria-selected="true">
+                                    <i class="bi bi-bezier2 me-1"></i>Diagrama de Flujo
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link py-1 px-3 small fw-semibold rounded-pill"
+                                        id="tab-tabla-@entrega.PaqueteId"
+                                        data-bs-toggle="pill"
+                                        data-bs-target="#panel-tabla-@entrega.PaqueteId"
+                                        type="button"
+                                        role="tab"
+                                        aria-controls="panel-tabla-@entrega.PaqueteId"
+                                        aria-selected="false">
+                                    <i class="bi bi-table me-1"></i>Tabla Clásica
+                                </button>
+                            </li>
+                        </ul>
                     </div>
 
-                    <div class="table-responsive rounded-3 border">
-                        <table class="table table-hover align-middle mb-0">
-                            <thead class="table-light small text-secondary">
-                                <tr>
-                                    <th class="py-2.5">Alimento / Producto</th>
-                                    <th class="py-2.5">Lote NutriRed</th>
-                                    <th class="py-2.5">Vencimiento</th>
-                                    <th class="py-2.5">Cantidad</th>
-                                    <th class="py-2.5">Donante de Origen</th>
-                                    <th class="py-2.5">Fecha Donación</th>
-                                </tr>
-                            </thead>
-                            <tbody>
+                    <!-- Contenido de las Pestañas -->
+                    <div class="tab-content" id="tabContent-@entrega.PaqueteId">
+                        <!-- Panel 1: Diagrama de Flujo Visual -->
+                        <div class="tab-pane fade show active" id="panel-flujo-@entrega.PaqueteId" role="tabpanel" aria-labelledby="tab-flujo-@entrega.PaqueteId">
+                            <div class="d-flex flex-column gap-3">
                                 @foreach (var item in entrega.Items)
                                 {
-                                    <tr>
-                                        <!-- Alimento + Codigo Barras -->
-                                        <td class="align-middle fw-medium">
-                                            <div class="text-dark">@item.NombreProducto</div>
-                                            @if (!string.IsNullOrWhiteSpace(item.CodigoEan) && item.CodigoEan != "N/A")
-                                            {
-                                                <div class="small text-muted font-monospace mt-0.5" style="font-size: 0.78rem;">
-                                                    <i class="bi bi-barcode me-1 opacity-75"></i>@item.CodigoEan
+                                    <div class="trace-chain">
+                                        <div class="d-flex align-items-center justify-content-between mb-2 flex-wrap gap-2">
+                                            <div class="d-flex align-items-center gap-2">
+                                                <span class="badge bg-primary bg-opacity-10 text-primary fw-bold font-monospace px-2 py-1">
+                                                    <i class="bi bi-upc-scan me-1"></i>Lote: @item.NumeroLote
+                                                </span>
+                                                <span class="fw-bold text-dark">@item.NombreProducto</span>
+                                                <span class="badge bg-secondary bg-opacity-10 text-secondary">
+                                                    @item.Cantidad.ToString("G29") @item.UnidadMedida
+                                                </span>
+                                            </div>
+                                            <small class="text-muted font-monospace" style="font-size: 0.75rem;">
+                                                Cadena de Custodia #@item.DonacionId &rarr; PKG-@entrega.PaqueteId
+                                            </small>
+                                        </div>
+
+                                        <div class="trace-steps-wrapper">
+                                            <!-- 1. Donante -->
+                                            <div class="trace-node border-start border-3 border-success">
+                                                <div class="d-flex align-items-center justify-content-between mb-1">
+                                                    <span class="badge bg-success bg-opacity-10 text-success fw-bold" style="font-size: 0.65rem;">1. DONANTE</span>
+                                                    <i class="bi bi-person-heart text-success"></i>
                                                 </div>
-                                            }
-                                        </td>
+                                                <div class="fw-semibold text-dark text-truncate" title="@item.NombreDonante" style="font-size: 0.85rem;">
+                                                    @item.NombreDonante
+                                                </div>
+                                                <div class="small text-muted font-monospace mt-1" style="font-size: 0.72rem;">
+                                                    <div>Doc: @item.DocumentoDonante</div>
+                                                    @if (!string.IsNullOrWhiteSpace(item.TipoDonante))
+                                                    {
+                                                        <div class="text-secondary text-truncate">@item.TipoDonante</div>
+                                                    }
+                                                </div>
+                                            </div>
 
-                                        <!-- Lote -->
-                                        <td class="align-middle">
-                                            <span class="badge bg-secondary font-monospace px-2.5 py-1.5">@item.NumeroLote</span>
-                                        </td>
+                                            <!-- Conector 1 -> 2 -->
+                                            <div class="trace-connector text-muted opacity-50">
+                                                <i class="bi bi-arrow-right fs-5 d-none d-lg-block"></i>
+                                                <i class="bi bi-arrow-down fs-5 d-lg-none"></i>
+                                            </div>
 
-                                        <!-- Vencimiento -->
-                                        <td class="align-middle small">
-                                            @(item.FechaVencimiento.HasValue? item.FechaVencimiento.Value.ToString("dd/MM/yyyy") : "N/A")
-                                        </td>
+                                            <!-- 2. Donación / Recepción -->
+                                            <div class="trace-node border-start border-3 border-info">
+                                                <div class="d-flex align-items-center justify-content-between mb-1">
+                                                    <span class="badge bg-info bg-opacity-10 text-info fw-bold" style="font-size: 0.65rem;">2. RECEPCIÓN</span>
+                                                    <i class="bi bi-box-arrow-in-down text-info"></i>
+                                                </div>
+                                                <div class="fw-semibold text-dark" style="font-size: 0.85rem;">
+                                                    Donación #@item.DonacionId
+                                                </div>
+                                                <div class="small text-muted mt-1" style="font-size: 0.72rem;">
+                                                    <div><i class="bi bi-calendar-check me-1"></i>@(item.FechaDonacion != DateTime.MinValue ? item.FechaDonacion.ToString("dd/MM/yyyy") : "N/A")</div>
+                                                    <div class="text-success fw-medium"><i class="bi bi-check-circle me-1"></i>Registrado</div>
+                                                </div>
+                                            </div>
 
-                                        <!-- Cantidad -->
-                                        <td class="align-middle fw-bold">
-                                            @item.Cantidad.ToString("G29") <span class="fw-normal text-muted small">@item.UnidadMedida</span>
-                                        </td>
+                                            <!-- Conector 2 -> 3 -->
+                                            <div class="trace-connector text-muted opacity-50">
+                                                <i class="bi bi-arrow-right fs-5 d-none d-lg-block"></i>
+                                                <i class="bi bi-arrow-down fs-5 d-lg-none"></i>
+                                            </div>
 
-                                        <!-- Donante de Origen -->
-                                        <td class="align-middle">
-                                            <div class="fw-semibold text-success">@item.NombreDonante</div>
-                                            <small class="text-muted font-monospace" style="font-size: 0.75rem;">Doc: @item.DocumentoDonante</small>
-                                        </td>
+                                            <!-- 3. Almacén FEFO -->
+                                            <div class="trace-node border-start border-3 border-warning">
+                                                <div class="d-flex align-items-center justify-content-between mb-1">
+                                                    <span class="badge bg-warning bg-opacity-10 text-warning fw-bold" style="font-size: 0.65rem;">3. ALMACÉN FEFO</span>
+                                                    <i class="bi bi-boxes text-warning"></i>
+                                                </div>
+                                                <div class="fw-semibold text-dark text-truncate" title="@item.NombreProducto" style="font-size: 0.85rem;">
+                                                    @item.NombreProducto
+                                                </div>
+                                                <div class="small text-muted font-monospace mt-1" style="font-size: 0.72rem;">
+                                                    <div>Lote: <strong class="text-dark">@item.NumeroLote</strong></div>
+                                                    <div>Vto: @(item.FechaVencimiento.HasValue ? item.FechaVencimiento.Value.ToString("dd/MM/yyyy") : "N/A")</div>
+                                                    <div class="text-secondary fw-semibold">@item.Cantidad.ToString("G29") @item.UnidadMedida</div>
+                                                </div>
+                                            </div>
 
-                                        <!-- Fecha Donación -->
-                                        <td class="align-middle small">
-                                            @(item.FechaDonacion != DateTime.MinValue ? item.FechaDonacion.ToString("dd/MM/yyyy") : "N/A")
-                                        </td>
-                                    </tr>
+                                            <!-- Conector 3 -> 4 -->
+                                            <div class="trace-connector text-muted opacity-50">
+                                                <i class="bi bi-arrow-right fs-5 d-none d-lg-block"></i>
+                                                <i class="bi bi-arrow-down fs-5 d-lg-none"></i>
+                                            </div>
+
+                                            <!-- 4. Paquete -->
+                                            <div class="trace-node border-start border-3 border-primary">
+                                                <div class="d-flex align-items-center justify-content-between mb-1">
+                                                    <span class="badge bg-primary bg-opacity-10 text-primary fw-bold" style="font-size: 0.65rem;">4. PAQUETE</span>
+                                                    <i class="bi bi-box-seam-fill text-primary"></i>
+                                                </div>
+                                                <div class="fw-semibold text-dark font-monospace" style="font-size: 0.85rem;">
+                                                    @entrega.CodigoPaquete
+                                                </div>
+                                                <div class="small text-muted mt-1" style="font-size: 0.72rem;">
+                                                    <div class="text-truncate">@entrega.TipoPaquete</div>
+                                                    <div><i class="bi bi-calendar-event me-1"></i>@entrega.FechaArmado.ToString("dd/MM/yyyy")</div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Conector 4 -> 5 -->
+                                            <div class="trace-connector text-muted opacity-50">
+                                                <i class="bi bi-arrow-right fs-5 d-none d-lg-block"></i>
+                                                <i class="bi bi-arrow-down fs-5 d-lg-none"></i>
+                                            </div>
+
+                                            <!-- 5. Destino Final -->
+                                            <div class="trace-node border-start border-3 border-danger">
+                                                <div class="d-flex align-items-center justify-content-between mb-1">
+                                                    <span class="badge bg-danger bg-opacity-10 text-danger fw-bold" style="font-size: 0.65rem;">5. DESTINO FINAL</span>
+                                                    <i class="bi bi-house-heart-fill text-danger"></i>
+                                                </div>
+                                                <div class="fw-semibold text-dark text-truncate" title="@entrega.NombreFamilia" style="font-size: 0.85rem;">
+                                                    @entrega.NombreFamilia
+                                                </div>
+                                                <div class="small text-muted font-monospace mt-1" style="font-size: 0.72rem;">
+                                                    <div>DNI: @entrega.DniRepresentante</div>
+                                                    <div><i class="bi bi-send-check me-1 text-success"></i>@entrega.FechaEntrega.ToString("dd/MM/yyyy")</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 }
-                            </tbody>
-                        </table>
+                            </div>
+                        </div>
+
+                        <!-- Panel 2: Vista de Tabla Clásica -->
+                        <div class="tab-pane fade" id="panel-tabla-@entrega.PaqueteId" role="tabpanel" aria-labelledby="tab-tabla-@entrega.PaqueteId">
+                            <div class="table-responsive rounded-3 border">
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead class="table-light small text-secondary">
+                                        <tr>
+                                            <th class="py-2.5">Alimento / Producto</th>
+                                            <th class="py-2.5">Lote NutriRed</th>
+                                            <th class="py-2.5">Vencimiento</th>
+                                            <th class="py-2.5">Cantidad</th>
+                                            <th class="py-2.5">Donante de Origen</th>
+                                            <th class="py-2.5">Fecha Donación</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var item in entrega.Items)
+                                        {
+                                            <tr>
+                                                <!-- Alimento + Codigo Barras -->
+                                                <td class="align-middle fw-medium">
+                                                    <div class="text-dark">@item.NombreProducto</div>
+                                                    @if (!string.IsNullOrWhiteSpace(item.CodigoEan) && item.CodigoEan != "N/A")
+                                                    {
+                                                        <div class="small text-muted font-monospace mt-0.5" style="font-size: 0.78rem;">
+                                                            <i class="bi bi-barcode me-1 opacity-75"></i>@item.CodigoEan
+                                                        </div>
+                                                    }
+                                                </td>
+
+                                                <!-- Lote -->
+                                                <td class="align-middle">
+                                                    <span class="badge bg-secondary font-monospace px-2.5 py-1.5">@item.NumeroLote</span>
+                                                </td>
+
+                                                <!-- Vencimiento -->
+                                                <td class="align-middle small">
+                                                    @(item.FechaVencimiento.HasValue? item.FechaVencimiento.Value.ToString("dd/MM/yyyy") : "N/A")
+                                                </td>
+
+                                                <!-- Cantidad -->
+                                                <td class="align-middle fw-bold">
+                                                    @item.Cantidad.ToString("G29") <span class="fw-normal text-muted small">@item.UnidadMedida</span>
+                                                </td>
+
+                                                <!-- Donante de Origen -->
+                                                <td class="align-middle">
+                                                    <div class="fw-semibold text-success">@item.NombreDonante</div>
+                                                    <small class="text-muted font-monospace" style="font-size: 0.75rem;">Doc: @item.DocumentoDonante</small>
+                                                </td>
+
+                                                <!-- Fecha Donación -->
+                                                <td class="align-middle small">
+                                                    @(item.FechaDonacion != DateTime.MinValue ? item.FechaDonacion.ToString("dd/MM/yyyy") : "N/A")
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

@@ -62,6 +62,9 @@ public class Donacion
     [Display(Name = "Observaciones")]
     public string? Observaciones { get; set; }
 
+    [Display(Name = "Anulada")]
+    public bool EsAnulada => !string.IsNullOrEmpty(Observaciones) && Observaciones.StartsWith("[ANULADA]");
+
     // Navegación
     public ICollection<DonacionDetalle> Detalles { get; set; } = new List<DonacionDetalle>();
 }

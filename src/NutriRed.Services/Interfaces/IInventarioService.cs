@@ -16,5 +16,5 @@ public interface IInventarioService
     Task<OperationResult<decimal>> ObtenerTotalMermasKgAsync();
     Task<OperationResult<decimal>> ObtenerTotalAlimentosDistribuidosAsync();
     Task<OperationResult<List<DistribucionMensualDto>>> ObtenerDistribucionMensualAsync();
-
+    Task<OperationResult> EditarLoteAsync(int loteId, string numeroLote, DateTime fechaVencimiento, string motivo, string usuarioId);
 }

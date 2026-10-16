@@ -145,7 +145,11 @@
                         <th>Caducidad (FEFO)</th>
                         <th class="text-center">Disponible</th>
                         <th class="text-center">Inicial</th>
-                        <th class="text-center pe-4">Estado Lote</th>
+                        <th class="text-center">Estado Lote</th>
+                        @if (User.IsInRole("Administrador"))
+                        {
+                            <th class="text-end pe-4">Acciones</th>
+                        }
                     </tr>
                 </thead>
                 <tbody>
@@ -168,7 +172,7 @@
                             <td class="text-center text-muted">
                                 @lote.CantidadInicial.ToString("N0") @Model.Producto.UnidadMedida
                             </td>
-                            <td class="text-center pe-4">
+                            <td class="text-center">
                                 @if (lote.Estado == EstadoLote.Disponible)
                                 {
                                     <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-1">Disponible</span>
@@ -186,6 +190,18 @@
                                     <span class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill px-3 py-1">Bloqueado</span>
                                 }
                             </td>
+                            @if (User.IsInRole("Administrador"))
+                            {
+                                <td class="text-end pe-4">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3 fw-semibold btn-editar-lote shadow-none"
+                                            data-id="@lote.Id"
+                                            data-numero="@lote.NumeroLote"
+                                            data-vencimiento="@lote.FechaVencimiento.ToString("yyyy-MM-dd")"
+                                            title="Corregir fecha de caducidad o código de lote">
+                                        <i class="bi bi-pencil-square me-1"></i>Editar
+                                    </button>
+                                </td>
+                            }
                         </tr>
                     }
                 </tbody>
@@ -193,3 +209,69 @@
         </div>
     }
 </div>
+
+@if (User.IsInRole("Administrador"))
+{
+    <!-- Modal de Edición Correctiva de Lote -->
+    <div class="modal fade" id="modalEditarLote" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content rounded-4 border-0 shadow">
+                <form asp-action="EditarLote" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="loteId" id="editLoteId" />
+                    <input type="hidden" name="productoId" value="@Model.Producto.Id" />
+                    <div class="modal-header border-0 pb-0">
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="rounded-circle bg-primary bg-opacity-10 text-primary p-2 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                <i class="bi bi-pencil-square fs-5"></i>
+                            </div>
+                            <h5 class="modal-title fw-bold text-dark">Corrección de Lote Físico</h5>
+                        </div>
+                        <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                    </div>
+                    <div class="modal-body py-3">
+                        <p class="text-secondary small mb-3">
+                            Modificación administrativa de lote para el alimento <strong class="text-dark">@Model.Producto.Nombre</strong>.
+                        </p>
+                        <div class="mb-3">
+                            <label for="editNumeroLote" class="form-label small fw-semibold text-secondary">Identificador / Número de Lote *</label>
+                            <input type="text" name="numeroLote" id="editNumeroLote" class="form-control font-mono rounded-3" required />
+                        </div>
+                        <div class="mb-3">
+                            <label for="editFechaVencimiento" class="form-label small fw-semibold text-secondary">Fecha de Caducidad / Vencimiento *</label>
+                            <input type="date" name="fechaVencimiento" id="editFechaVencimiento" class="form-control rounded-3" required />
+                            <small class="text-muted" style="font-size: 0.75rem;">El sistema recalculará automáticamente la prioridad FEFO tras guardar.</small>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editMotivo" class="form-label small fw-semibold text-secondary">Motivo formal de la corrección *</label>
+                            <textarea name="motivo" id="editMotivo" class="form-control rounded-3" rows="2" required placeholder="Ej: Error de tipeo en recepción de donación, fecha en envase invertida..."></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-0 pt-0">
+                        <button type="button" class="btn btn-light rounded-pill px-3" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary rounded-pill px-4 fw-semibold shadow-sm">
+                            <i class="bi bi-check-lg me-1"></i> Guardar Corrección
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    @section Scripts {
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+                document.querySelectorAll('.btn-editar-lote').forEach(btn => {
+                    btn.addEventListener('click', function () {
+                        document.getElementById('editLoteId').value = this.dataset.id;
+                        document.getElementById('editNumeroLote').value = this.dataset.numero;
+                        document.getElementById('editFechaVencimiento').value = this.dataset.vencimiento;
+                        document.getElementById('editMotivo').value = '';
+                        const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('modalEditarLote'));
+                        modal.show();
+                    });
+                });
+            });
+        </script>
+    }
+}

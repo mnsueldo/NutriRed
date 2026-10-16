@@ -340,4 +340,91 @@ public class DonacionService : IDonacionService
             }).ToList()
         };
     }
+
+    public async Task<OperationResult> AnularDonacionAsync(int donacionId, string motivo, string usuarioId)
+    {
+        using var transaction = await _context.Database.BeginTransactionAsync();
+        try
+        {
+            if (string.IsNullOrWhiteSpace(motivo))
+            {
+                return OperationResult.Fail("Debe especificar el motivo formal de la anulación.");
+            }
+
+            var donacion = await _context.Donaciones
+                .Include(d => d.Detalles)
+                    .ThenInclude(det => det.Lote)
+                .Include(d => d.Detalles)
+                    .ThenInclude(det => det.Producto)
+                .FirstOrDefaultAsync(d => d.Id == donacionId);
+
+            if (donacion == null)
+            {
+                return OperationResult.Fail("La donación solicitada no existe.");
+            }
+
+            if (!string.IsNullOrEmpty(donacion.Observaciones) && donacion.Observaciones.StartsWith("[ANULADA]"))
+            {
+                return OperationResult.Fail($"La donación '{donacion.CodigoComprobante}' ya se encuentra anulada.");
+            }
+
+            // 1. Control de Integridad: Verificar que ningún lote haya sido extraído o empaquetado
+            foreach (var det in donacion.Detalles)
+            {
+                if (det.Lote == null) continue;
+
+                bool loteEnPaquete = await _context.PaqueteDetalles
+                    .AnyAsync(pd => pd.LoteId == det.LoteId);
+
+                if (loteEnPaquete || det.Lote.CantidadDisponible < det.Lote.CantidadInicial)
+                {
+                    await transaction.RollbackAsync();
+                    return OperationResult.Fail(
+                        $"No es posible anular la donación '{donacion.CodigoComprobante}' porque el lote '{det.Lote.NumeroLote}' " +
+                        $"del alimento '{det.Producto?.Nombre ?? "Item"}' ya ha sido asignado o consumido en el armado de paquetes. " +
+                        $"Para diferencias de inventario, utilice el módulo de Registro de Bajas / Mermas."
+                    );
+                }
+            }
+
+            // 2. Reversión atómica de existencias y registro de auditoría
+            foreach (var det in donacion.Detalles)
+            {
+                if (det.Lote == null) continue;
+
+                det.Lote.CantidadDisponible = 0;
+                det.Lote.Estado = EstadoLote.Bloqueado;
+
+                var movimiento = new MovimientoStock
+                {
+                    LoteId = det.LoteId,
+                    TipoMovimiento = TipoMovimiento.AjusteManual,
+                    Motivo = MotivoMovimiento.AjusteInventario,
+                    Cantidad = det.Cantidad,
+                    Fecha = DateTime.UtcNow,
+                    UsuarioId = string.IsNullOrWhiteSpace(usuarioId) ? "administrador" : usuarioId,
+                    Observaciones = $"Reversión de stock por Anulación de Donación {donacion.CodigoComprobante}. Motivo: {motivo.Trim()}"
+                };
+
+                _context.MovimientosStock.Add(movimiento);
+            }
+
+            // 3. Asentar marca de anulación en la cabecera
+            var timestamp = DateTime.Now.ToString("dd/MM/yyyy HH:mm");
+            var prefijoAnulacion = $"[ANULADA - {timestamp} por {usuarioId}: {motivo.Trim()}]";
+            donacion.Observaciones = string.IsNullOrWhiteSpace(donacion.Observaciones)
+                ? prefijoAnulacion
+                : $"{prefijoAnulacion} {donacion.Observaciones}";
+
+            await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
+
+            return OperationResult.Ok();
+        }
+        catch (Exception ex)
+        {
+            await transaction.RollbackAsync();
+            return OperationResult.Fail($"Error al anular la donación: {ex.Message}");
+        }
+    }
 }

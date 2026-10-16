@@ -383,4 +383,68 @@ public class InventarioService : IInventarioService
             return OperationResult<List<DistribucionMensualDto>>.Fail($"Error al obtener distribución mensual: {ex.Message}");
         }
     }
+
+    public async Task<OperationResult> EditarLoteAsync(int loteId, string numeroLote, DateTime fechaVencimiento, string motivo, string usuarioId)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(numeroLote))
+            {
+                return OperationResult.Fail("El número de lote es obligatorio.");
+            }
+
+            if (string.IsNullOrWhiteSpace(motivo))
+            {
+                return OperationResult.Fail("Debe especificar el motivo de la corrección administrativa.");
+            }
+
+            var lote = await _context.Lotes
+                .Include(l => l.Producto)
+                .FirstOrDefaultAsync(l => l.Id == loteId);
+
+            if (lote == null)
+            {
+                return OperationResult.Fail("El lote físico que intenta editar no existe.");
+            }
+
+            var loteAnterior = lote.NumeroLote;
+            var fechaAnterior = lote.FechaVencimiento;
+            var nuevoNumero = numeroLote.Trim();
+            var nuevaFecha = fechaVencimiento.Date;
+
+            lote.NumeroLote = nuevoNumero;
+            lote.FechaVencimiento = nuevaFecha;
+
+            // Reevaluación del estado del lote según la nueva caducidad
+            if (nuevaFecha <= DateTime.Today && lote.CantidadDisponible > 0)
+            {
+                lote.Estado = EstadoLote.Vencido;
+            }
+            else if (nuevaFecha > DateTime.Today && lote.Estado == EstadoLote.Vencido && lote.CantidadDisponible > 0)
+            {
+                lote.Estado = EstadoLote.Disponible;
+            }
+
+            // Asentar movimiento de auditoría
+            var movimiento = new MovimientoStock
+            {
+                LoteId = lote.Id,
+                TipoMovimiento = TipoMovimiento.AjusteManual,
+                Motivo = MotivoMovimiento.AjusteInventario,
+                Cantidad = lote.CantidadDisponible,
+                Fecha = DateTime.UtcNow,
+                UsuarioId = string.IsNullOrWhiteSpace(usuarioId) ? "administrador" : usuarioId,
+                Observaciones = $"Corrección administrativa: {motivo.Trim()}. [Anterior: Lote '{loteAnterior}', Vto: {fechaAnterior:dd/MM/yyyy}] -> [Nuevo: Lote '{nuevoNumero}', Vto: {nuevaFecha:dd/MM/yyyy}]"
+            };
+
+            _context.MovimientosStock.Add(movimiento);
+            await _context.SaveChangesAsync();
+
+            return OperationResult.Ok();
+        }
+        catch (Exception ex)
+        {
+            return OperationResult.Fail($"Error al editar el lote: {ex.Message}");
+        }
+    }
 }

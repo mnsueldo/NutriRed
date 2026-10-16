@@ -44,6 +44,7 @@ public class DonacionComprobanteDto
     public string? DonanteDocumento { get; set; }
     public TipoDonante TipoDonante { get; set; }
     public string? Observaciones { get; set; }
+    public bool EsAnulada => !string.IsNullOrEmpty(Observaciones) && Observaciones.StartsWith("[ANULADA]");
     public decimal TotalUnidadesRecibidas { get; set; }
     public List<DonacionDetalleDto> Detalles { get; set; } = new();
 }
